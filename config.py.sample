@@ -3,6 +3,7 @@ SERVER_IP = '203.0.113.207'
 SERVER_PORT = 8443
 SSL_CERT = '/root/cert/PUBLIC.pem'
 SSL_PRIV = '/root/cert/PRIVATE.key'
+METHODS_JSON = '/root/methods.json'
 IP_RANGE = ['149.154.167.{}'.format(i) for i in range(197, 234)]  # From https://core.telegram.org/bots/webhooks
 
 import logging
