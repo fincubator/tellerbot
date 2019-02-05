@@ -4,7 +4,7 @@ Thank you for considering contributing to this project! The following are guidel
 ## GPG commit signature verification
 To ensure your work comes from a trusted source, you are required to sign your commits with a GPG key that you generate yourself. You can read [this article from GitHub](https://help.github.com/articles/signing-commits/) as a guide.
 
-**Commits that do not have a cryptograhically verifiable signature will not be accepted.**
+**Commits that do not have a cryptographically verifiable signature will not be accepted.**
 
 ## Developer Certificate of Origin
 In order to give project's owner permission to use and redistribute your contributions as part of the project, you must accept the Developer Certificate of Origin (DCO):
