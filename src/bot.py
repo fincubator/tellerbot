@@ -38,12 +38,12 @@ SETTINGS = [
 
 
 def translate_handler(handler):
-    def decorator(message):
+    def lang_handler(message):
         user = database.users.find_one({'id': message.chat.id})
         domain = user['language'] if user else 'us'
         _ = lambda text: text if domain == 'us' else translations[domain].get(text, text)
         return handler(message, user, _)
-    return decorator
+    return lang_handler
 
 
 def private_only(message):
@@ -53,9 +53,10 @@ def private_only(message):
 def message_handler(func=None, **kwargs):
     def decorator(handler):
         conjuction = private_only if func is None else lambda message: private_only(message) and func(message)
-        handler_dict = bot._build_handler_dict(handler, func=conjuction, **kwargs)
+        lang_handler = translate_handler(handler)
+        handler_dict = bot._build_handler_dict(lang_handler, func=conjuction, **kwargs)
         bot.add_message_handler(handler_dict)
-        return translate_handler(handler)
+        return lang_handler
     return decorator
 
 
