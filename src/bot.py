@@ -60,7 +60,7 @@ def message_handler(func=None, **kwargs):
     return decorator
 
 
-@message_handler(func=private_only, commands=['start', 'help'])
+@message_handler(commands=['start', 'help'])
 def handle_start_command(message, user, _):
     language_code = message.from_user.language_code
     if language_code is None:
