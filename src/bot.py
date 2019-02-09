@@ -49,9 +49,8 @@ def translate_handler(handler):
 
         if user:
             domain = user['language']
-
-        if domain != 'en' and domain in translations:
-            _ = lambda text: translations[domain].get(text, text)
+            if domain != 'en' and domain in translations:
+                _ = lambda text: translations[domain].get(text, text)
 
         return handler(obj, user, _)
     return lang_handler
