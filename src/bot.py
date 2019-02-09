@@ -23,11 +23,10 @@ from .locale import translations
 import re
 import json
 
-import telebot
-from telebot.types import InlineKeyboardMarkup, ReplyKeyboardMarkup, InlineKeyboardButton, KeyboardButton, Message, CallbackQuery
+from telebot import TeleBot, types
 
 
-bot = telebot.TeleBot(config.TOKEN)
+bot = TeleBot(config.TOKEN)
 
 
 SETTINGS = [
@@ -43,18 +42,18 @@ def translate_handler(handler):
         domain = 'en'
         _ = lambda text: text
 
-        if isinstance(obj, Message):
+        if isinstance(obj, types.Message):
             user = database.users.find_one({'id': obj.chat.id})
-        elif isinstance(obj, CallbackQuery) and obj.message:
+        elif isinstance(obj, types.CallbackQuery) and obj.message:
             user = database.users.find_one({'id': obj.message.chat.id})
 
         if user:
             domain = user['language']
 
-        if domain != 'us' and domain in translations:
+        if domain != 'en' and domain in translations:
             _ = lambda text: translations[domain].get(text, text)
 
-        return handler(message, user, _)
+        return handler(obj, user, _)
     return lang_handler
 
 
@@ -87,11 +86,11 @@ def handle_start_command(message, user, _):
         {'$setOnInsert': new_user},
         upsert=True
     )
-    keyboard = ReplyKeyboardMarkup(row_width=2)
+    keyboard = types.ReplyKeyboardMarkup(row_width=2)
     keyboard.add(
-        KeyboardButton('\U0001f4bb ' + _('Buy')),
-        KeyboardButton('\U0001f4b5 ' + _('Sell')),
-        KeyboardButton('\u2699\ufe0f ' + _('Settings'))
+        types.KeyboardButton('\U0001f4bb ' + _('Buy')),
+        types.KeyboardButton('\U0001f4b5 ' + _('Sell')),
+        types.KeyboardButton('\u2699\ufe0f ' + _('Settings'))
     )
     bot.send_message(
         message.chat.id,
@@ -103,10 +102,10 @@ def handle_start_command(message, user, _):
 
 def orders_list(chat_id, start, count=10):
     orders = database.orders.find()[start:start + count]
-    keyboard = InlineKeyboardMarkup(row_width=2)
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
     keyboard.add(
-        InlineKeyboardButton(text='\u2b05\ufe0f', callback_data='orders {}'.format(start - count)),
-        InlineKeyboardButton(text='\u27a1\ufe0f', callback_data='orders {}'.format(start + count))
+        types.InlineKeyboardButton(text='\u2b05\ufe0f', callback_data='orders {}'.format(start - count)),
+        types.InlineKeyboardButton(text='\u27a1\ufe0f', callback_data='orders {}'.format(start + count))
     )
     bot.send_message(
         chat_id,
@@ -185,7 +184,7 @@ def handle_sell(message, user, _):
         'payment_methods': user['payment_methods'],
         'date': message.date,
         'expiration_time': 0,
-        'username': user.get('username'),
+        'username': user['username'],
     })
     database.users.update_one(
         {'_id': user['_id']},
@@ -290,7 +289,7 @@ def set_username(message, user, _):
 @translate_handler
 def settings_username(call, user, _):
     reply = bot.send_message(
-        call.chat.id,
+        call.message.chat.id,
         'Send your Bitshares username.'
     )
     bot.register_next_step_handler(reply, set_username)
@@ -316,9 +315,9 @@ def settings_order_creation_ui(call, user, _):
     func=lambda msg: msg.text.encode('unicode-escape').startswith(b'\\u2699\\ufe0f')
 )
 def handle_settings(message, user, _):
-    keyboard = InlineKeyboardMarkup(row_width=2)
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
     keyboard.add(
-        *[InlineKeyboardButton(text=_(setting['name']), callback_data=setting['name'].lower())
+        *[types.InlineKeyboardButton(text=_(setting['name']), callback_data=setting['name'].lower())
           for setting in SETTINGS]
     )
     user_info = []
