@@ -41,7 +41,10 @@ def translate_handler(handler):
     def lang_handler(message):
         user = database.users.find_one({'id': message.chat.id})
         domain = user['language'] if user else 'us'
-        _ = lambda text: text if domain == 'us' else translations[domain].get(text, text)
+        if domain != 'us' and domain in translations:
+            _ = lambda text: translations[domain].get(text, text)
+        else:
+            _ = lambda text: text
         return handler(message, user, _)
     return lang_handler
 
