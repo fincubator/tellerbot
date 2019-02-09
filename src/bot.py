@@ -101,7 +101,7 @@ def handle_start_command(message, user, _):
     )
 
 
-def orders_list(start, count=10):
+def orders_list(chat_id, start, count=10):
     orders = database.orders.find()[start:start + count]
     keyboard = InlineKeyboardMarkup(row_width=2)
     keyboard.add(
@@ -109,8 +109,8 @@ def orders_list(start, count=10):
         InlineKeyboardButton(text='\u27a1\ufe0f', callback_data='orders {}'.format(start + count))
     )
     bot.send_message(
-        message.chat.id,
-        '\n'.join(['{}. {} - {}'.format(start + i + 1, order['username']) for i, order in enumerate(orders)]),
+        chat_id,
+        '\n'.join(['{}. {} - {:.2f}'.format(start + i + 1, order['username'], order['amount']) for i, order in enumerate(orders)]),
         reply_markup=keyboard
     )
 
@@ -130,7 +130,7 @@ def orders_button(call, user, _):
         )
         return
 
-    orders_list(cursor, start)
+    orders_list(call.message.chat.id, start)
 
 
 @message_handler(commands=['buy'])
@@ -141,7 +141,7 @@ def handle_buy(message, user, _):
     if database.orders.count_documents({}) == 0:
         bot.send_message(message.chat.id, _("There are no orders."))
         return
-    orders_list(0)
+    orders_list(message.chat.id, 0)
 
 
 @translate_handler
