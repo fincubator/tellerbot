@@ -109,7 +109,10 @@ def orders_list(chat_id, start, count=10):
     )
     bot.send_message(
         chat_id,
-        '\n'.join(['{}. {} - {:.2f}'.format(start + i + 1, order['username'], order['amount']) for i, order in enumerate(orders)]),
+        '\n'.join([
+            '{}. {} - {:.2f}'.format(start + i + 1, order['username'], order['amount'])
+            for i, order in enumerate(orders)
+        ]),
         reply_markup=keyboard
     )
 
