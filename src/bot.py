@@ -123,7 +123,7 @@ def orders_button(call, user, _):
     if start < 0:
         start = 0
 
-    if start >= database.orders.count_documents():
+    if start >= database.orders.count_documents({}):
         bot.answer_callback_query(
             callback_query_id=call.id,
             text=_("There are no more orders.")
@@ -138,7 +138,7 @@ def orders_button(call, user, _):
     func=lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4bb')
 )
 def handle_buy(message, user, _):
-    if database.orders.count_documents() == 0:
+    if database.orders.count_documents({}) == 0:
         bot.send_message(message.chat.id, _("There are no orders."))
         return
     orders_list(0)
