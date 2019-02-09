@@ -52,7 +52,7 @@ def private_only(message):
 
 def message_handler(func=None, **kwargs):
     def decorator(handler):
-        conjuction = private_only if func is None else lambda message: private_only and func()
+        conjuction = private_only if func is None else lambda message: private_only(message) and func(message)
         handler_dict = bot._build_handler_dict(handler, func=conjuction, **kwargs)
         bot.add_message_handler(handler_dict)
         return translate_handler(handler)
