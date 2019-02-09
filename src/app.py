@@ -27,13 +27,7 @@ from telebot.types import Update
 app = flask.Flask(__name__)
 
 
-@app.before_request
-def limit_remote_addr():
-    if flask.request.remote_addr not in config.IP_RANGE:
-        flask.abort(403)
-
-
-@app.route('/' + config.TOKEN, methods=['POST'])
+@app.route('/', methods=['POST'])
 def webhook():
     if flask.request.headers.get('content-type') == 'application/json':
         json_string = flask.request.get_data().decode('utf-8')
@@ -47,14 +41,12 @@ def webhook():
 
 def main():
     bot.remove_webhook()
-    url = 'https://{}:{}/'.format(config.SERVER_IP, config.SERVER_PORT)
-    with open(config.SSL_CERT, 'r') as certificate:
-        bot.set_webhook(url=url + config.TOKEN, certificate=certificate)
+    url = 'https://{}/'.format(config.SERVER_HOST)
+    bot.set_webhook(url=url + 'bailsbot/webhook')
 
-        logger.debug(f'Running app on {url}')
-        app.run(
-            host=config.SERVER_IP,
-            port=config.SERVER_PORT,
-            ssl_context=(config.SSL_CERT, config.SSL_PRIV),
-            debug=False
-        )
+    logger.debug(f'Running webhook on {url}')
+    app.run(
+        host='127.0.0.1',
+        port=config.SERVER_PORT,
+        debug=False
+    )
