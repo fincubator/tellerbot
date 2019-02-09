@@ -24,7 +24,7 @@ import re
 import json
 
 import telebot
-from telebot.types import InlineKeyboardMarkup, ReplyKeyboardMarkup, InlineKeyboardButton, KeyboardButton
+from telebot.types import InlineKeyboardMarkup, ReplyKeyboardMarkup, InlineKeyboardButton, KeyboardButton, Message, CallbackQuery
 
 
 bot = telebot.TeleBot(config.TOKEN)
@@ -38,13 +38,22 @@ SETTINGS = [
 
 
 def translate_handler(handler):
-    def lang_handler(message):
-        user = database.users.find_one({'id': message.chat.id})
-        domain = user['language'] if user else 'us'
+    def lang_handler(obj):
+        user = None
+        domain = 'en'
+        _ = lambda text: text
+
+        if isinstance(obj, Message):
+            user = database.users.find_one({'id': obj.chat.id})
+        elif isinstance(obj, CallbackQuery) and obj.message:
+            user = database.users.find_one({'id': obj.message.chat.id})
+
+        if user:
+            domain = user['language']
+
         if domain != 'us' and domain in translations:
             _ = lambda text: translations[domain].get(text, text)
-        else:
-            _ = lambda text: text
+
         return handler(message, user, _)
     return lang_handler
 
