@@ -17,36 +17,23 @@
 
 
 import config
-from .bot import bot
+from .bot import bot, dp
 from .logger import logger, log_update
 
-import flask
-from telebot.types import Update
+from aiogram.utils.executor import start_webhook
 
 
-app = flask.Flask(__name__)
-
-
-@app.route('/', methods=['POST'])
-def webhook():
-    if flask.request.headers.get('content-type') == 'application/json':
-        json_string = flask.request.get_data().decode('utf-8')
-        update = Update.de_json(json_string)
-        log_update(update)
-        bot.process_new_updates([update])
-        return ''
-    else:
-        flask.abort(403)
+async def on_startup(dp):
+    await bot.delete_webhook()
+    url = 'https://{}'.format(config.SERVER_HOST)
+    await bot.set_webhook(url + config.WEBHOOK_PATH)
 
 
 def main():
-    bot.remove_webhook()
-    url = 'https://{}/'.format(config.SERVER_HOST)
-    bot.set_webhook(url=url + 'bailsbot/webhook')
-
-    logger.debug(f'Running webhook on {url}')
-    app.run(
+    start_webhook(
+        dispatcher=dp,
+        webhook_path=config.WEBHOOK_PATH,
+        on_startup=on_startup,
         host='127.0.0.1',
-        port=config.SERVER_PORT,
-        debug=False
+        port=config.SERVER_PORT
     )

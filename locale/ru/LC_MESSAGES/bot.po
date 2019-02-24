@@ -1,0 +1,138 @@
+# Russian translations for PROJECT.
+# Copyright (C) 2019 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2019-02-24 05:30+0300\n"
+"PO-Revision-Date: 2019-02-24 04:46+0300\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ru\n"
+"Language-Team: ru <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.6.0\n"
+
+#: src/bot.py:98
+msgid "Buy"
+msgstr "Купить"
+
+#: src/bot.py:99
+msgid "Sell"
+msgstr "Продать"
+
+#: src/bot.py:100
+msgid "Settings"
+msgstr "Настройки"
+
+#: src/bot.py:104
+msgid ""
+"Hello, I'm BailsBot and I can help you meet with people that you can swap"
+" money with.\n"
+"\n"
+"Choose one of the options on your keyboard."
+msgstr ""
+"Привет, я - BailsBot и я могу помочь вам встретить людей, с которыми вы "
+"можете обмениваться деньгами.\n"
+"\n"
+"Выберите один из вариантов на вашей клавиатуре."
+
+#: src/bot.py:135
+msgid "There are no more orders."
+msgstr "Больше нет заказов."
+
+#: src/bot.py:148
+msgid "There are no orders."
+msgstr "Нет заказов."
+
+#: src/bot.py:158
+msgid "Send decimal number or /cancel"
+msgstr "Отправьте десятичное число или /cancel для отмены"
+
+#: src/bot.py:161
+msgid "Send positive number or /cancel"
+msgstr "Отправьте положительное число или /cancel для отмены"
+
+#: src/bot.py:173
+msgid "Order is set."
+msgstr "Заказ установлен."
+
+#: src/bot.py:185
+msgid "Set Bitshares username in settings first."
+msgstr "Сначала установите имя Bitshares в настройках."
+
+#: src/bot.py:202
+msgid "How many BTS are you selling?"
+msgstr "Сколько BTS вы продаёте?"
+
+#: src/bot.py:213
+msgid "Order is cancelled."
+msgstr "Заказ отменён."
+
+#: src/bot.py:224
+msgid ""
+"You need to send text message with space-separated numbers corresponding "
+"to payment methods."
+msgstr ""
+"Вам нужно отправить текстовое сообщение с числами, разделёнными "
+"пробелами, соответствующие способам оплаты."
+
+#: src/bot.py:236
+msgid "Some numbers were ignored as they don't correspond to any payment method."
+msgstr "Несколько чисел проигнорированы, так как они не соответствуют никаким способам оплаты."
+
+#: src/bot.py:250
+msgid "Preference of these payment methods were changed:"
+msgstr "Предпочтения этих способов оплаты изменились:"
+
+#: src/bot.py:268
+msgid "Send space-separated numbers corresponding to payment methods from list:"
+msgstr "Отправьте числа, разделённые пробелами, соответствующие способам оплаты из списка:"
+
+#: src/bot.py:314
+msgid "Your order creation UI is now set to"
+msgstr "Ваш интерфейс создания заказа установлен на"
+
+#: src/bot.py:315
+msgid "visual"
+msgstr "визуальный"
+
+#: src/bot.py:315
+msgid "conversational"
+msgstr "разговорный"
+
+#: src/bot.py:326 src/bot.py:334
+msgid "name"
+msgstr "имя"
+
+#: src/bot.py:337
+msgid "Choose which option you would like to change."
+msgstr "Выберите настройку которую вы бы хотели изменить."
+
+#: src/bot.py:345
+msgid "Unknown command."
+msgstr "Неизвестная команда."
+
+#~ msgid ""
+#~ "Some numbers were ignored as they "
+#~ "don't correspond to any payment method."
+#~ msgstr ""
+#~ "Несколько чисел проигнорированы, так как "
+#~ "они не соответствуют ни одному способу"
+#~ " оплаты."
+
+#~ msgid "%d %s ignored as they don't correspond to any payment method."
+#~ msgstr ""
+
+#~ msgid "number was"
+#~ msgstr ""
+
+#~ msgid "number were"
+#~ msgstr ""
+

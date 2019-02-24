@@ -18,15 +18,15 @@
 
 import config
 from .database import database
-from .locale import translations
 
 import re
 import json
+import asyncio
 
-from telebot import TeleBot, types
-
-
-bot = TeleBot(config.TOKEN)
+from aiogram import Bot, executor, types
+from aiogram.dispatcher import Dispatcher
+from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.contrib.middlewares.i18n import I18nMiddleware
 
 
 SETTINGS = [
@@ -36,48 +36,50 @@ SETTINGS = [
 ]
 
 
-def translate_handler(handler):
-    def lang_handler(obj):
-        user = None
-        domain = 'en'
-        _ = lambda text: text
+bot = Bot(token=config.TOKEN, loop=asyncio.get_event_loop())
+dp = Dispatcher(bot)
 
+
+i18n = I18nMiddleware('bot', config.LOCALES_DIR)
+dp.middleware.setup(i18n)
+_ = i18n.gettext
+
+
+class OrderCreation(StatesGroup):
+    amount = State()
+
+
+class Settings(StatesGroup):
+    payment_methods = State()
+    username = State()
+
+
+def user_handler(handler):
+    def decorator(obj, *args, **kwargs):
         if isinstance(obj, types.Message):
             user = database.users.find_one({'id': obj.chat.id})
         elif isinstance(obj, types.CallbackQuery) and obj.message:
             user = database.users.find_one({'id': obj.message.chat.id})
 
-        if user:
-            domain = user['language']
-            if domain != 'en' and domain in translations:
-                _ = lambda text: translations[domain].get(text, text)
-
-        return handler(obj, user, _)
-    return lang_handler
-
-
-def private_only(message):
-    return message.chat.type == 'private'
-
-
-def message_handler(func=None, **kwargs):
-    def decorator(handler):
-        conjuction = private_only if func is None else lambda message: private_only(message) and func(message)
-        lang_handler = translate_handler(handler)
-        handler_dict = bot._build_handler_dict(lang_handler, func=conjuction, **kwargs)
-        bot.add_message_handler(handler_dict)
-        return lang_handler
+        return handler(obj, user, *args, **kwargs)
     return decorator
 
 
-@message_handler(commands=['start', 'help'])
-def handle_start_command(message, user, _):
-    language_code = message.from_user.language_code
-    if language_code is None:
-        language_code = 'us'
-    new_user = {
-        'language': language_code
-    }
+def private_handler(*args, **kwargs):
+    def decorator(handler):
+        new_handler = user_handler(handler)
+        dp.register_message_handler(
+            new_handler,
+            lambda message: message.chat.type == types.ChatType.PRIVATE,
+            *args, **kwargs
+        )
+        return new_handler
+    return decorator
+
+
+@private_handler(commands=['start', 'help'])
+async def handle_start_command(message, user, *args, **kwargs):
+    new_user = {}
     for setting in SETTINGS:
         new_user[setting['field']] = setting['default']
     database.users.update_one(
@@ -91,7 +93,7 @@ def handle_start_command(message, user, _):
         types.KeyboardButton('\U0001f4b5 ' + _('Sell')),
         types.KeyboardButton('\u2699\ufe0f ' + _('Settings'))
     )
-    bot.send_message(
+    await bot.send_message(
         message.chat.id,
         _("Hello, I'm BailsBot and I can help you meet with people that you "
           "can swap money with.\n\nChoose one of the options on your keyboard."),
@@ -99,14 +101,14 @@ def handle_start_command(message, user, _):
     )
 
 
-def orders_list(chat_id, start, count=10):
+async def orders_list(chat_id, start, count=10):
     orders = database.orders.find()[start:start + count]
     keyboard = types.InlineKeyboardMarkup(row_width=2)
     keyboard.add(
         types.InlineKeyboardButton(text='\u2b05\ufe0f', callback_data='orders {}'.format(start - count)),
         types.InlineKeyboardButton(text='\u27a1\ufe0f', callback_data='orders {}'.format(start + count))
     )
-    bot.send_message(
+    await bot.send_message(
         chat_id,
         '\n'.join([
             '{}. {} - {:.2f}'.format(start + i + 1, order['username'], order['amount'])
@@ -116,47 +118,43 @@ def orders_list(chat_id, start, count=10):
     )
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('orders'))
-@translate_handler
-def orders_button(call, user, _):
-    start = int(call.data.split()[1])
-
-    if start < 0:
-        start = 0
+@dp.callback_query_handler(lambda call: call.data.startswith('orders'))
+@user_handler
+async def orders_button(call, user, *args, **kwargs):
+    start = max(0, int(call.data.split()[1]))
 
     if start >= database.orders.count_documents({}):
-        bot.answer_callback_query(
+        await bot.answer_callback_query(
             callback_query_id=call.id,
             text=_("There are no more orders.")
         )
         return
 
-    orders_list(call.message.chat.id, start)
+    await orders_list(call.message.chat.id, start)
 
 
-@message_handler(commands=['buy'])
-@message_handler(
-    func=lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4bb')
+@private_handler(commands=['buy'])
+@private_handler(
+    lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4bb')
 )
-def handle_buy(message, user, _):
+async def handle_buy(message, user, *args, **kwargs):
     if database.orders.count_documents({}) == 0:
-        bot.send_message(message.chat.id, _("There are no orders."))
+        await bot.send_message(message.chat.id, _("There are no orders."))
         return
-    orders_list(message.chat.id, 0)
+    await orders_list(message.chat.id, 0)
 
 
-@translate_handler
-def choose_amount(message, user, _):
+@private_handler(state=OrderCreation.amount)
+async def choose_amount(message, user, state, **kwargs):
     try:
         amount = float(message.text)
     except ValueError:
-        bot.send_message(message.chat.id, _("Send decimal number or /cancel"))
-        bot.register_next_step_handler(reply, choose_amount)
+        await bot.send_message(message.chat.id, _("Send decimal number or /cancel"))
         return
     if amount <= 0:
-        bot.send_message(message.chat.id, _("Send positive number or /cancel"))
-        bot.register_next_step_handler(reply, choose_amount)
+        await bot.send_message(message.chat.id, _("Send positive number or /cancel"))
         return
+
     database.orders.update_one(
         {'_id': user['order']},
         {'$set': {'amount': amount}}
@@ -165,17 +163,18 @@ def choose_amount(message, user, _):
         {'_id': user['_id']},
         {'$unset': {'order': True}}
     )
-    bot.send_message(message.chat.id, _('Order is set.'))
+    await state.finish()
+    await bot.send_message(message.chat.id, _('Order is set.'))
 
 
-@message_handler(commands=['sell'])
-@message_handler(
-    func=lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4b5')
+@private_handler(commands=['sell'])
+@private_handler(
+    lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4b5')
 )
-def handle_sell(message, user, _):
+async def handle_sell(message, user, *args, **kwargs):
     username = user.get('username')
     if not username:
-        bot.send_message(
+        await bot.send_message(
             message.chat.id,
             _("Set Bitshares username in settings first.")
         )
@@ -192,29 +191,29 @@ def handle_sell(message, user, _):
         {'_id': user['_id']},
         {'$set': {'order': doc.inserted_id}}
     )
-    reply = bot.send_message(
+    reply = await bot.send_message(
         message.chat.id,
         _("How many BTS are you selling?")
     )
-    bot.register_next_step_handler(reply, choose_amount)
+    await OrderCreation.amount.set()
 
 
-@message_handler(commands=['cancel'])
-def cancel_sell(message, user, _):
+@private_handler(state='*', commands=['cancel'])
+async def cancel_sell(message, user, state, **kwargs):
     database.users.update_one(
         {'_id': user['_id']},
         {'$unset': {'order': True}}
     )
-    bot.send_message(message.chat.id, _('Order is cancelled.'))
+    await bot.send_message(message.chat.id, _('Order is cancelled.'))
 
 
-@translate_handler
-def choose_payment_methods(message, user, _):
+@private_handler(state=Settings.payment_methods)
+async def choose_payment_methods(message, user, state, **kwargs):
     chosen_methods = None
     if message.text:
         chosen_methods = map(int, re.findall(r'(?:\b(\d+)\b)+', message.text))
     if not chosen_methods:
-        bot.send_message(
+        await bot.send_message(
             message.chat.id,
             _('You need to send text message with space-separated numbers '
               'corresponding to payment methods.')
@@ -228,10 +227,7 @@ def choose_payment_methods(message, user, _):
     for pivot, method_index in enumerate(sorted(chosen_methods)):
         if method_index > len(methods):
             remaining = len(chosen_methods) - pivot
-            answer += _("%d %s ignored as they don't correspond to any payment method.") % (
-                remaining,
-                _('number was') if remaining == 1 else _('number were')
-            ) + '\n\n'
+            answer += _("Some numbers were ignored as they don't correspond to any payment method.") % (remaining) + '\n\n'
             break
         method = methods[method_index - 1]
         if method in user['payment_methods']:
@@ -246,12 +242,13 @@ def choose_payment_methods(message, user, _):
          '$push': {'payment_methods': {'$each': pushes}}}
     )
     answer += _('Preference of these payment methods were changed:') + '\n' + '\n'.join(changes)
-    bot.send_message(message.chat.id, answer)
+    await state.finish()
+    await bot.send_message(message.chat.id, answer)
 
 
-@bot.callback_query_handler(func=lambda call: call.data == 'payment method')
-@translate_handler
-def settings_payment_methods(call, user, _):
+@dp.callback_query_handler(lambda call: call.data == 'payment method')
+@user_handler
+async def settings_payment_methods(call, user, *args, **kwargs):
     with open(config.METHODS_JSON, 'r') as methods_json:
         methods = json.load(methods_json)
     user = database.users.find_one({'id': call.from_user.id})
@@ -260,63 +257,58 @@ def settings_payment_methods(call, user, _):
         '\u2714\ufe0f' if method['name'] in user['payment_methods'] else '\u274c',
         method['name']
     ) for i, method in enumerate(methods)]
-    reply = bot.send_message(
+    reply = await bot.send_message(
         call.chat.id,
         _('Send space-separated numbers corresponding to payment methods from list:') +
         '\n\n' + '\n'.join(method_list)
     )
-    bot.register_next_step_handler(reply, choose_payment_methods)
+    await Settings.payment_methods.set()
 
 
-@bot.callback_query_handler(func=lambda call: call.data == 'language')
-@translate_handler
-def settings_language(call, user, _):
-    pass
-
-
-@translate_handler
-def set_username(message, user, _):
+@private_handler(state=Settings.username)
+async def set_username(message, user, state, **kwargs):
     username = message.text
     if not username:
-        bot.send_message(message.chat.id, 'This is not a valid username.')
+        await bot.send_message(message.chat.id, 'This is not a valid username.')
         return
     database.users.update_one(
         {'_id': user['_id']},
         {'$set': {'username': username}}
     )
-    bot.send_message(message.chat.id, 'Username set.')
+    await state.finish()
+    await bot.send_message(message.chat.id, 'Username set.')
 
 
-@bot.callback_query_handler(func=lambda call: call.data == 'bitshares username')
-@translate_handler
-def settings_username(call, user, _):
-    reply = bot.send_message(
+@dp.callback_query_handler(lambda call: call.data == 'bitshares username')
+@user_handler
+async def settings_username(call, user, *args, **kwargs):
+    reply = await bot.send_message(
         call.message.chat.id,
         'Send your Bitshares username.'
     )
-    bot.register_next_step_handler(reply, set_username)
+    await Settings.username.set()
 
 
-@bot.callback_query_handler(func=lambda call: call.data == 'order creation ui')
-@translate_handler
-def settings_order_creation_ui(call, user, _):
+@dp.callback_query_handler(lambda call: call.data == 'order creation ui')
+@user_handler
+async def settings_order_creation_ui(call, user, *args, **kwargs):
     order_ui = 1 - user['order_creation_id']
     database.users.update_one(
         {'_id': user['_id']},
         {'$set': {'order_creation_ui': order_ui}}
     )
-    bot.send_message(
+    await bot.send_message(
         call.chat.id,
         _('Your order creation UI is now set to') + ' ' +
         _('visual') if order_ui else _('conversational') + '.'
     )
 
 
-@message_handler(commands=['settings'])
-@message_handler(
-    func=lambda msg: msg.text.encode('unicode-escape').startswith(b'\\u2699\\ufe0f')
+@private_handler(commands=['settings'])
+@private_handler(
+    lambda msg: msg.text.encode('unicode-escape').startswith(b'\\u2699\\ufe0f')
 )
-def handle_settings(message, user, _):
+async def handle_settings(message, user, *args, **kwargs):
     keyboard = types.InlineKeyboardMarkup(row_width=2)
     keyboard.add(
         *[types.InlineKeyboardButton(text=_(setting['name']), callback_data=setting['name'].lower())
@@ -328,7 +320,7 @@ def handle_settings(message, user, _):
         if option is None:
             option = '\U0001f6ab'
         user_info.append('{}: {}'.format(_(setting['name']), option))
-    bot.send_message(
+    await bot.send_message(
         message.chat.id,
         _('Choose which option you would like to change.') + '\n\n' +
         '\n'.join(user_info),
@@ -336,6 +328,6 @@ def handle_settings(message, user, _):
     )
 
 
-@message_handler()
-def handle_default(message, user, _):
-    bot.send_message(message.chat.id, _('Unknown command.'))
+@private_handler()
+async def handle_default(message, user, *args, **kwargs):
+    await bot.send_message(message.chat.id, _('Unknown command.'))

@@ -1,8 +1,10 @@
+from pathlib import Path
+import logging
+
 TOKEN = '344999817:tiEnlKcJ46Y43xJdbF7Czt3EBPSNWfNUWrj'
 SERVER_HOST = 'example.com'
+WEBHOOK_PATH = '/bailsbot/webhook'
 SERVER_PORT = 5000
+LOCALES_DIR = Path(__file__).parent / 'locale'
 METHODS_JSON = '/root/methods.json'
-
-import logging
 LOGGER_LEVEL = logging.DEBUG
-

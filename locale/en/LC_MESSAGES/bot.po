@@ -1,0 +1,129 @@
+# English translations for PROJECT.
+# Copyright (C) 2019 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2019-02-24 05:30+0300\n"
+"PO-Revision-Date: 2019-02-24 04:46+0300\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.6.0\n"
+
+#: src/bot.py:98
+msgid "Buy"
+msgstr "Buy"
+
+#: src/bot.py:99
+msgid "Sell"
+msgstr "Sell"
+
+#: src/bot.py:100
+msgid "Settings"
+msgstr "Settings"
+
+#: src/bot.py:104
+msgid ""
+"Hello, I'm BailsBot and I can help you meet with people that you can swap"
+" money with.\n"
+"\n"
+"Choose one of the options on your keyboard."
+msgstr ""
+"Hello, I'm BailsBot and I can help you meet with people that you can swap"
+" money with.\n"
+"\n"
+"Choose one of the options on your keyboard."
+
+#: src/bot.py:135
+msgid "There are no more orders."
+msgstr "There are no more orders."
+
+#: src/bot.py:148
+msgid "There are no orders."
+msgstr "There are no orders."
+
+#: src/bot.py:158
+msgid "Send decimal number or /cancel"
+msgstr "Send decimal number or /cancel"
+
+#: src/bot.py:161
+msgid "Send positive number or /cancel"
+msgstr "Send positive number or /cancel"
+
+#: src/bot.py:173
+msgid "Order is set."
+msgstr "Order is set."
+
+#: src/bot.py:185
+msgid "Set Bitshares username in settings first."
+msgstr "Set Bitshares username in settings first."
+
+#: src/bot.py:202
+msgid "How many BTS are you selling?"
+msgstr "How many BTS are you selling?"
+
+#: src/bot.py:213
+msgid "Order is cancelled."
+msgstr "Order is cancelled."
+
+#: src/bot.py:224
+msgid ""
+"You need to send text message with space-separated numbers corresponding "
+"to payment methods."
+msgstr ""
+"You need to send text message with space-separated numbers corresponding "
+"to payment methods."
+
+#: src/bot.py:236
+msgid "Some numbers were ignored as they don't correspond to any payment method."
+msgstr "Some numbers were ignored as they don't correspond to any payment method."
+
+#: src/bot.py:250
+msgid "Preference of these payment methods were changed:"
+msgstr "Preference of these payment methods were changed:"
+
+#: src/bot.py:268
+msgid "Send space-separated numbers corresponding to payment methods from list:"
+msgstr "Send space-separated numbers corresponding to payment methods from list:"
+
+#: src/bot.py:314
+msgid "Your order creation UI is now set to"
+msgstr "Your order creation UI is now set to"
+
+#: src/bot.py:315
+msgid "visual"
+msgstr "visual"
+
+#: src/bot.py:315
+msgid "conversational"
+msgstr "conversational"
+
+#: src/bot.py:326 src/bot.py:334
+msgid "name"
+msgstr "name"
+
+#: src/bot.py:337
+msgid "Choose which option you would like to change."
+msgstr "Choose which option you would like to change."
+
+#: src/bot.py:345
+msgid "Unknown command."
+msgstr "Unknown command."
+
+#~ msgid "%d %s ignored as they don't correspond to any payment method."
+#~ msgstr ""
+
+#~ msgid "number was"
+#~ msgstr ""
+
+#~ msgid "number were"
+#~ msgstr ""
+
