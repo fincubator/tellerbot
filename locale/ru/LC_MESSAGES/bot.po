@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-02-24 05:30+0300\n"
+"POT-Creation-Date: 2019-03-05 05:44+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
@@ -19,19 +19,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.6.0\n"
 
-#: src/bot.py:98
+#: src/bot.py:85
 msgid "Buy"
 msgstr "Купить"
 
-#: src/bot.py:99
+#: src/bot.py:86
 msgid "Sell"
 msgstr "Продать"
 
-#: src/bot.py:100
+#: src/bot.py:87
 msgid "Settings"
 msgstr "Настройки"
 
-#: src/bot.py:104
+#: src/bot.py:91
 msgid ""
 "Hello, I'm BailsBot and I can help you meet with people that you can swap"
 " money with.\n"
@@ -43,39 +43,139 @@ msgstr ""
 "\n"
 "Выберите один из вариантов на вашей клавиатуре."
 
-#: src/bot.py:135
-msgid "There are no more orders."
-msgstr "Больше нет заказов."
-
-#: src/bot.py:148
+#: src/bot.py:111
 msgid "There are no orders."
 msgstr "Нет заказов."
 
-#: src/bot.py:158
-msgid "Send decimal number or /cancel"
-msgstr "Отправьте десятичное число или /cancel для отмены"
+#: src/bot.py:140
+msgid "[Page {} of {}]\n"
+msgstr "[Страница {} из {}]\n"
 
 #: src/bot.py:161
-msgid "Send positive number or /cancel"
-msgstr "Отправьте положительное число или /cancel для отмены"
+msgid "There are no more orders."
+msgstr "Больше нет заказов."
 
-#: src/bot.py:173
-msgid "Order is set."
-msgstr "Заказ установлен."
+#: src/bot.py:171
+msgid "There are no previous orders."
+msgstr "Нет предыдущих заказов."
 
-#: src/bot.py:185
+#: src/bot.py:183
+msgid "Order is not found."
+msgstr "Заказ не найден."
+
+#: src/bot.py:199
+msgid "Delete"
+msgstr "Удалить"
+
+#: src/bot.py:203
+msgid "Accept"
+msgstr "Принять"
+
+#: src/bot.py:209
+msgid "Hide"
+msgstr "Скрыть"
+
+#: src/bot.py:213
+msgid "Username: {username}"
+msgstr "Имя Bitshares: {username}"
+
+#: src/bot.py:214
+msgid "Price: {price:.2f} {currency}/BTS"
+msgstr "Цена: {price:.2f} {currency}/BTS"
+
+#: src/bot.py:215
+msgid "Minimum limit: {min_limit:.2f}"
+msgstr "Минимальный предел: {min_limit:.2f}"
+
+#: src/bot.py:218
+msgid "Maximum limit: {max_limit:.2f}"
+msgstr "Максимальный предел: {max_limit:.2f}"
+
+#: src/bot.py:220
+msgid "Comments: «{comments}»"
+msgstr "Комментарии: «{comments}»"
+
+#: src/bot.py:243
+msgid "Order was deleted."
+msgstr "Заказ удалён."
+
+#: src/bot.py:243
+msgid "Couldn't delete order."
+msgstr "Не удалось удалить заказ."
+
+#: src/bot.py:255
+msgid "Send your message for the seller and I will forward it."
+msgstr "Отправьте сообщение продавцу и я его перешлю."
+
+#: src/bot.py:270
+msgid "Your message was forwarded to the seller."
+msgstr "Ваше сообщение переслано продавцу."
+
+#: src/bot.py:271
+msgid "Couldn't forward your message to the seller."
+msgstr "Не удалось переслать сообщение продавцу."
+
+#: src/bot.py:302
 msgid "Set Bitshares username in settings first."
 msgstr "Сначала установите имя Bitshares в настройках."
 
-#: src/bot.py:202
-msgid "How many BTS are you selling?"
-msgstr "Сколько BTS вы продаёте?"
+#: src/bot.py:316
+msgid "What currency do you want to buy?"
+msgstr "Какую валюту вы хотите купить?"
 
-#: src/bot.py:213
+#: src/bot.py:325
 msgid "Order is cancelled."
 msgstr "Заказ отменён."
 
-#: src/bot.py:224
+#: src/bot.py:332
+msgid "Choose from the options on reply keyboard."
+msgstr "Выберите из вариантов на клавиатуре."
+
+#: src/bot.py:342
+msgid "At what price do you want to sell BTS?"
+msgstr "По какой цене вы хотите продать BTS?"
+
+#: src/bot.py:353
+msgid "Send decimal number or /cancel"
+msgstr "Отправьте десятичное число или /cancel для отмены"
+
+#: src/bot.py:359
+msgid "Send positive number or /cancel"
+msgstr "Отправьте положительное число или /cancel для отмены"
+
+#: src/bot.py:379
+msgid "Would you like to have minimum fiat amount limit? (Send \"No\" to skip)"
+msgstr "Вы хотите установить минимальный предел количества фиата? (Отправьте \"No\" для пропуска)"
+
+#: src/bot.py:400
+msgid "Would you like to have maximum fiat amount limit? (Send \"No\" to skip)"
+msgstr "Вы хотите установить максимальный предел количества фиата? (Отправьте \"No\" для пропуска)"
+
+#: src/bot.py:421
+msgid "Send location of a preferred meeting point."
+msgstr "Отправьте локацию предпочитаемого места встречи."
+
+#: src/bot.py:428
+msgid "Send location object in message."
+msgstr "Отправьте объект локации в сообщении."
+
+#: src/bot.py:441
+msgid "Add any additional comments. (Send \"No\" to skip)"
+msgstr "Добавьте любые дополнительные комментарии. (Отправьте \"No\" для пропуска)"
+
+#: src/bot.py:450
+msgid ""
+"Comment should have less than 150 characters (your comment has {} "
+"characters)."
+msgstr ""
+"Комментарий должен содержать меньше 150 символов (ваш комментарий содержит {} "
+"символов)."
+
+#: src/bot.py:460
+msgid "Order is set."
+msgstr "Заказ установлен."
+
+#: src/bot.py:472
 msgid ""
 "You need to send text message with space-separated numbers corresponding "
 "to payment methods."
@@ -83,39 +183,43 @@ msgstr ""
 "Вам нужно отправить текстовое сообщение с числами, разделёнными "
 "пробелами, соответствующие способам оплаты."
 
-#: src/bot.py:236
+#: src/bot.py:484
 msgid "Some numbers were ignored as they don't correspond to any payment method."
-msgstr "Несколько чисел проигнорированы, так как они не соответствуют никаким способам оплаты."
+msgstr ""
+"Несколько чисел проигнорированы, так как они не соответствуют никаким "
+"способам оплаты."
 
-#: src/bot.py:250
+#: src/bot.py:498
 msgid "Preference of these payment methods were changed:"
 msgstr "Предпочтения этих способов оплаты изменились:"
 
-#: src/bot.py:268
+#: src/bot.py:516
 msgid "Send space-separated numbers corresponding to payment methods from list:"
-msgstr "Отправьте числа, разделённые пробелами, соответствующие способам оплаты из списка:"
+msgstr ""
+"Отправьте числа, разделённые пробелами, соответствующие способам оплаты "
+"из списка:"
 
-#: src/bot.py:314
+#: src/bot.py:557
 msgid "Your order creation UI is now set to"
 msgstr "Ваш интерфейс создания заказа установлен на"
 
-#: src/bot.py:315
+#: src/bot.py:558
 msgid "visual"
 msgstr "визуальный"
 
-#: src/bot.py:315
+#: src/bot.py:558
 msgid "conversational"
 msgstr "разговорный"
 
-#: src/bot.py:326 src/bot.py:334
+#: src/bot.py:569 src/bot.py:577
 msgid "name"
 msgstr "имя"
 
-#: src/bot.py:337
+#: src/bot.py:580
 msgid "Choose which option you would like to change."
 msgstr "Выберите настройку которую вы бы хотели изменить."
 
-#: src/bot.py:345
+#: src/bot.py:588
 msgid "Unknown command."
 msgstr "Неизвестная команда."
 
@@ -135,4 +239,7 @@ msgstr "Неизвестная команда."
 
 #~ msgid "number were"
 #~ msgstr ""
+
+#~ msgid "How many BTS are you selling?"
+#~ msgstr "Сколько BTS вы продаёте?"
 

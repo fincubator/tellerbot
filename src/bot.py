@@ -17,27 +17,33 @@
 
 
 import config
-from .database import database
+from .database import database, MongoStorage
 
 import re
+import math
 import json
 import asyncio
+
+from bson.objectid import ObjectId
 
 from aiogram import Bot, executor, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.middlewares.i18n import I18nMiddleware
+from aiogram.utils.exceptions import MessageNotModified
 
 
 SETTINGS = [
     {'name': 'Payment methods', 'field': 'payment_methods', 'default': None},
-    {'name': 'BitShares username', 'field': 'bitshares_username', 'default': None},
-    # {'name': 'Order creation UI', 'field': 'order_creation_ui', 'default': 0}
+    {'name': 'BitShares username', 'field': 'bitshares_username', 'default': None}
 ]
+
+CURRENCIES = ['USD', 'EUR', 'RUB']
 
 
 bot = Bot(token=config.TOKEN, loop=asyncio.get_event_loop())
-dp = Dispatcher(bot)
+storage = MongoStorage()
+dp = Dispatcher(bot, storage=storage)
 
 
 i18n = I18nMiddleware('bot', config.LOCALES_DIR)
@@ -45,23 +51,10 @@ dp.middleware.setup(i18n)
 _ = i18n.gettext
 
 
-class OrderCreation(StatesGroup):
-    amount = State()
-
-
-class Settings(StatesGroup):
-    payment_methods = State()
-    username = State()
-
-
 def user_handler(handler):
-    def decorator(obj, *args, **kwargs):
-        if isinstance(obj, types.Message):
-            user = database.users.find_one({'id': obj.chat.id})
-        elif isinstance(obj, types.CallbackQuery) and obj.message:
-            user = database.users.find_one({'id': obj.message.chat.id})
-
-        return handler(obj, user, *args, **kwargs)
+    async def decorator(obj, *args, **kwargs):
+        user = await database.users.find_one({'id': obj.from_user.id})
+        return await handler(obj, user, *args, **kwargs)
     return decorator
 
 
@@ -82,7 +75,7 @@ async def handle_start_command(message, user, *args, **kwargs):
     new_user = {}
     for setting in SETTINGS:
         new_user[setting['field']] = setting['default']
-    database.users.update_one(
+    await database.users.update_one(
         {'id': message.from_user.id},
         {'$setOnInsert': new_user},
         upsert=True
@@ -101,21 +94,58 @@ async def handle_start_command(message, user, *args, **kwargs):
     )
 
 
-async def orders_list(chat_id, start, count=10):
-    orders = database.orders.find()[start:start + count]
-    keyboard = types.InlineKeyboardMarkup(row_width=2)
-    keyboard.add(
-        types.InlineKeyboardButton(text='\u2b05\ufe0f', callback_data='orders {}'.format(start - count)),
-        types.InlineKeyboardButton(text='\u27a1\ufe0f', callback_data='orders {}'.format(start + count))
+async def orders_list(chat_id, start, quantity, message_id=None):
+    keyboard = types.InlineKeyboardMarkup(row_width=5)
+
+    inline_orders_buttons = (
+        types.InlineKeyboardButton(
+            text='\u2b05\ufe0f', callback_data='orders {}'.format(start - config.ORDERS_COUNT)
+        ),
+        types.InlineKeyboardButton(
+            text='\u27a1\ufe0f', callback_data='orders {}'.format(start + config.ORDERS_COUNT)
+        )
     )
-    await bot.send_message(
-        chat_id,
-        '\n'.join([
-            '{}. {} - {:.2f}'.format(start + i + 1, order['username'], order['amount'])
-            for i, order in enumerate(orders)
-        ]),
-        reply_markup=keyboard
-    )
+
+    if quantity == 0:
+        keyboard.row(*inline_orders_buttons)
+        text = _("There are no orders.")
+        if message_id is None:
+            await bot.send_message(chat_id, text, reply_markup=keyboard)
+        else:
+            await bot.edit_message_text(text, chat_id, message_id, reply_markup=keyboard)
+        return
+
+    all_orders = await database.orders.find().to_list(length=start + config.ORDERS_COUNT)
+    orders = all_orders[start:]
+
+    lines = []
+    buttons = []
+    for i, order in enumerate(orders):
+        line = '{}. {} - {:.2f} {}/BTS'.format(
+            i + 1, order['username'], order['price'], order['currency'],
+        )
+        limits = ['{:.2f}'.format(order['min_limit'])]
+        if order['max_limit']:
+            limits.append('{:.2f}'.format(order['max_limit']))
+        if limits:
+            line += ' ({})'.format(' - '.join(limits))
+        lines.append(line)
+        buttons.append(
+            types.InlineKeyboardButton(text='{}'.format(i + 1), callback_data='get_order {}'.format(order['_id']))
+        )
+
+    keyboard.add(*buttons)
+    keyboard.row(*inline_orders_buttons)
+
+    text = _('[Page {} of {}]\n').format(
+        math.ceil(start / config.ORDERS_COUNT) + 1,
+        math.ceil(quantity / config.ORDERS_COUNT)
+    ) + '\n'.join(lines)
+
+    if message_id is None:
+        await bot.send_message(chat_id, text, reply_markup=keyboard)
+    else:
+        await bot.edit_message_text(text, chat_id, message_id, reply_markup=keyboard)
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('orders'))
@@ -123,14 +153,132 @@ async def orders_list(chat_id, start, count=10):
 async def orders_button(call, user, *args, **kwargs):
     start = max(0, int(call.data.split()[1]))
 
-    if start >= database.orders.count_documents({}):
+    quantity = await database.orders.count_documents({})
+
+    if start >= quantity > 0:
         await bot.answer_callback_query(
             callback_query_id=call.id,
             text=_("There are no more orders.")
         )
         return
 
-    await orders_list(call.message.chat.id, start)
+    try:
+        await bot.answer_callback_query(callback_query_id=call.id)
+        await orders_list(call.message.chat.id, start, quantity, message_id=call.message.message_id)
+    except MessageNotModified:
+        await bot.answer_callback_query(
+            callback_query_id=call.id,
+            text=_("There are no previous orders.")
+        )
+
+
+def order_handler(handler):
+    async def decorator(call, *args, **kwargs):
+        order_id = call.data.split()[1]
+        order = await database.orders.find_one({'_id': ObjectId(order_id)})
+
+        if not order:
+            await bot.answer_callback_query(
+                callback_query_id=call.id,
+                text=_("Order is not found.")
+            )
+            return
+
+        new_handler = user_handler(handler)
+        return await new_handler(call, order, *args, **kwargs)
+    return decorator
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('get_order'))
+@order_handler
+async def get_order_button(call, user, order, *args, **kwargs):
+    keyboard = types.InlineKeyboardMarkup()
+
+    if order['user_id'] == user['id']:
+        keyboard.row(
+            types.InlineKeyboardButton(text=_('Delete'), callback_data='delete {}'.format(order['_id']))
+        )
+    else:
+        keyboard.row(
+            types.InlineKeyboardButton(text=_('Accept'), callback_data='accept {}'.format(order['_id']))
+        )
+
+    location_message = await bot.send_location(call.message.chat.id, order['latitude'], order['longitude'])
+
+    keyboard.row(
+        types.InlineKeyboardButton(text=_('Hide'), callback_data='hide {}'.format(location_message.message_id))
+    )
+
+    lines = [
+        _('Username: {username}'),
+        _('Price: {price:.2f} {currency}/BTS'),
+        _('Minimum limit: {min_limit:.2f}')
+    ]
+    if order['max_limit']:
+        lines.append(_('Maximum limit: {max_limit:.2f}'))
+    if order['comments']:
+        lines.append(_('Comments: «{comments}»'))
+
+    await bot.answer_callback_query(callback_query_id=call.id)
+    await bot.send_message(
+        call.message.chat.id,
+        '\n'.join(lines).format(
+            username=order['username'],
+            price=order['price'],
+            currency=order['currency'],
+            min_limit=order['min_limit'],
+            max_limit=order['max_limit'],
+            comments=order['comments']
+        ),
+        reply_markup=keyboard
+    )
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('delete'))
+@order_handler
+async def delete_button(call, user, order, *args, **kwargs):
+    delete_result = await database.orders.delete_one({'_id': order['_id'], 'user_id': call.from_user.id})
+    await bot.answer_callback_query(
+        callback_query_id=call.id,
+        text=_('Order was deleted.') if delete_result.deleted_count > 0 else _("Couldn't delete order.")
+    )
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('accept'))
+@order_handler
+async def accept_button(call, user, order, *args, **kwargs):
+    await database.users.update_one({'_id': user['_id']}, {'$set': {'order_chat_id': order['user_id']}})
+    await storage.set_state(call.from_user.id, 'message_for_seller')
+    await bot.answer_callback_query(callback_query_id=call.id)
+    await bot.send_message(
+        call.message.chat.id,
+        text=_("Send your message for the seller and I will forward it.")
+    )
+
+
+@private_handler(state='message_for_seller')
+async def forward_to_seller(message, user, state, *args, **kwargs):
+    result = await bot.forward_message(
+        chat_id=user['order_chat_id'],
+        from_chat_id=message.chat.id,
+        message_id=message.message_id
+    )
+    await database.users.update_one({'_id': user['_id']}, {'$unset': {'order_chat_id': True}})
+
+    await bot.send_message(
+        message.chat.id,
+        _("Your message was forwarded to the seller.") if result else
+        _("Couldn't forward your message to the seller.")
+    )
+    await state.finish()
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('hide'))
+@user_handler
+async def hide_button(call, user, *args, **kwargs):
+    location_message_id = call.data.split()[1]
+    await bot.delete_message(call.message.chat.id, call.message.message_id)
+    await bot.delete_message(call.message.chat.id, location_message_id)
 
 
 @private_handler(commands=['buy'])
@@ -138,33 +286,8 @@ async def orders_button(call, user, *args, **kwargs):
     lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4bb')
 )
 async def handle_buy(message, user, *args, **kwargs):
-    if database.orders.count_documents({}) == 0:
-        await bot.send_message(message.chat.id, _("There are no orders."))
-        return
-    await orders_list(message.chat.id, 0)
-
-
-@private_handler(state=OrderCreation.amount)
-async def choose_amount(message, user, state, **kwargs):
-    try:
-        amount = float(message.text)
-    except ValueError:
-        await bot.send_message(message.chat.id, _("Send decimal number or /cancel"))
-        return
-    if amount <= 0:
-        await bot.send_message(message.chat.id, _("Send positive number or /cancel"))
-        return
-
-    database.orders.update_one(
-        {'_id': user['order']},
-        {'$set': {'amount': amount}}
-    )
-    database.users.update_one(
-        {'_id': user['_id']},
-        {'$unset': {'order': True}}
-    )
-    await state.finish()
-    await bot.send_message(message.chat.id, _('Order is set.'))
+    quantity = await database.orders.count_documents({})
+    await orders_list(message.chat.id, 0, quantity)
 
 
 @private_handler(commands=['sell'])
@@ -179,35 +302,166 @@ async def handle_sell(message, user, *args, **kwargs):
             _("Set Bitshares username in settings first.")
         )
         return
-    doc = database.orders.insert_one({
-        'amount': 0.0,
-        'comission': 0.0,
-        'payment_methods': user['payment_methods'],
-        'date': message.date,
-        'expiration_time': 0,
+
+    await database.creation.insert_one({
+        'user_id': message.from_user.id,
         'username': user['username'],
     })
-    database.users.update_one(
-        {'_id': user['_id']},
-        {'$set': {'order': doc.inserted_id}}
-    )
-    reply = await bot.send_message(
+
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(*CURRENCIES)
+
+    await bot.send_message(
         message.chat.id,
-        _("How many BTS are you selling?")
+        _('What currency do you want to buy?'),
+        reply_markup=markup
     )
-    await OrderCreation.amount.set()
+    await storage.set_state(message.from_user.id, 'currency')
 
 
 @private_handler(state='*', commands=['cancel'])
-async def cancel_sell(message, user, state, **kwargs):
-    database.users.update_one(
-        {'_id': user['_id']},
-        {'$unset': {'order': True}}
-    )
+async def cancel_sell(message, user, state, *args, **kwargs):
+    await state.finish()
     await bot.send_message(message.chat.id, _('Order is cancelled.'))
 
 
-@private_handler(state=Settings.payment_methods)
+@private_handler(state='currency')
+async def choose_currency(message, user, state, *args, **kwargs):
+    currency = message.text.upper()
+    if currency not in CURRENCIES:
+        await bot.send_message(message.chat.id, _("Choose from the options on reply keyboard."))
+        return
+
+    await database.creation.update_one(
+        {'user_id': message.from_user.id},
+        {'$set': {'currency': currency}}
+    )
+    await state.set_state('price')
+    await bot.send_message(
+        message.chat.id,
+        _('At what price do you want to sell BTS?'),
+        reply_markup=types.ReplyKeyboardRemove()
+    )
+
+
+async def validate_money(data, chat_id):
+    try:
+        money = float(data)
+    except ValueError:
+        await bot.send_message(
+            chat_id,
+            _("Send decimal number or /cancel")
+        )
+        return
+    if money <= 0:
+        await bot.send_message(
+            chat_id,
+            _("Send positive number or /cancel")
+        )
+        return
+
+    return money
+
+
+@private_handler(state='price')
+async def choose_price(message, user, state, *args, **kwargs):
+    price = await validate_money(message.text, message.chat.id)
+    if not price:
+        return
+
+    await database.creation.update_one(
+        {'user_id': message.from_user.id},
+        {'$set': {'price': price}}
+    )
+    await state.set_state('min_limit')
+    await bot.send_message(
+        message.chat.id,
+        _('Would you like to have minimum fiat amount limit? (Send "No" to skip)'),
+        reply_markup=types.ReplyKeyboardRemove()
+    )
+
+
+@private_handler(state='min_limit')
+async def choose_min(message, user, state, *args, **kwargs):
+    if message.text.lower() == 'no':
+        min_limit = 0
+    else:
+        min_limit = await validate_money(message.text, message.chat.id)
+        if not min_limit:
+            return
+
+    await database.creation.update_one(
+        {'user_id': message.from_user.id},
+        {'$set': {'min_limit': min_limit}}
+    )
+    await state.set_state('max_limit')
+    await bot.send_message(
+        message.chat.id,
+        _('Would you like to have maximum fiat amount limit? (Send "No" to skip)'),
+        reply_markup=types.ReplyKeyboardRemove()
+    )
+
+
+@private_handler(state='max_limit')
+async def choose_max(message, user, state, *args, **kwargs):
+    if message.text.lower() == 'no':
+        max_limit = None
+    else:
+        max_limit = await validate_money(message.text, message.chat.id)
+        if not max_limit:
+            return
+
+    await database.creation.update_one(
+        {'user_id': message.from_user.id},
+        {'$set': {'max_limit': max_limit}}
+    )
+    await state.set_state('location')
+    await bot.send_message(
+        message.chat.id,
+        _('Send location of a preferred meeting point.'),
+        reply_markup=types.ReplyKeyboardRemove()
+    )
+
+
+@private_handler(state='location', content_types=types.ContentType.TEXT)
+async def wrong_location(message, user, state, *args, **kwargs):
+    await bot.send_message(message.chat.id, _("Send location object in message."))
+
+
+@private_handler(state='location', content_types=types.ContentType.LOCATION)
+async def choose_location(message, user, state, *args, **kwargs):
+    location = message.location
+    await database.creation.update_one(
+        {'user_id': message.from_user.id},
+        {'$set': {'latitude': location.latitude, 'longitude': location.longitude}}
+    )
+    await state.set_state('comments')
+    await bot.send_message(
+        message.chat.id,
+        _('Add any additional comments. (Send "No" to skip)'),
+        reply_markup=types.ReplyKeyboardRemove()
+    )
+
+
+@private_handler(state='comments')
+async def choose_comments(message, user, state, *args, **kwargs):
+    comments = message.text
+    if len(comments) > 150:
+        await bot.send_message(message.chat.id, _("Comment should have less than 150 characters (your comment has {} characters).").format(len(comments)))
+        return
+
+    if comments.lower() == "no":
+        comments = None
+
+    order = await database.creation.find_one_and_delete({'user_id': message.from_user.id})
+    order['comments'] = comments
+    await database.orders.insert_one(order)
+
+    await bot.send_message(message.chat.id, _('Order is set.'))
+    await state.finish()
+
+
+@private_handler(state='payment_methods')
 async def choose_payment_methods(message, user, state, **kwargs):
     chosen_methods = None
     if message.text:
@@ -236,7 +490,7 @@ async def choose_payment_methods(message, user, state, **kwargs):
         else:
             pushes.append(method['name'])
             changes.append(['{}. \u2714\ufe0f {}'.format(method_index, method['name'])])
-    database.users.update_one(
+    await database.users.update_one(
         {'_id': user['_id']},
         {'$pull': {'payment_methods': {'$in': pulls}},
          '$push': {'payment_methods': {'$each': pushes}}}
@@ -251,27 +505,26 @@ async def choose_payment_methods(message, user, state, **kwargs):
 async def settings_payment_methods(call, user, *args, **kwargs):
     with open(config.METHODS_JSON, 'r') as methods_json:
         methods = json.load(methods_json)
-    user = database.users.find_one({'id': call.from_user.id})
+    user = await database.users.find_one({'id': call.from_user.id})
     method_list = ['{}. {} {}'.format(
         i + 1,
         '\u2714\ufe0f' if method['name'] in user['payment_methods'] else '\u274c',
         method['name']
     ) for i, method in enumerate(methods)]
     reply = await bot.send_message(
-        call.chat.id,
+        call.message.chat.id,
         _('Send space-separated numbers corresponding to payment methods from list:') +
         '\n\n' + '\n'.join(method_list)
     )
-    await Settings.payment_methods.set()
 
 
-@private_handler(state=Settings.username)
-async def set_username(message, user, state, **kwargs):
+@private_handler(state='username')
+async def set_username(message, user, state, *args, **kwargs):
     username = message.text
     if not username:
         await bot.send_message(message.chat.id, 'This is not a valid username.')
         return
-    database.users.update_one(
+    await database.users.update_one(
         {'_id': user['_id']},
         {'$set': {'username': username}}
     )
@@ -282,23 +535,25 @@ async def set_username(message, user, state, **kwargs):
 @dp.callback_query_handler(lambda call: call.data == 'bitshares username')
 @user_handler
 async def settings_username(call, user, *args, **kwargs):
+    await bot.answer_callback_query(callback_query_id=call.id)
     reply = await bot.send_message(
         call.message.chat.id,
         'Send your Bitshares username.'
     )
-    await Settings.username.set()
+    await storage.set_state(call.from_user.id, 'username')
 
 
 @dp.callback_query_handler(lambda call: call.data == 'order creation ui')
 @user_handler
 async def settings_order_creation_ui(call, user, *args, **kwargs):
     order_ui = 1 - user['order_creation_id']
-    database.users.update_one(
+    await database.users.update_one(
         {'_id': user['_id']},
         {'$set': {'order_creation_ui': order_ui}}
     )
+    await bot.answer_callback_query(callback_query_id=call.id)
     await bot.send_message(
-        call.chat.id,
+        call.message.chat.id,
         _('Your order creation UI is now set to') + ' ' +
         _('visual') if order_ui else _('conversational') + '.'
     )

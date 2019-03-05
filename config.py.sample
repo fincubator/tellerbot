@@ -8,3 +8,4 @@ SERVER_PORT = 5000
 LOCALES_DIR = Path(__file__).parent / 'locale'
 METHODS_JSON = '/root/methods.json'
 LOGGER_LEVEL = logging.DEBUG
+ORDERS_COUNT = 10
