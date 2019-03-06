@@ -24,6 +24,7 @@ import math
 import json
 import asyncio
 
+from pymongo.collection import ReturnDocument
 from bson.objectid import ObjectId
 
 from aiogram import Bot, executor, types
@@ -34,8 +35,7 @@ from aiogram.utils.exceptions import MessageNotModified
 
 
 SETTINGS = [
-    {'name': 'Payment methods', 'field': 'payment_methods', 'default': None},
-    {'name': 'BitShares username', 'field': 'bitshares_username', 'default': None}
+    {'name': 'BitShares username', 'field': 'username', 'default': None}
 ]
 
 CURRENCIES = ['USD', 'EUR', 'RUB']
@@ -290,22 +290,10 @@ async def handle_buy(message, user, *args, **kwargs):
     await orders_list(message.chat.id, 0, quantity)
 
 
-@private_handler(commands=['sell'])
-@private_handler(
-    lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4b5')
-)
-async def handle_sell(message, user, *args, **kwargs):
-    username = user.get('username')
-    if not username:
-        await bot.send_message(
-            message.chat.id,
-            _("Set Bitshares username in settings first.")
-        )
-        return
-
+async def start_order(message, user):
     await database.creation.insert_one({
         'user_id': message.from_user.id,
-        'username': user['username'],
+        'username': user['username']
     })
 
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -317,6 +305,23 @@ async def handle_sell(message, user, *args, **kwargs):
         reply_markup=markup
     )
     await storage.set_state(message.from_user.id, 'currency')
+
+
+@private_handler(commands=['sell'])
+@private_handler(
+    lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4b5')
+)
+async def handle_sell(message, user, *args, **kwargs):
+    username = user.get('username')
+    if not username:
+        await bot.send_message(
+            message.chat.id,
+            _('Send your Bitshares username.')
+        )
+        await storage.set_state(user_id, 'order_username')
+        return
+
+    await start_order(message, user)
 
 
 @private_handler(state='*', commands=['cancel'])
@@ -461,75 +466,33 @@ async def choose_comments(message, user, state, *args, **kwargs):
     await state.finish()
 
 
-@private_handler(state='payment_methods')
-async def choose_payment_methods(message, user, state, **kwargs):
-    chosen_methods = None
-    if message.text:
-        chosen_methods = map(int, re.findall(r'(?:\b(\d+)\b)+', message.text))
-    if not chosen_methods:
-        await bot.send_message(
-            message.chat.id,
-            _('You need to send text message with space-separated numbers '
-              'corresponding to payment methods.')
-        )
-    with open(config.METHODS_JSON, 'r') as methods_json:
-        methods = json.load(methods_json)
-    answer = ''
-    changes = []
-    pulls = []
-    pushes = []
-    for pivot, method_index in enumerate(sorted(chosen_methods)):
-        if method_index > len(methods):
-            remaining = len(chosen_methods) - pivot
-            answer += _("Some numbers were ignored as they don't correspond to any payment method.") % (remaining) + '\n\n'
-            break
-        method = methods[method_index - 1]
-        if method in user['payment_methods']:
-            pulls.append(method['name'])
-            changes.append(['{}. \u274c {}'.format(method_index, method['name'])])
-        else:
-            pushes.append(method['name'])
-            changes.append(['{}. \u2714\ufe0f {}'.format(method_index, method['name'])])
-    await database.users.update_one(
-        {'_id': user['_id']},
-        {'$pull': {'payment_methods': {'$in': pulls}},
-         '$push': {'payment_methods': {'$each': pushes}}}
-    )
-    answer += _('Preference of these payment methods were changed:') + '\n' + '\n'.join(changes)
-    await state.finish()
-    await bot.send_message(message.chat.id, answer)
-
-
-@dp.callback_query_handler(lambda call: call.data == 'payment method')
-@user_handler
-async def settings_payment_methods(call, user, *args, **kwargs):
-    with open(config.METHODS_JSON, 'r') as methods_json:
-        methods = json.load(methods_json)
-    user = await database.users.find_one({'id': call.from_user.id})
-    method_list = ['{}. {} {}'.format(
-        i + 1,
-        '\u2714\ufe0f' if method['name'] in user['payment_methods'] else '\u274c',
-        method['name']
-    ) for i, method in enumerate(methods)]
-    reply = await bot.send_message(
-        call.message.chat.id,
-        _('Send space-separated numbers corresponding to payment methods from list:') +
-        '\n\n' + '\n'.join(method_list)
-    )
-
-
-@private_handler(state='username')
-async def set_username(message, user, state, *args, **kwargs):
+async def update_username(message, user):
     username = message.text
     if not username:
         await bot.send_message(message.chat.id, 'This is not a valid username.')
         return
-    await database.users.update_one(
+
+    result = await database.users.find_one_and_update(
         {'_id': user['_id']},
-        {'$set': {'username': username}}
+        {'$set': {'username': username}},
+        return_document=ReturnDocument.AFTER
     )
-    await state.finish()
-    await bot.send_message(message.chat.id, 'Username set.')
+    return result
+
+
+@private_handler(state='username')
+async def set_username(message, user, state, *args, **kwargs):
+    user = await update_username(message, user)
+    if user is not None:
+        await state.finish()
+        await bot.send_message(message.chat.id, 'Username set.')
+
+
+@private_handler(state='order_username')
+async def order_username(message, user, state, *args, **kwargs):
+    user = await update_username(message, user)
+    if user is not None:
+        await start_order(message, user)
 
 
 @dp.callback_query_handler(lambda call: call.data == 'bitshares username')
@@ -543,38 +506,24 @@ async def settings_username(call, user, *args, **kwargs):
     await storage.set_state(call.from_user.id, 'username')
 
 
-@dp.callback_query_handler(lambda call: call.data == 'order creation ui')
-@user_handler
-async def settings_order_creation_ui(call, user, *args, **kwargs):
-    order_ui = 1 - user['order_creation_id']
-    await database.users.update_one(
-        {'_id': user['_id']},
-        {'$set': {'order_creation_ui': order_ui}}
-    )
-    await bot.answer_callback_query(callback_query_id=call.id)
-    await bot.send_message(
-        call.message.chat.id,
-        _('Your order creation UI is now set to') + ' ' +
-        _('visual') if order_ui else _('conversational') + '.'
-    )
-
-
 @private_handler(commands=['settings'])
 @private_handler(
     lambda msg: msg.text.encode('unicode-escape').startswith(b'\\u2699\\ufe0f')
 )
 async def handle_settings(message, user, *args, **kwargs):
-    keyboard = types.InlineKeyboardMarkup(row_width=2)
-    keyboard.add(
-        *[types.InlineKeyboardButton(text=_(setting['name']), callback_data=setting['name'].lower())
-          for setting in SETTINGS]
-    )
     user_info = []
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
     for setting in SETTINGS:
         option = user.get(setting['field'])
         if option is None:
             option = '\U0001f6ab'
         user_info.append('{}: {}'.format(_(setting['name']), option))
+        keyboard.add(
+            types.InlineKeyboardButton(
+                text=_(setting['name']),
+                callback_data=setting['name'].lower()
+            )
+        )
     await bot.send_message(
         message.chat.id,
         _('Choose which option you would like to change.') + '\n\n' +
