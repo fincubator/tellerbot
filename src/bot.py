@@ -430,7 +430,7 @@ async def choose_max(message, user, state, *args, **kwargs):
 
 @private_handler(state='location', content_types=types.ContentType.TEXT)
 async def wrong_location(message, user, state, *args, **kwargs):
-    await bot.send_message(message.chat.id, _("Send location object in message."))
+    await bot.send_message(message.chat.id, _("Send location object with point on the map in message."))
 
 
 @private_handler(state='location', content_types=types.ContentType.LOCATION)
