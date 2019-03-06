@@ -381,7 +381,7 @@ async def choose_price(message, user, state, *args, **kwargs):
     await state.set_state('min_limit')
     await bot.send_message(
         message.chat.id,
-        _('Would you like to have minimum fiat amount limit? (Send "No" to skip)'),
+        _('Would you like to have minimum amount limit? (Send "No" to skip)'),
         reply_markup=types.ReplyKeyboardRemove()
     )
 
@@ -402,7 +402,7 @@ async def choose_min(message, user, state, *args, **kwargs):
     await state.set_state('max_limit')
     await bot.send_message(
         message.chat.id,
-        _('Would you like to have maximum fiat amount limit? (Send "No" to skip)'),
+        _('Would you like to have maximum amount limit? (Send "No" to skip)'),
         reply_markup=types.ReplyKeyboardRemove()
     )
 
