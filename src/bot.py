@@ -124,11 +124,11 @@ async def orders_list(chat_id, start, quantity, message_id=None):
         line = '{}. {} - {:.2f} {}/BTS'.format(
             i + 1, order['username'], order['price'], order['currency'],
         )
-        limits = ['{:.2f}'.format(order['min_limit'])]
-        if order['max_limit']:
-            limits.append('{:.2f}'.format(order['max_limit']))
-        if limits:
-            line += ' ({})'.format(' - '.join(limits))
+        if order['min_limit'] or order['max_limit']:
+            line += ' ({:.2f}'.format(order['min_limit'])
+            if order['max_limit']:
+                line += ' - {:.2f}'.format(order['max_limit'])
+            line += ')'
         lines.append(line)
         buttons.append(
             types.InlineKeyboardButton(text='{}'.format(i + 1), callback_data='get_order {}'.format(order['_id']))
@@ -215,9 +215,16 @@ async def get_order_button(call, user, order, *args, **kwargs):
         _('Minimum limit: {min_limit:.2f}')
     ]
     if order['max_limit']:
-        lines.append(_('Maximum limit: {max_limit:.2f}'))
+        lines.append(
+            _('Maximum limit: {max_limit:.2f}')
+        )
+    lines.append(
+        _('Possible distance: {radius:.2f}')
+    )
     if order['comments']:
-        lines.append(_('Comments: «{comments}»'))
+        lines.append(
+            _('Comments: «{comments}»')
+        )
 
     await bot.answer_callback_query(callback_query_id=call.id)
     await bot.send_message(
@@ -228,6 +235,7 @@ async def get_order_button(call, user, order, *args, **kwargs):
             currency=order['currency'],
             min_limit=order['min_limit'],
             max_limit=order['max_limit'],
+            radius=order['radius'],
             comments=order['comments']
         ),
         reply_markup=keyboard
@@ -439,6 +447,24 @@ async def choose_location(message, user, state, *args, **kwargs):
     await database.creation.update_one(
         {'user_id': message.from_user.id},
         {'$set': {'latitude': location.latitude, 'longitude': location.longitude}}
+    )
+    await state.set_state('radius')
+    await bot.send_message(
+        message.chat.id,
+        _('Send a distance you are ready to pass.'),
+        reply_markup=types.ReplyKeyboardRemove()
+    )
+
+
+@private_handler(state='radius', content_types=types.ContentType.LOCATION)
+async def choose_radius(message, user, state, *args, **kwargs):
+    radius = await validate_money(message.text, message.chat.id)
+    if not radius:
+        return
+
+    await database.creation.update_one(
+        {'user_id': message.from_user.id},
+        {'$set': {'radius': radius}}
     )
     await state.set_state('comments')
     await bot.send_message(

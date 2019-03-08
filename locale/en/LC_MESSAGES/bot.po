@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-03-05 05:44+0300\n"
+"POT-Creation-Date: 2019-03-08 18:19+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -86,83 +86,91 @@ msgstr "Price: {price:.2f} {currency}/BTS"
 msgid "Minimum limit: {min_limit:.2f}"
 msgstr "Minimum limit: {min_limit:.2f}"
 
-#: src/bot.py:218
+#: src/bot.py:219
 msgid "Maximum limit: {max_limit:.2f}"
 msgstr "Maximum limit: {max_limit:.2f}"
 
-#: src/bot.py:220
+#: src/bot.py:222
+msgid "Possible distance: {radius:.2f}"
+msgstr "Possible distance: {radius:.2f}"
+
+#: src/bot.py:226
 msgid "Comments: «{comments}»"
 msgstr "Comments: «{comments}»"
 
-#: src/bot.py:243
+#: src/bot.py:251
 msgid "Order was deleted."
 msgstr "Order was deleted."
 
-#: src/bot.py:243
+#: src/bot.py:251
 msgid "Couldn't delete order."
 msgstr "Couldn't delete order."
 
-#: src/bot.py:255
+#: src/bot.py:263
 msgid "Send your message for the seller and I will forward it."
 msgstr "Send your message for the seller and I will forward it."
 
-#: src/bot.py:270
+#: src/bot.py:278
 msgid "Your message was forwarded to the seller."
 msgstr "Your message was forwarded to the seller."
 
-#: src/bot.py:271
+#: src/bot.py:279
 msgid "Couldn't forward your message to the seller."
 msgstr "Couldn't forward your message to the seller."
 
-#: src/bot.py:302
-msgid "Set Bitshares username in settings first."
-msgstr "Set Bitshares username in settings first."
-
-#: src/bot.py:316
+#: src/bot.py:312
 msgid "What currency do you want to buy?"
 msgstr "What currency do you want to buy?"
 
-#: src/bot.py:325
+#: src/bot.py:327
+msgid "Send your Bitshares username."
+msgstr "Send your Bitshares username."
+
+#: src/bot.py:338
 msgid "Order is cancelled."
 msgstr "Order is cancelled."
 
-#: src/bot.py:332
+#: src/bot.py:345
 msgid "Choose from the options on reply keyboard."
 msgstr "Choose from the options on reply keyboard."
 
-#: src/bot.py:342
+#: src/bot.py:355
 msgid "At what price do you want to sell BTS?"
 msgstr "At what price do you want to sell BTS?"
 
-#: src/bot.py:353
+#: src/bot.py:366
 msgid "Send decimal number or /cancel"
 msgstr "Send decimal number or /cancel"
 
-#: src/bot.py:359
+#: src/bot.py:372
 msgid "Send positive number or /cancel"
 msgstr "Send positive number or /cancel"
 
-#: src/bot.py:379
-msgid "Would you like to have minimum fiat amount limit? (Send \"No\" to skip)"
-msgstr "Would you like to have minimum fiat amount limit? (Send \"No\" to skip)"
+#: src/bot.py:392
+msgid "Would you like to have minimum amount limit? (Send \"No\" to skip)"
+msgstr "Would you like to have minimum amount limit? (Send \"No\" to skip)"
 
-#: src/bot.py:400
-msgid "Would you like to have maximum fiat amount limit? (Send \"No\" to skip)"
-msgstr "Would you like to have maximum fiat amount limit? (Send \"No\" to skip)"
+#: src/bot.py:413
+msgid "Would you like to have maximum amount limit? (Send \"No\" to skip)"
+msgstr "Would you like to have maximum amount limit? (Send \"No\" to skip)"
 
-#: src/bot.py:421
+#: src/bot.py:434
 msgid "Send location of a preferred meeting point."
 msgstr "Send location of a preferred meeting point."
 
-#: src/bot.py:428
-msgid "Send location object in message."
-msgstr "Send location object in message."
-
 #: src/bot.py:441
+msgid "Send location object with point on the map in message."
+msgstr "Send location object with point on the map in message."
+
+#: src/bot.py:454
+msgid "Send a distance you are ready to pass."
+msgstr "Send a distance you are ready to pass."
+
+#: src/bot.py:472
 msgid "Add any additional comments. (Send \"No\" to skip)"
 msgstr "Add any additional comments. (Send \"No\" to skip)"
 
-#: src/bot.py:450
+#: src/bot.py:481
 msgid ""
 "Comment should have less than 150 characters (your comment has {} "
 "characters)."
@@ -170,63 +178,18 @@ msgstr ""
 "Comment should have less than 150 characters (your comment has {} "
 "characters)."
 
-#: src/bot.py:460
+#: src/bot.py:491
 msgid "Order is set."
 msgstr "Order is set."
 
-#: src/bot.py:472
-msgid ""
-"You need to send text message with space-separated numbers corresponding "
-"to payment methods."
-msgstr ""
-"You need to send text message with space-separated numbers corresponding "
-"to payment methods."
-
-#: src/bot.py:484
-msgid "Some numbers were ignored as they don't correspond to any payment method."
-msgstr "Some numbers were ignored as they don't correspond to any payment method."
-
-#: src/bot.py:498
-msgid "Preference of these payment methods were changed:"
-msgstr "Preference of these payment methods were changed:"
-
-#: src/bot.py:516
-msgid "Send space-separated numbers corresponding to payment methods from list:"
-msgstr "Send space-separated numbers corresponding to payment methods from list:"
-
-#: src/bot.py:557
-msgid "Your order creation UI is now set to"
-msgstr "Your order creation UI is now set to"
-
-#: src/bot.py:558
-msgid "visual"
-msgstr "visual"
-
-#: src/bot.py:558
-msgid "conversational"
-msgstr "conversational"
-
-#: src/bot.py:569 src/bot.py:577
+#: src/bot.py:546 src/bot.py:549
 msgid "name"
 msgstr "name"
 
-#: src/bot.py:580
+#: src/bot.py:555
 msgid "Choose which option you would like to change."
 msgstr "Choose which option you would like to change."
 
-#: src/bot.py:588
+#: src/bot.py:563
 msgid "Unknown command."
 msgstr "Unknown command."
-
-#~ msgid "%d %s ignored as they don't correspond to any payment method."
-#~ msgstr ""
-
-#~ msgid "number was"
-#~ msgstr ""
-
-#~ msgid "number were"
-#~ msgstr ""
-
-#~ msgid "How many BTS are you selling?"
-#~ msgstr "How many BTS are you selling?"
-
