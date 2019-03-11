@@ -456,7 +456,7 @@ async def choose_location(message, user, state, *args, **kwargs):
     )
 
 
-@private_handler(state='radius', content_types=types.ContentType.LOCATION)
+@private_handler(state='radius')
 async def choose_radius(message, user, state, *args, **kwargs):
     radius = await validate_money(message.text, message.chat.id)
     if not radius:
