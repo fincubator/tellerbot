@@ -121,13 +121,13 @@ async def orders_list(chat_id, start, quantity, message_id=None):
     lines = []
     buttons = []
     for i, order in enumerate(orders):
-        line = '{}. {} - {:.2f} {}/BTS'.format(
+        line = '{}. {} - {:.8g} {}/BTS'.format(
             i + 1, order['username'], order['price'], order['currency'],
         )
         if order['min_limit'] or order['max_limit']:
-            line += ' ({:.2f}'.format(order['min_limit'])
+            line += ' ({:.8g}'.format(order['min_limit'])
             if order['max_limit']:
-                line += ' - {:.2f}'.format(order['max_limit'])
+                line += ' - {:.8g}'.format(order['max_limit'])
             line += ')'
         lines.append(line)
         buttons.append(
@@ -211,12 +211,12 @@ async def get_order_button(call, user, order, *args, **kwargs):
 
     lines = [
         _('Username: {username}'),
-        _('Price: {price:.2f} {currency}/BTS'),
-        _('Minimum limit: {min_limit:.2f}')
+        _('Price: {price:.8g} {currency}/BTS'),
+        _('Minimum limit: {min_limit:.8g}')
     ]
     if order['max_limit']:
         lines.append(
-            _('Maximum limit: {max_limit:.2f}')
+            _('Maximum limit: {max_limit:.8g}')
         )
     lines.append(
         _('Possible distance: {radius:.2f}')
