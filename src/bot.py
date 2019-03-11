@@ -88,7 +88,7 @@ async def handle_start_command(message, user, *args, **kwargs):
     )
     await bot.send_message(
         message.chat.id,
-        _("Hello, I'm BailsBot and I can help you meet with people that you "
+        _("I can help you meet with people that you "
           "can swap money with.\n\nChoose one of the options on your keyboard."),
         reply_markup=keyboard
     )
