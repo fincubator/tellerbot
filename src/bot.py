@@ -326,7 +326,7 @@ async def handle_sell(message, user, *args, **kwargs):
             message.chat.id,
             _('Send your Bitshares username.')
         )
-        await storage.set_state(user_id, 'order_username')
+        await storage.set_state(user['id'], 'order_username')
         return
 
     await start_order(message, user)
