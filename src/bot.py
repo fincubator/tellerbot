@@ -631,7 +631,7 @@ async def choose_duration(message, state):
 
 @dp.callback_query_handler(lambda call: call.data == 'skip', state='comments')
 async def skip_comments(call, state):
-    order = await database.creation.find_one_and_delete({'user_id': call.message.from_user.id})
+    order = await database.creation.find_one_and_delete({'user_id': call.from_user.id})
     await database.orders.insert_one(order)
     await bot.edit_message_text(
         _('Order is set.'),
