@@ -399,7 +399,7 @@ async def skip_sum(call, state):
         _('At what price do you want to sell?') if order['type'] == 'sell' else
         _('At what price do you want to buy?'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
 
 
@@ -425,7 +425,7 @@ async def choose_sum(message, state):
         message.chat.id,
         _('At what price do you want to sell?') if order['type'] == 'sell' else
         _('At what price do you want to buy?'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
 
 
@@ -474,7 +474,7 @@ async def skip_payment_type(call, state):
     await bot.edit_message_text(
         _('Send payment method.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
 
 
@@ -509,7 +509,7 @@ async def skip_location(call, state):
     await bot.edit_message_text(
         _('Send duration of order in days.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
 
 
@@ -524,7 +524,7 @@ async def choose_location(message, state):
     await bot.send_message(
         message.chat.id,
         _('Send duration of order in days.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
 
 
@@ -543,7 +543,7 @@ async def skip_payment_method(call, state):
     await bot.edit_message_text(
         _('Send location of a preferred meeting point.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
 
 
@@ -558,7 +558,7 @@ async def choose_payment_method(message, state):
     await bot.send_message(
         message.chat.id,
         _('Send duration of order in days.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
 
 
@@ -568,7 +568,7 @@ async def skip_payment_method_cashless(call, state):
     await bot.edit_message_text(
         _('Send duration of order in days.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
 
 
@@ -583,7 +583,7 @@ async def choose_payment_method_cashless(message, state):
     await bot.send_message(
         message.chat.id,
         _('Send duration of order in days.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
 
 
@@ -593,7 +593,7 @@ async def skip_duration(call, state):
     await bot.edit_message_text(
         _('Add any additional comments.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
 
 
@@ -616,7 +616,7 @@ async def choose_duration(message, state):
     await bot.send_message(
         message.chat.id,
         _('Add any additional comments.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
 
 
