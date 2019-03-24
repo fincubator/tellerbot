@@ -652,7 +652,7 @@ async def choose_comments(message, state):
     order['comments'] = comments
     await database.orders.insert_one(order)
 
-    await bot.send_message(message.chat.id, _('Order is set.'))
+    await bot.send_message(message.chat.id, _('Order is set.'), reply_markup=start_keyboard)
     await state.finish()
 
 
