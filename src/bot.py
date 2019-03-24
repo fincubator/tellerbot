@@ -171,7 +171,7 @@ def order_handler(handler):
 async def get_order_button(call, order):
     keyboard = types.InlineKeyboardMarkup()
 
-    if order['user_id'] == message.from_user.id:
+    if order['user_id'] == call.from_user.id:
         keyboard.row(
             types.InlineKeyboardButton(text=_('Delete'), callback_data='delete {}'.format(order['_id']))
         )
@@ -197,10 +197,16 @@ async def get_order_button(call, order):
         )
     ]
     if order.get('sum'):
-        lines.append(
-            _('Transaction sum:') +
-            ' {:.8g} {}'.format(order['sum'], order['sum_currency'])
-        )
+        if order['sum_currency'] == 'fiat':
+            lines.append(
+                _('Transaction sum:') +
+                ' {:.2g} {}'.format(order['sum'], order['fiat'])
+            )
+        elif order['sum_currency'] == 'crypto':
+            lines.append(
+                _('Transaction sum:') +
+                ' {:.8g} {}'.format(order['sum'], order['crypto'])
+            )
     if order.get('price'):
         lines.append(
             _('Price:') + ' {:.2f}'.format(order['price'])
