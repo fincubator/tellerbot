@@ -491,7 +491,7 @@ async def cash_payment_type(call):
     await storage.set_state(call.from_user.id, 'location')
     await bot.edit_message_text(
         _('Send location of a preferred meeting point.'),
-        message.chat.id, message.message_id
+        call.message.chat.id, call.message.message_id
     )
 
 
@@ -622,14 +622,14 @@ async def choose_duration(message, state):
 
 @dp.callback_query_handler(lambda call: call.data == 'skip', state='comments')
 async def skip_comments(call, state):
-    order = await database.creation.find_one_and_delete({'user_id': message.from_user.id})
+    order = await database.creation.find_one_and_delete({'user_id': call.message.from_user.id})
     await database.orders.insert_one(order)
     await bot.edit_message_text(
         _('Order is set.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=start_keyboard
     )
-    await storage.set_state(user_id, None)
+    await state.finish()
 
 
 @private_handler(state='comments')
