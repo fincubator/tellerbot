@@ -104,9 +104,9 @@ async def orders_list(chat_id, start, quantity, message_id=None):
     for i, order in enumerate(orders):
         line = f'{i + 1}. '
         if order['type'] == 'sell':
-            line += '1 {} \U0001f846 {} {}'.format(order['crypto'], order['fiat'], order['price'])
+            line += '1 {} \U0001f846 {:.2f} {}'.format(order['crypto'], order['price'], order['fiat'])
         else:
-            line += '{} {} \U0001f846 1 {}'.format(order['price'], order['fiat'], order['crypto'])
+            line += '{:.2f} {} \U0001f846 1 {}'.format(order['price'], order['fiat'], order['crypto'])
         line += ' ({})'.format(order['username'])
         lines.append(line)
         buttons.append(
@@ -203,7 +203,7 @@ async def get_order_button(call, order):
         )
     if order.get('price'):
         lines.append(
-            _('Price:') + ' {:.8g}'.format(order['price'])
+            _('Price:') + ' {:.2f}'.format(order['price'])
         )
     if order.get('duration'):
         lines.append(
