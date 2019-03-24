@@ -43,8 +43,6 @@ i18n = I18nMiddleware('bot', config.LOCALES_DIR)
 dp.middleware.setup(i18n)
 _ = i18n.gettext
 
-
-skip_buttons = {}
 inline_skip_button = types.InlineKeyboardButton(text='Skip', callback_data='skip')
 
 start_keyboard = types.ReplyKeyboardMarkup(row_width=2)
@@ -130,7 +128,7 @@ async def orders_list(chat_id, start, quantity, message_id=None):
         await bot.edit_message_text(text, chat_id, message_id, reply_markup=keyboard, parse_mode='Markdown')
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('orders'))
+@dp.callback_query_handler(lambda call: call.data.startswith('orders'), state='*')
 async def orders_button(call):
     start = max(0, int(call.data.split()[1]))
 
@@ -169,7 +167,7 @@ def order_handler(handler):
     return decorator
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('get_order'))
+@dp.callback_query_handler(lambda call: call.data.startswith('get_order'), state='*')
 @order_handler
 async def get_order_button(call, order):
     keyboard = types.InlineKeyboardMarkup()
@@ -226,7 +224,7 @@ async def get_order_button(call, order):
     )
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('delete'))
+@dp.callback_query_handler(lambda call: call.data.startswith('delete'), state='*')
 @order_handler
 async def delete_button(call, order):
     delete_result = await database.orders.delete_one({'_id': order['_id'], 'user_id': call.from_user.id})
@@ -236,7 +234,7 @@ async def delete_button(call, order):
     )
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('hide'))
+@dp.callback_query_handler(lambda call: call.data.startswith('hide'), state='*')
 async def hide_button(call):
     await bot.delete_message(call.message.chat.id, call.message.message_id)
     location_message_id = call.data.split()[1]
@@ -328,22 +326,6 @@ async def choose_crypto(message, state):
     await bot.send_message(message.chat.id, answer, reply_markup=markup)
 
 
-def skip_button(stage):
-    def decorator(handler):
-        skip_buttons[stage] = handler
-        return handler
-    return decorator
-
-
-@dp.callback_query_handler(lambda call: call.data == 'skip')
-async def skip_button_handler(call):
-    state = await storage.get_state(call.from_user.id)
-    handler = skip_buttons.get(state)
-    if handler:
-        await handler(call.from_user_id, call.message.chat.id, call.message.message_id)
-        return
-
-
 @private_handler(state='fiat')
 async def choose_fiat(message, state):
     currency = message.text.upper()
@@ -375,7 +357,7 @@ async def choose_fiat(message, state):
     )
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('sum'))
+@dp.callback_query_handler(lambda call: call.data.startswith('sum'), state='sum')
 async def choose_sum_currency(call):
     sum_currency = call.data.split()[1]
     await database.creation.update_one(
@@ -401,22 +383,22 @@ async def validate_money(data, chat_id):
     return money
 
 
-@skip_button('sum')
-async def skip_sum(user_id, chat_id, message_id):
+@dp.callback_query_handler(lambda call: call.data == 'skip', state='sum')
+async def skip_sum(call, state):
     order = await database.creation.find_one_and_update(
         {
-            'user_id': user_id,
+            'user_id': call.from_user.id,
             'sum_currency': {'$exists': True},
             'sum': {'$exists': False}
         },
         {'$unset': {'sum_currency': True}},
         return_document=ReturnDocument.AFTER
     )
-    await storage.set_state(user_id, 'price')
+    await state.set_state('price')
     await bot.edit_message_text(
         _('At what price do you want to sell?') if order['type'] == 'sell' else
         _('At what price do you want to buy?'),
-        chat_id, message_id,
+        call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
     )
 
@@ -447,18 +429,18 @@ async def choose_sum(message, state):
     )
 
 
-@skip_button('price')
-async def skip_price(user_id, chat_id, message_id):
+@dp.callback_query_handler(lambda call: call.data == 'skip', state='price')
+async def skip_price(call, state):
     keyboard = types.InlineKeyboardMarkup()
     keyboard.add(
         types.InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
         types.InlineKeyboardButton(text=_('Cashless'), callback_data='cashless type')
     )
     keyboard.row(inline_skip_button)
-    await storage.set_state(user_id, 'payment_type')
+    await state.set_state('payment_type')
     await bot.edit_message_text(
         _('Choose payment type.'),
-        chat_id, message_id,
+        call.message.chat.id, call.message.message_id,
         reply_markup=keyboard
     )
 
@@ -486,12 +468,12 @@ async def choose_price(message, state):
     )
 
 
-@skip_button('payment_type')
-async def skip_payment_type(user_id, chat_id, message_id):
-    await storage.set_state(user_id, 'payment_method')
+@dp.callback_query_handler(lambda call: call.data == 'skip', state='payment_type')
+async def skip_payment_type(call, state):
+    await state.set_state('payment_method')
     await bot.edit_message_text(
         _('Send payment method.'),
-        chat_id, message_id,
+        call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
     )
 
@@ -504,7 +486,7 @@ async def message_in_payment_type(message, state):
     )
 
 
-@dp.callback_query_handler(lambda call: call.data == 'cash type')
+@dp.callback_query_handler(lambda call: call.data == 'cash type', state='payment_type')
 async def cash_payment_type(call):
     await storage.set_state(call.from_user.id, 'location')
     await bot.edit_message_text(
@@ -521,12 +503,12 @@ async def wrong_location(message, state):
     )
 
 
-@skip_button('location')
-async def skip_location(user_id, chat_id, message_id):
-    await storage.set_state(user_id, 'duration')
+@dp.callback_query_handler(lambda call: call.data == 'skip', state='location')
+async def skip_location(call, state):
+    await state.set_state('duration')
     await bot.edit_message_text(
         _('Send duration of order in days.'),
-        chat_id, message_id,
+        call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
     )
 
@@ -546,7 +528,7 @@ async def choose_location(message, state):
     )
 
 
-@dp.callback_query_handler(lambda call: call.data == 'cashless type')
+@dp.callback_query_handler(lambda call: call.data == 'cashless type', state='payment_type')
 async def cashless_payment_type(call):
     await storage.set_state(call.from_user.id, 'payment_method_cashless')
     await bot.edit_message_text(
@@ -555,12 +537,12 @@ async def cashless_payment_type(call):
     )
 
 
-@skip_button('payment_method')
-async def skip_payment_method(user_id, chat_id, message_id):
-    await storage.set_state(user_id, 'location')
+@dp.callback_query_handler(lambda call: call.data == 'skip', state='payment_method')
+async def skip_payment_method(call, state):
+    await state.set_state('location')
     await bot.edit_message_text(
         _('Send location of a preferred meeting point.'),
-        chat_id, message_id,
+        call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
     )
 
@@ -580,12 +562,12 @@ async def choose_payment_method(message, state):
     )
 
 
-@skip_button('payment_method_cashless')
-async def skip_payment_method_cashless(user_id, chat_id, message_id):
-    await storage.set_state(user_id, 'duration')
+@dp.callback_query_handler(lambda call: call.data == 'skip', state='payment_method_cashless')
+async def skip_payment_method_cashless(call, state):
+    await state.set_state('duration')
     await bot.edit_message_text(
         _('Send duration of order in days.'),
-        chat_id, message_id,
+        call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
     )
 
@@ -605,12 +587,12 @@ async def choose_payment_method_cashless(message, state):
     )
 
 
-@skip_button('duration')
-async def skip_duration(user_id, chat_id, message_id):
-    await storage.set_state(user_id, 'comments')
+@dp.callback_query_handler(lambda call: call.data == 'skip', state='duration')
+async def skip_duration(call, state):
+    await state.set_state('comments')
     await bot.edit_message_text(
         _('Add any additional comments.'),
-        chat_id, message_id,
+        call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
     )
 
@@ -638,13 +620,13 @@ async def choose_duration(message, state):
     )
 
 
-@skip_button('comments')
-async def skip_comments(user_id, chat_id, message_id):
+@dp.callback_query_handler(lambda call: call.data == 'skip', state='comments')
+async def skip_comments(call, state):
     order = await database.creation.find_one_and_delete({'user_id': message.from_user.id})
     await database.orders.insert_one(order)
     await bot.edit_message_text(
         _('Order is set.'),
-        chat_id, message_id,
+        call.message.chat.id, call.message.message_id,
         reply_markup=start_keyboard
     )
     await storage.set_state(user_id, None)
