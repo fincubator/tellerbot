@@ -34,13 +34,6 @@ from aiogram.contrib.middlewares.i18n import I18nMiddleware
 from aiogram.utils.exceptions import MessageNotModified
 
 
-SETTINGS = [
-    {'name': 'BitShares username', 'field': 'username', 'default': None}
-]
-
-CURRENCIES = ['USD', 'EUR', 'RUB']
-
-
 bot = Bot(token=config.TOKEN, loop=asyncio.get_event_loop())
 storage = MongoStorage()
 dp = Dispatcher(bot, storage=storage)
@@ -51,46 +44,37 @@ dp.middleware.setup(i18n)
 _ = i18n.gettext
 
 
-def user_handler(handler):
-    async def decorator(obj, *args, **kwargs):
-        user = await database.users.find_one({'id': obj.from_user.id})
-        return await handler(obj, user, *args, **kwargs)
-    return decorator
+skip_buttons = {}
+inline_skip_button = types.InlineKeyboardButton(text='Skip', callback_data='skip')
+
+start_keyboard = types.ReplyKeyboardMarkup(row_width=2)
+start_keyboard.add(
+    types.KeyboardButton('\U0001f4bb ' + _('Buy')),
+    types.KeyboardButton('\U0001f4b5 ' + _('Sell')),
+    types.KeyboardButton('\U0001f4d5 ' + _('Order book'))
+)
 
 
 def private_handler(*args, **kwargs):
     def decorator(handler):
-        new_handler = user_handler(handler)
         dp.register_message_handler(
-            new_handler,
+            handler,
             lambda message: message.chat.type == types.ChatType.PRIVATE,
             *args, **kwargs
         )
-        return new_handler
+        return handler
     return decorator
 
 
 @private_handler(commands=['start', 'help'])
-async def handle_start_command(message, user, *args, **kwargs):
-    new_user = {}
-    for setting in SETTINGS:
-        new_user[setting['field']] = setting['default']
-    await database.users.update_one(
-        {'id': message.from_user.id},
-        {'$setOnInsert': new_user},
-        upsert=True
-    )
-    keyboard = types.ReplyKeyboardMarkup(row_width=2)
-    keyboard.add(
-        types.KeyboardButton('\U0001f4bb ' + _('Buy')),
-        types.KeyboardButton('\U0001f4b5 ' + _('Sell')),
-        types.KeyboardButton('\u2699\ufe0f ' + _('Settings'))
-    )
+async def handle_start_command(message):
+    user = {'id': message.from_user.id}
+    await database.users.update_one(user, {'$setOnInsert': user}, upsert=True)
     await bot.send_message(
         message.chat.id,
         _("I can help you meet with people that you "
           "can swap money with.\n\nChoose one of the options on your keyboard."),
-        reply_markup=keyboard
+        reply_markup=start_keyboard
     )
 
 
@@ -121,14 +105,12 @@ async def orders_list(chat_id, start, quantity, message_id=None):
     lines = []
     buttons = []
     for i, order in enumerate(orders):
-        line = '{}. {} - {:.8g} {}/BTS'.format(
-            i + 1, order['username'], order['price'], order['currency'],
-        )
-        if order['min_limit'] or order['max_limit']:
-            line += ' ({:.8g}'.format(order['min_limit'])
-            if order['max_limit']:
-                line += ' - {:.8g}'.format(order['max_limit'])
-            line += ')'
+        line = f'{i + 1}. '
+        if order['type'] == 'sell':
+            line += '1 {} \U0001f846 {} {}'.format(order['crypto'], order['fiat'], order['price'])
+        else:
+            line += '{} {} \U0001f846 1 {}'.format(order['price'], order['fiat'], order['crypto'])
+        line += ' ({})'.format(order['username'])
         lines.append(line)
         buttons.append(
             types.InlineKeyboardButton(text='{}'.format(i + 1), callback_data='get_order {}'.format(order['_id']))
@@ -143,14 +125,13 @@ async def orders_list(chat_id, start, quantity, message_id=None):
     ) + '\n'.join(lines)
 
     if message_id is None:
-        await bot.send_message(chat_id, text, reply_markup=keyboard)
+        await bot.send_message(chat_id, text, reply_markup=keyboard, parse_mode='Markdown')
     else:
-        await bot.edit_message_text(text, chat_id, message_id, reply_markup=keyboard)
+        await bot.edit_message_text(text, chat_id, message_id, reply_markup=keyboard, parse_mode='Markdown')
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('orders'))
-@user_handler
-async def orders_button(call, user, *args, **kwargs):
+async def orders_button(call):
     start = max(0, int(call.data.split()[1]))
 
     quantity = await database.orders.count_documents({})
@@ -173,7 +154,7 @@ async def orders_button(call, user, *args, **kwargs):
 
 
 def order_handler(handler):
-    async def decorator(call, *args, **kwargs):
+    async def decorator(call):
         order_id = call.data.split()[1]
         order = await database.orders.find_one({'_id': ObjectId(order_id)})
 
@@ -184,67 +165,70 @@ def order_handler(handler):
             )
             return
 
-        new_handler = user_handler(handler)
-        return await new_handler(call, order, *args, **kwargs)
+        return await handler(call, order)
     return decorator
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('get_order'))
 @order_handler
-async def get_order_button(call, user, order, *args, **kwargs):
+async def get_order_button(call, order):
     keyboard = types.InlineKeyboardMarkup()
 
-    if order['user_id'] == user['id']:
+    if order['user_id'] == message.from_user.id:
         keyboard.row(
             types.InlineKeyboardButton(text=_('Delete'), callback_data='delete {}'.format(order['_id']))
         )
-    else:
-        keyboard.row(
-            types.InlineKeyboardButton(text=_('Accept'), callback_data='accept {}'.format(order['_id']))
-        )
 
-    location_message = await bot.send_location(call.message.chat.id, order['latitude'], order['longitude'])
+    if order.get('latitude') is not None and order.get('longitude') is not None:
+        location_message = await bot.send_location(
+            call.message.chat.id, order['latitude'], order['longitude']
+        )
+        location_message_id = location_message.message_id
+    else:
+        location_message_id = -1
 
     keyboard.row(
-        types.InlineKeyboardButton(text=_('Hide'), callback_data='hide {}'.format(location_message.message_id))
+        types.InlineKeyboardButton(text=_('Hide'), callback_data='hide {}'.format(location_message_id))
     )
 
     lines = [
-        _('Username: {username}'),
-        _('Price: {price:.8g} {currency}/BTS'),
-        _('Minimum limit: {min_limit:.8g}')
-    ]
-    if order['max_limit']:
-        lines.append(
-            _('Maximum limit: {max_limit:.8g}')
+        '{} {} {} for {}'.format(
+            order['username'],
+            _('sells') if order['type'] == 'sell' else _('buys'),
+            order['crypto'],
+            order['fiat']
         )
-    lines.append(
-        _('Possible distance: {radius:.2f}')
-    )
+    ]
+    if order.get('sum'):
+        lines.append(
+            _('Transaction sum:') +
+            ' {:.8g} {}'.format(order['sum'], order['sum_currency'])
+        )
+    if order.get('price'):
+        lines.append(
+            _('Price:') + ' {:.8g}'.format(order['price'])
+        )
+    if order.get('duration'):
+        lines.append(
+            _('Duration: {} days').format(order['duration'])
+        )
     if order['comments']:
         lines.append(
-            _('Comments: «{comments}»')
+            _('Comments:') + ' «{}»'.format(order['comments'])
         )
 
     await bot.answer_callback_query(callback_query_id=call.id)
     await bot.send_message(
         call.message.chat.id,
-        '\n'.join(lines).format(
-            username=order['username'],
-            price=order['price'],
-            currency=order['currency'],
-            min_limit=order['min_limit'],
-            max_limit=order['max_limit'],
-            radius=order['radius'],
-            comments=order['comments']
-        ),
-        reply_markup=keyboard
+        '\n'.join(lines),
+        reply_markup=keyboard,
+        parse_mode='Markdown'
     )
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('delete'))
 @order_handler
-async def delete_button(call, user, order, *args, **kwargs):
+async def delete_button(call, order):
     delete_result = await database.orders.delete_one({'_id': order['_id'], 'user_id': call.from_user.id})
     await bot.answer_callback_query(
         callback_query_id=call.id,
@@ -252,108 +236,155 @@ async def delete_button(call, user, order, *args, **kwargs):
     )
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('accept'))
-@order_handler
-async def accept_button(call, user, order, *args, **kwargs):
-    await database.users.update_one({'_id': user['_id']}, {'$set': {'order_chat_id': order['user_id']}})
-    await storage.set_state(call.from_user.id, 'message_for_seller')
-    await bot.answer_callback_query(callback_query_id=call.id)
-    await bot.send_message(
-        call.message.chat.id,
-        text=_("Send your message for the seller and I will forward it.")
-    )
+@dp.callback_query_handler(lambda call: call.data.startswith('hide'))
+async def hide_button(call):
+    await bot.delete_message(call.message.chat.id, call.message.message_id)
+    location_message_id = call.data.split()[1]
+    if location_message_id != '-1':
+        await bot.delete_message(call.message.chat.id, location_message_id)
 
 
-@private_handler(state='message_for_seller')
-async def forward_to_seller(message, user, state, *args, **kwargs):
-    result = await bot.forward_message(
-        chat_id=user['order_chat_id'],
-        from_chat_id=message.chat.id,
-        message_id=message.message_id
-    )
-    await database.users.update_one({'_id': user['_id']}, {'$unset': {'order_chat_id': True}})
+async def create_order(message, order_type):
+    if message.from_user.username:
+        username = '@' + message.from_user.username
+    else:
+        username = '[' + message.from_user.first_name
+        if message.from_user.last_name:
+            username += ' ' + message.from_user.last_name
+        username += f'](tg://user?id={message.from_user.id})'
+
+    await database.creation.insert_one({
+        'user_id': message.from_user.id,
+        'username': username,
+        'type': order_type
+    })
+    await storage.set_state(message.from_user.id, 'crypto')
+    if order_type == 'sell':
+        answer = _('What currency do you want to sell?')
+    else:
+        answer = _('What currency do you want to buy?')
 
     await bot.send_message(
         message.chat.id,
-        _("Your message was forwarded to the seller.") if result else
-        _("Couldn't forward your message to the seller.")
+        answer,
+        reply_markup=types.ReplyKeyboardRemove()
     )
-    await state.finish()
-
-
-@dp.callback_query_handler(lambda call: call.data.startswith('hide'))
-@user_handler
-async def hide_button(call, user, *args, **kwargs):
-    location_message_id = call.data.split()[1]
-    await bot.delete_message(call.message.chat.id, call.message.message_id)
-    await bot.delete_message(call.message.chat.id, location_message_id)
 
 
 @private_handler(commands=['buy'])
 @private_handler(
     lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4bb')
 )
-async def handle_buy(message, user, *args, **kwargs):
-    quantity = await database.orders.count_documents({})
-    await orders_list(message.chat.id, 0, quantity)
-
-
-async def start_order(message, user):
-    await database.creation.insert_one({
-        'user_id': message.from_user.id,
-        'username': user['username']
-    })
-
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(*CURRENCIES)
-
-    await bot.send_message(
-        message.chat.id,
-        _('What currency do you want to buy?'),
-        reply_markup=markup
-    )
-    await storage.set_state(message.from_user.id, 'currency')
+async def handle_buy(message):
+    await create_order(message, 'buy')
 
 
 @private_handler(commands=['sell'])
 @private_handler(
     lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4b5')
 )
-async def handle_sell(message, user, *args, **kwargs):
-    username = user.get('username')
-    if not username:
-        await bot.send_message(
-            message.chat.id,
-            _('Send your Bitshares username.')
-        )
-        await storage.set_state(user['id'], 'order_username')
-        return
+async def handle_sell(message):
+    await create_order(message, 'sell')
 
-    await start_order(message, user)
+
+@private_handler(commands=['book'])
+@private_handler(
+    lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4d5')
+)
+async def handle_book(message):
+    quantity = await database.orders.count_documents({})
+    await orders_list(message.chat.id, 0, quantity)
 
 
 @private_handler(state='*', commands=['cancel'])
-async def cancel_sell(message, user, state, *args, **kwargs):
+async def cancel_sell(message, state):
     await state.finish()
-    await bot.send_message(message.chat.id, _('Order is cancelled.'))
-
-
-@private_handler(state='currency')
-async def choose_currency(message, user, state, *args, **kwargs):
-    currency = message.text.upper()
-    if currency not in CURRENCIES:
-        await bot.send_message(message.chat.id, _("Choose from the options on reply keyboard."))
-        return
-
-    await database.creation.update_one(
-        {'user_id': message.from_user.id},
-        {'$set': {'currency': currency}}
-    )
-    await state.set_state('price')
     await bot.send_message(
         message.chat.id,
-        _('At what price do you want to sell BTS?'),
-        reply_markup=types.ReplyKeyboardRemove()
+        _('Order is cancelled.'),
+        reply_markup=start_keyboard
+    )
+
+
+@private_handler(state='crypto')
+async def choose_crypto(message, state):
+    currency = message.text.upper()
+
+    order = await database.creation.find_one_and_update(
+        {'user_id': message.from_user.id},
+        {'$set': {'crypto': currency}},
+        return_document=ReturnDocument.AFTER
+    )
+
+    await state.set_state('fiat')
+
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    markup.add('USD', 'EUR', 'RUB')
+
+    if order['type'] == 'sell':
+        answer = _('What currency do you want to buy?')
+    else:
+        answer = _('What currency do you want to sell?')
+    await bot.send_message(message.chat.id, answer, reply_markup=markup)
+
+
+def skip_button(stage):
+    def decorator(handler):
+        skip_buttons[stage] = handler
+        return handler
+    return decorator
+
+
+@dp.callback_query_handler(lambda call: call.data == 'skip')
+async def skip_button_handler(call):
+    state = await storage.get_state(call.from_user.id)
+    handler = skip_buttons.get(state)
+    if handler:
+        await handler(call.from_user_id, call.message.chat.id, call.message.message_id)
+        return
+
+
+@private_handler(state='fiat')
+async def choose_fiat(message, state):
+    currency = message.text.upper()
+
+    order = await database.creation.find_one_and_update(
+        {'user_id': message.from_user.id},
+        {'$set': {'fiat': currency}},
+        return_document=ReturnDocument.AFTER
+    )
+
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(
+        types.InlineKeyboardButton(
+            text=order['crypto'],
+            callback_data='sum crypto'
+        ),
+        types.InlineKeyboardButton(
+            text=order['fiat'],
+            callback_data='sum fiat'
+        )
+    )
+    keyboard.row(inline_skip_button)
+
+    await state.set_state('sum')
+    await bot.send_message(
+        message.chat.id,
+        _('Send order sum in...'),
+        reply_markup=keyboard
+    )
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('sum'))
+async def choose_sum_currency(call):
+    sum_currency = call.data.split()[1]
+    await database.creation.update_one(
+        {'user_id': call.from_user.id},
+        {'$set': {'sum_currency': sum_currency}}
+    )
+    await bot.answer_callback_query(
+        callback_query_id=call.id,
+        text=_("Currency of sum set. Send sum in the next message.")
     )
 
 
@@ -361,128 +392,270 @@ async def validate_money(data, chat_id):
     try:
         money = float(data)
     except ValueError:
-        await bot.send_message(
-            chat_id,
-            _("Send decimal number or /cancel")
-        )
+        await bot.send_message(chat_id, _("Send decimal number."))
         return
     if money <= 0:
-        await bot.send_message(
-            chat_id,
-            _("Send positive number or /cancel")
-        )
+        await bot.send_message(chat_id, _("Send positive number."))
         return
 
     return money
 
 
+@skip_button('sum')
+async def skip_sum(user_id, chat_id, message_id):
+    order = await database.creation.find_one_and_update(
+        {
+            'user_id': user_id,
+            'sum_currency': {'$exists': True},
+            'sum': {'$exists': False}
+        },
+        {'$unset': {'sum_currency': True}},
+        return_document=ReturnDocument.AFTER
+    )
+    await storage.set_state(user_id, 'price')
+    await bot.edit_message_text(
+        _('At what price do you want to sell?') if order['type'] == 'sell' else
+        _('At what price do you want to buy?'),
+        chat_id, message_id,
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+    )
+
+
+@private_handler(state='sum')
+async def choose_sum(message, state):
+    transaction_sum = await validate_money(message.text, message.chat.id)
+    if not transaction_sum:
+        return
+
+    order = await database.creation.find_one_and_update(
+        {
+            'user_id': message.from_user.id,
+            'sum_currency': {'$exists': True}
+        },
+        {'$set': {'sum': transaction_sum}},
+        return_document=ReturnDocument.AFTER
+    )
+    if not order:
+        await bot.send_message(message.chat.id, _('Choose currency of sum with buttons.'))
+
+    await state.set_state('price')
+    await bot.send_message(
+        message.chat.id,
+        _('At what price do you want to sell?') if order['type'] == 'sell' else
+        _('At what price do you want to buy?'),
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+    )
+
+
+@skip_button('price')
+async def skip_price(user_id, chat_id, message_id):
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(
+        types.InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
+        types.InlineKeyboardButton(text=_('Cashless'), callback_data='cashless type')
+    )
+    keyboard.row(inline_skip_button)
+    await storage.set_state(user_id, 'payment_type')
+    await bot.edit_message_text(
+        _('Choose payment type.'),
+        chat_id, message_id,
+        reply_markup=keyboard
+    )
+
+
 @private_handler(state='price')
-async def choose_price(message, user, state, *args, **kwargs):
+async def choose_price(message, state):
     price = await validate_money(message.text, message.chat.id)
     if not price:
         return
-
     await database.creation.update_one(
         {'user_id': message.from_user.id},
         {'$set': {'price': price}}
     )
-    await state.set_state('min_limit')
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(
+        types.InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
+        types.InlineKeyboardButton(text=_('Cashless'), callback_data='cashless type')
+    )
+    keyboard.row(inline_skip_button)
+    await state.set_state('payment_type')
     await bot.send_message(
         message.chat.id,
-        _('Would you like to have minimum amount limit? (Send "No" to skip)'),
-        reply_markup=types.ReplyKeyboardRemove()
+        _('Choose payment type.'),
+        reply_markup=keyboard
     )
 
 
-@private_handler(state='min_limit')
-async def choose_min(message, user, state, *args, **kwargs):
-    if message.text.lower() == 'no':
-        min_limit = 0
-    else:
-        min_limit = await validate_money(message.text, message.chat.id)
-        if not min_limit:
-            return
-
-    await database.creation.update_one(
-        {'user_id': message.from_user.id},
-        {'$set': {'min_limit': min_limit}}
+@skip_button('payment_type')
+async def skip_payment_type(user_id, chat_id, message_id):
+    await storage.set_state(user_id, 'payment_method')
+    await bot.edit_message_text(
+        _('Send payment method.'),
+        chat_id, message_id,
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
     )
-    await state.set_state('max_limit')
+
+
+@private_handler(state='payment_type')
+async def message_in_payment_type(message, state):
     await bot.send_message(
         message.chat.id,
-        _('Would you like to have maximum amount limit? (Send "No" to skip)'),
-        reply_markup=types.ReplyKeyboardRemove()
+        _('Press on one of the buttons to choose payment type.')
     )
 
 
-@private_handler(state='max_limit')
-async def choose_max(message, user, state, *args, **kwargs):
-    if message.text.lower() == 'no':
-        max_limit = None
-    else:
-        max_limit = await validate_money(message.text, message.chat.id)
-        if not max_limit:
-            return
-
-    await database.creation.update_one(
-        {'user_id': message.from_user.id},
-        {'$set': {'max_limit': max_limit}}
-    )
-    await state.set_state('location')
-    await bot.send_message(
-        message.chat.id,
+@dp.callback_query_handler(lambda call: call.data == 'cash type')
+async def cash_payment_type(call):
+    await storage.set_state(call.from_user.id, 'location')
+    await bot.edit_message_text(
         _('Send location of a preferred meeting point.'),
-        reply_markup=types.ReplyKeyboardRemove()
+        message.chat.id, message.message_id
     )
 
 
 @private_handler(state='location', content_types=types.ContentType.TEXT)
-async def wrong_location(message, user, state, *args, **kwargs):
-    await bot.send_message(message.chat.id, _("Send location object with point on the map in message."))
+async def wrong_location(message, state):
+    await bot.send_message(
+        message.chat.id,
+        _('Send location object with point on the map.')
+    )
+
+
+@skip_button('location')
+async def skip_location(user_id, chat_id, message_id):
+    await storage.set_state(user_id, 'duration')
+    await bot.edit_message_text(
+        _('Send duration of order in days.'),
+        chat_id, message_id,
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+    )
 
 
 @private_handler(state='location', content_types=types.ContentType.LOCATION)
-async def choose_location(message, user, state, *args, **kwargs):
+async def choose_location(message, state):
     location = message.location
     await database.creation.update_one(
         {'user_id': message.from_user.id},
         {'$set': {'latitude': location.latitude, 'longitude': location.longitude}}
     )
-    await state.set_state('radius')
+    await state.set_state('duration')
     await bot.send_message(
         message.chat.id,
-        _('Send a distance you are ready to pass.'),
-        reply_markup=types.ReplyKeyboardRemove()
+        _('Send duration of order in days.'),
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
     )
 
 
-@private_handler(state='radius')
-async def choose_radius(message, user, state, *args, **kwargs):
-    radius = await validate_money(message.text, message.chat.id)
-    if not radius:
+@dp.callback_query_handler(lambda call: call.data == 'cashless type')
+async def cashless_payment_type(call):
+    await storage.set_state(call.from_user.id, 'payment_method_cashless')
+    await bot.edit_message_text(
+        _('Send payment method.'),
+        message.chat.id, message.message_id
+    )
+
+
+@skip_button('payment_method')
+async def skip_payment_method(user_id, chat_id, message_id):
+    await storage.set_state(user_id, 'location')
+    await bot.edit_message_text(
+        _('Send location of a preferred meeting point.'),
+        chat_id, message_id,
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+    )
+
+
+@private_handler(state='payment_method')
+async def choose_payment_method(message, state):
+    order = await database.creation.find_one_and_update(
+        {'user_id': message.from_user.id},
+        {'$set': {'payment_method': message.text}},
+        return_document=ReturnDocument.AFTER
+    )
+    await state.set_state('duration')
+    await bot.send_message(
+        message.chat.id,
+        _('Send duration of order in days.'),
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+    )
+
+
+@skip_button('payment_method_cashless')
+async def skip_payment_method_cashless(user_id, chat_id, message_id):
+    await storage.set_state(user_id, 'duration')
+    await bot.edit_message_text(
+        _('Send duration of order in days.'),
+        chat_id, message_id,
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+    )
+
+
+@private_handler(state='payment_method_cashless')
+async def choose_payment_method_cashless(message, state):
+    order = await database.creation.find_one_and_update(
+        {'user_id': message.from_user.id},
+        {'$set': {'payment_method': message.text}},
+        return_document=ReturnDocument.AFTER
+    )
+    await state.set_state('duration')
+    await bot.send_message(
+        message.chat.id,
+        _('Send duration of order in days.'),
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+    )
+
+
+@skip_button('duration')
+async def skip_duration(user_id, chat_id, message_id):
+    await storage.set_state(user_id, 'comments')
+    await bot.edit_message_text(
+        _('Add any additional comments.'),
+        chat_id, message_id,
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
+    )
+
+
+@private_handler(state='duration')
+async def choose_duration(message, state):
+    try:
+        duration = int(message.text)
+        if duration <= 0:
+            raise ValueError
+    except ValueError:
+        await bot.send_message(message.chat.id, _('Send integer.'))
         return
 
     await database.creation.update_one(
         {'user_id': message.from_user.id},
-        {'$set': {'radius': radius}}
+        {'$set': {'duration': duration}}
     )
+
     await state.set_state('comments')
     await bot.send_message(
         message.chat.id,
-        _('Add any additional comments. (Send "No" to skip)'),
-        reply_markup=types.ReplyKeyboardRemove()
+        _('Add any additional comments.'),
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_button])
     )
 
 
+@skip_button('comments')
+async def skip_comments(user_id, chat_id, message_id):
+    order = await database.creation.find_one_and_delete({'user_id': message.from_user.id})
+    await database.orders.insert_one(order)
+    await bot.edit_message_text(
+        _('Order is set.'),
+        chat_id, message_id,
+        reply_markup=start_keyboard
+    )
+    await storage.set_state(user_id, None)
+
+
 @private_handler(state='comments')
-async def choose_comments(message, user, state, *args, **kwargs):
+async def choose_comments(message, state):
     comments = message.text
     if len(comments) > 150:
         await bot.send_message(message.chat.id, _("Comment should have less than 150 characters (your comment has {} characters).").format(len(comments)))
         return
-
-    if comments.lower() == "no":
-        comments = None
 
     order = await database.creation.find_one_and_delete({'user_id': message.from_user.id})
     order['comments'] = comments
@@ -492,72 +665,6 @@ async def choose_comments(message, user, state, *args, **kwargs):
     await state.finish()
 
 
-async def update_username(message, user):
-    username = message.text
-    if not username:
-        await bot.send_message(message.chat.id, 'This is not a valid username.')
-        return
-
-    result = await database.users.find_one_and_update(
-        {'_id': user['_id']},
-        {'$set': {'username': username}},
-        return_document=ReturnDocument.AFTER
-    )
-    return result
-
-
-@private_handler(state='username')
-async def set_username(message, user, state, *args, **kwargs):
-    user = await update_username(message, user)
-    if user is not None:
-        await state.finish()
-        await bot.send_message(message.chat.id, 'Username set.')
-
-
-@private_handler(state='order_username')
-async def order_username(message, user, state, *args, **kwargs):
-    user = await update_username(message, user)
-    if user is not None:
-        await start_order(message, user)
-
-
-@dp.callback_query_handler(lambda call: call.data == 'bitshares username')
-@user_handler
-async def settings_username(call, user, *args, **kwargs):
-    await bot.answer_callback_query(callback_query_id=call.id)
-    reply = await bot.send_message(
-        call.message.chat.id,
-        'Send your Bitshares username.'
-    )
-    await storage.set_state(call.from_user.id, 'username')
-
-
-@private_handler(commands=['settings'])
-@private_handler(
-    lambda msg: msg.text.encode('unicode-escape').startswith(b'\\u2699\\ufe0f')
-)
-async def handle_settings(message, user, *args, **kwargs):
-    user_info = []
-    keyboard = types.InlineKeyboardMarkup(row_width=2)
-    for setting in SETTINGS:
-        option = user.get(setting['field'])
-        if option is None:
-            option = '\U0001f6ab'
-        user_info.append('{}: {}'.format(_(setting['name']), option))
-        keyboard.add(
-            types.InlineKeyboardButton(
-                text=_(setting['name']),
-                callback_data=setting['name'].lower()
-            )
-        )
-    await bot.send_message(
-        message.chat.id,
-        _('Choose which option you would like to change.') + '\n\n' +
-        '\n'.join(user_info),
-        reply_markup=keyboard
-    )
-
-
 @private_handler()
-async def handle_default(message, user, *args, **kwargs):
+async def handle_default(message):
     await bot.send_message(message.chat.id, _('Unknown command.'))
