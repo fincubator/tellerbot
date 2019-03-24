@@ -38,7 +38,6 @@ bot = Bot(token=config.TOKEN, loop=asyncio.get_event_loop())
 storage = MongoStorage()
 dp = Dispatcher(bot, storage=storage)
 
-
 i18n = I18nMiddleware('bot', config.LOCALES_DIR)
 dp.middleware.setup(i18n)
 _ = i18n.gettext
@@ -296,6 +295,16 @@ async def handle_book(message):
 
 @private_handler(state='*', commands=['cancel'])
 async def cancel_sell(message, state):
+    order = await database.creation.delete_one({'user_id': message.from_user.id})
+
+    if not order.deleted_count:
+        await bot.send_message(
+            message.chat.id,
+            _('You are not creating order.'),
+            reply_markup=start_keyboard
+        )
+        return
+
     await state.finish()
     await bot.send_message(
         message.chat.id,
