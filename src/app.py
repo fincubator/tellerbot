@@ -18,7 +18,6 @@
 
 import config
 from .bot import bot, dp
-from .logger import logger, log_update
 
 from aiogram.utils.executor import start_webhook
 

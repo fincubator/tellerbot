@@ -23,7 +23,8 @@ import re
 import math
 import json
 import asyncio
-from uuid import uuid4
+import logging
+from string import ascii_letters
 
 from pymongo.collection import ReturnDocument
 from bson.objectid import ObjectId
@@ -32,6 +33,7 @@ from aiogram import Bot, executor, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.middlewares.i18n import I18nMiddleware
+from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.utils.exceptions import MessageNotModified
 
 
@@ -42,6 +44,9 @@ dp = Dispatcher(bot, storage=storage)
 i18n = I18nMiddleware('bot', config.LOCALES_DIR)
 dp.middleware.setup(i18n)
 _ = i18n.gettext
+
+logging.basicConfig(level=logging.INFO)
+dp.middleware.setup(LoggingMiddleware())
 
 inline_skip_button = types.InlineKeyboardButton(text='Skip', callback_data='skip')
 
@@ -365,6 +370,7 @@ async def cancel_sell(message, state):
         )
         return
 
+
     await state.finish()
     await bot.send_message(
         message.chat.id,
@@ -375,6 +381,9 @@ async def cancel_sell(message, state):
 
 @private_handler(state='crypto')
 async def choose_crypto(message, state):
+    if not all(ch in ascii_letters for ch in message.text):
+        return _('Currency may only contain letters.')
+
     currency = message.text.upper()
 
     order = await database.creation.find_one_and_update(
@@ -397,6 +406,9 @@ async def choose_crypto(message, state):
 
 @private_handler(state='fiat')
 async def choose_fiat(message, state):
+    if not all(ch in ascii_letters for ch in message.text):
+        return _('Currency may only contain letters.')
+
     currency = message.text.upper()
 
     order = await database.creation.find_one_and_update(
