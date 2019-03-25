@@ -16,11 +16,6 @@
 # along with BailsBot.  If not, see <https://www.gnu.org/licenses/>.
 
 from motor.motor_asyncio import AsyncIOMotorClient
-
-import asyncio
-import logging
-import typing
-
 from aiogram.dispatcher.storage import BaseStorage
 
 client = AsyncIOMotorClient()

@@ -19,9 +19,7 @@
 import config
 from .database import database, MongoStorage
 
-import re
 import math
-import json
 import asyncio
 import logging
 from string import ascii_letters
@@ -29,9 +27,8 @@ from string import ascii_letters
 from pymongo.collection import ReturnDocument
 from bson.objectid import ObjectId
 
-from aiogram import Bot, executor, types
+from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
-from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.middlewares.i18n import I18nMiddleware
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.utils.exceptions import MessageNotModified
@@ -370,7 +367,6 @@ async def cancel_sell(message, state):
         )
         return
 
-
     await state.finish()
     await bot.send_message(
         message.chat.id,
@@ -633,10 +629,9 @@ async def skip_payment_method(call, state):
 
 @private_handler(state='payment_method')
 async def choose_payment_method(message, state):
-    order = await database.creation.find_one_and_update(
+    await database.creation.update_one(
         {'user_id': message.from_user.id},
-        {'$set': {'payment_method': message.text}},
-        return_document=ReturnDocument.AFTER
+        {'$set': {'payment_method': message.text}}
     )
     await state.set_state('duration')
     await bot.send_message(
@@ -658,7 +653,7 @@ async def skip_payment_method_cashless(call, state):
 
 @private_handler(state='payment_method_cashless')
 async def choose_payment_method_cashless(message, state):
-    order = await database.creation.find_one_and_update(
+    await database.creation.update_one(
         {'user_id': message.from_user.id},
         {'$set': {'payment_method': message.text}},
         return_document=ReturnDocument.AFTER
@@ -722,7 +717,10 @@ async def skip_comments(call, state):
 async def choose_comments(message, state):
     comments = message.text
     if len(comments) > 150:
-        await bot.send_message(message.chat.id, _("Comment should have less than 150 characters (your comment has {} characters).").format(len(comments)))
+        await bot.send_message(
+            message.chat.id,
+            _("Comment should have less than 150 characters (your comment has {} characters).").format(len(comments))
+        )
         return
 
     order = await database.creation.find_one_and_delete({'user_id': message.from_user.id})
