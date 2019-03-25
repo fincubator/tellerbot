@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-03-24 18:49+0300\n"
+"POT-Creation-Date: 2019-03-25 06:33+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
@@ -19,19 +19,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.6.0\n"
 
-#: src/bot.py:49
+#: src/bot.py:50
 msgid "Buy"
 msgstr "Купить"
 
-#: src/bot.py:50
+#: src/bot.py:51
 msgid "Sell"
 msgstr "Продать"
 
-#: src/bot.py:51
+#: src/bot.py:52
+msgid "My orders"
+msgstr "Мои заказы"
+
+#: src/bot.py:53
 msgid "Order book"
 msgstr "Список заказов"
 
-#: src/bot.py:72
+#: src/bot.py:74
 msgid ""
 "I can help you meet with people that you can swap money with.\n"
 "\n"
@@ -42,155 +46,163 @@ msgstr ""
 "\n"
 "Выберите один из вариантов на вашей клавиатуре."
 
-#: src/bot.py:92
+#: src/bot.py:94
 msgid "There are no orders."
 msgstr "Нет заказов."
 
-#: src/bot.py:119
-msgid "[Page {} of {}]\n"
-msgstr "[Страница {} из {}]\n"
+#: src/bot.py:128
+msgid "Page {} of {}"
+msgstr "Страница {} из {}"
 
-#: src/bot.py:139
+#: src/bot.py:145
 msgid "There are no more orders."
 msgstr "Больше нет заказов."
 
-#: src/bot.py:149
+#: src/bot.py:155
 msgid "There are no previous orders."
 msgstr "Нет предыдущих заказов."
 
-#: src/bot.py:161
+#: src/bot.py:179 src/bot.py:270
 msgid "Order is not found."
 msgstr "Заказ не найден."
 
-#: src/bot.py:176
+#: src/bot.py:192
 msgid "Delete"
 msgstr "Удалить"
 
-#: src/bot.py:188
+#: src/bot.py:205
 msgid "Hide"
 msgstr "Скрыть"
 
-#: src/bot.py:194
+#: src/bot.py:212
 msgid "sells"
 msgstr "продаёт"
 
-#: src/bot.py:194
+#: src/bot.py:212
 msgid "buys"
 msgstr "покупает"
 
-#: src/bot.py:201
+#: src/bot.py:220 src/bot.py:225
 msgid "Transaction sum:"
 msgstr "Сумма транзакции:"
 
-#: src/bot.py:206
+#: src/bot.py:230
 msgid "Price:"
 msgstr "Цена:"
 
-#: src/bot.py:210
+#: src/bot.py:234
+msgid "Payment method:"
+msgstr "Способ оплаты:"
+
+#: src/bot.py:238
 msgid "Duration: {} days"
 msgstr "Продолжительность: {} дней"
 
-#: src/bot.py:214
+#: src/bot.py:242
 msgid "Comments:"
 msgstr "Комментарии:"
 
-#: src/bot.py:232
+#: src/bot.py:265
+msgid "Send order's ID as an argument."
+msgstr "Отправьте ID заказа как аргумент."
+
+#: src/bot.py:281
 msgid "Order was deleted."
 msgstr "Заказ удалён."
 
-#: src/bot.py:232
+#: src/bot.py:281
 msgid "Couldn't delete order."
 msgstr "Не удалось удалить заказ."
 
-#: src/bot.py:260 src/bot.py:334
+#: src/bot.py:309 src/bot.py:394
 msgid "What currency do you want to sell?"
 msgstr "Какую валюту вы хотите продать?"
 
-#: src/bot.py:262 src/bot.py:332
+#: src/bot.py:311 src/bot.py:392
 msgid "What currency do you want to buy?"
 msgstr "Какую валюту вы хотите купить?"
 
-#: src/bot.py:303
+#: src/bot.py:363
 msgid "You are not creating order."
 msgstr "Вы не создаёте заказ."
 
-#: src/bot.py:311
+#: src/bot.py:371
 msgid "Order is cancelled."
 msgstr "Заказ отменён."
 
-#: src/bot.py:364
+#: src/bot.py:424
 msgid "Send order sum in..."
 msgstr "Отправьте сумму заказа в..."
 
-#: src/bot.py:378
+#: src/bot.py:438
 msgid "Currency of sum set. Send sum in the next message."
 msgstr "Валюта суммы установлена. Отправьте сумму в следующем сообщении."
 
-#: src/bot.py:386
+#: src/bot.py:446
 msgid "Send decimal number."
 msgstr "Отправьте десятичное число."
 
-#: src/bot.py:389
+#: src/bot.py:449
 msgid "Send positive number."
 msgstr "Отправьте положительное число."
 
-#: src/bot.py:408 src/bot.py:435
+#: src/bot.py:468 src/bot.py:495
 msgid "At what price do you want to sell?"
 msgstr "По какой цене вы хотите продать?"
 
-#: src/bot.py:409 src/bot.py:436
+#: src/bot.py:469 src/bot.py:496
 msgid "At what price do you want to buy?"
 msgstr "По какой цене вы хотите купить?"
 
-#: src/bot.py:430
+#: src/bot.py:490
 msgid "Choose currency of sum with buttons."
 msgstr "Выберите валюту суммы кнопками."
 
-#: src/bot.py:445 src/bot.py:468
+#: src/bot.py:505 src/bot.py:528
 msgid "Cash"
 msgstr "Наличная"
 
-#: src/bot.py:446 src/bot.py:469
+#: src/bot.py:506 src/bot.py:529
 msgid "Cashless"
 msgstr "Безналичная"
 
-#: src/bot.py:451 src/bot.py:475
+#: src/bot.py:511 src/bot.py:535
 msgid "Choose payment type."
 msgstr "Выберите тип оплаты."
 
-#: src/bot.py:484 src/bot.py:544
+#: src/bot.py:544 src/bot.py:606
 msgid "Send payment method."
-msgstr "Отправьте метод оплаты."
+msgstr "Отправьте способ оплаты."
 
-#: src/bot.py:494
+#: src/bot.py:554
 msgid "Press on one of the buttons to choose payment type."
 msgstr "Нажмите на одну из кнопок для выбора типа оплаты."
 
-#: src/bot.py:502 src/bot.py:553
+#: src/bot.py:562 src/bot.py:616
 msgid "Send location of a preferred meeting point."
 msgstr "Отправьте локацию предпочитаемого места встречи."
 
-#: src/bot.py:511
+#: src/bot.py:572
 msgid "Send location object with point on the map."
 msgstr "Отправьте объект локации с точкой на карте."
 
-#: src/bot.py:519 src/bot.py:535 src/bot.py:569 src/bot.py:578 src/bot.py:594
+#: src/bot.py:581 src/bot.py:597 src/bot.py:632 src/bot.py:641 src/bot.py:657
 msgid "Send duration of order in days."
 msgstr "Отправьте продолжительность заказа в днях."
 
-#: src/bot.py:603 src/bot.py:627
+#: src/bot.py:666 src/bot.py:690
 msgid "Add any additional comments."
 msgstr "Добавьте какие-либо дополнительные комментарии."
 
-#: src/bot.py:616
+#: src/bot.py:679
 msgid "Send integer."
 msgstr "Отправьте целое число."
 
-#: src/bot.py:637 src/bot.py:655
+#: src/bot.py:703 src/bot.py:722
 msgid "Order is set."
 msgstr "Заказ установлен."
 
-#: src/bot.py:648
+#: src/bot.py:713
 msgid ""
 "Comment should have less than 150 characters (your comment has {} "
 "characters)."
@@ -198,7 +210,6 @@ msgstr ""
 "Комментарий должен содержать меньше 150 символов (ваш комментарий "
 "содержит {} символов)."
 
-#: src/bot.py:661
+#: src/bot.py:730
 msgid "Unknown command."
 msgstr "Неизвестная команда."
-

@@ -23,6 +23,7 @@ import re
 import math
 import json
 import asyncio
+from uuid import uuid4
 
 from pymongo.collection import ReturnDocument
 from bson.objectid import ObjectId
@@ -48,6 +49,7 @@ start_keyboard = types.ReplyKeyboardMarkup(row_width=2)
 start_keyboard.add(
     types.KeyboardButton('\U0001f4bb ' + _('Buy')),
     types.KeyboardButton('\U0001f4b5 ' + _('Sell')),
+    types.KeyboardButton('\U0001f464 ' + _('My orders')),
     types.KeyboardButton('\U0001f4d5 ' + _('Order book'))
 )
 
@@ -75,15 +77,15 @@ async def handle_start_command(message):
     )
 
 
-async def orders_list(chat_id, start, quantity, message_id=None):
+async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=None):
     keyboard = types.InlineKeyboardMarkup(row_width=5)
 
     inline_orders_buttons = (
         types.InlineKeyboardButton(
-            text='\u2b05\ufe0f', callback_data='orders {}'.format(start - config.ORDERS_COUNT)
+            text='\u2b05\ufe0f', callback_data='{} {}'.format(buttons_data, start - config.ORDERS_COUNT)
         ),
         types.InlineKeyboardButton(
-            text='\u27a1\ufe0f', callback_data='orders {}'.format(start + config.ORDERS_COUNT)
+            text='\u27a1\ufe0f', callback_data='{} {}'.format(buttons_data, start + config.ORDERS_COUNT)
         )
     )
 
@@ -96,17 +98,24 @@ async def orders_list(chat_id, start, quantity, message_id=None):
             await bot.edit_message_text(text, chat_id, message_id, reply_markup=keyboard)
         return
 
-    all_orders = await database.orders.find().to_list(length=start + config.ORDERS_COUNT)
+    all_orders = await database.orders.find(query).to_list(length=start + config.ORDERS_COUNT)
     orders = all_orders[start:]
 
     lines = []
     buttons = []
     for i, order in enumerate(orders):
         line = f'{i + 1}. '
-        if order['type'] == 'sell':
-            line += '1 {} \U0001f846 {:.2f} {}'.format(order['crypto'], order['price'], order['fiat'])
+        price = order.get('price')
+        if order['type']:
+            if price:
+                line += '1 {} \U0001f846 {:.2f} {}'.format(order['crypto'], price, order['fiat'])
+            else:
+                line += '{} \U0001f846 {}'.format(order['crypto'], order['fiat'])
         else:
-            line += '{:.2f} {} \U0001f846 1 {}'.format(order['price'], order['fiat'], order['crypto'])
+            if price:
+                line += '{:.2f} {} \U0001f846 1 {}'.format(price, order['fiat'], order['crypto'])
+            else:
+                line += '{} \U0001f846 {}'.format(order['fiat'], order['crypto'])
         line += ' ({})'.format(order['username'])
         lines.append(line)
         buttons.append(
@@ -116,10 +125,10 @@ async def orders_list(chat_id, start, quantity, message_id=None):
     keyboard.add(*buttons)
     keyboard.row(*inline_orders_buttons)
 
-    text = _('[Page {} of {}]\n').format(
+    text = '[' + _('Page {} of {}').format(
         math.ceil(start / config.ORDERS_COUNT) + 1,
         math.ceil(quantity / config.ORDERS_COUNT)
-    ) + '\n'.join(lines)
+    ) + ']\n' + '\n'.join(lines)
 
     if message_id is None:
         await bot.send_message(chat_id, text, reply_markup=keyboard, parse_mode='Markdown')
@@ -127,11 +136,8 @@ async def orders_list(chat_id, start, quantity, message_id=None):
         await bot.edit_message_text(text, chat_id, message_id, reply_markup=keyboard, parse_mode='Markdown')
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('orders'), state='*')
-async def orders_button(call):
-    start = max(0, int(call.data.split()[1]))
-
-    quantity = await database.orders.count_documents({})
+async def show_orders(call, query, start, buttons_data):
+    quantity = await database.orders.count_documents(query)
 
     if start >= quantity > 0:
         await bot.answer_callback_query(
@@ -142,12 +148,24 @@ async def orders_button(call):
 
     try:
         await bot.answer_callback_query(callback_query_id=call.id)
-        await orders_list(call.message.chat.id, start, quantity, message_id=call.message.message_id)
+        await orders_list(query, call.message.chat.id, start, quantity, buttons_data, message_id=call.message.message_id)
     except MessageNotModified:
         await bot.answer_callback_query(
             callback_query_id=call.id,
             text=_("There are no previous orders.")
         )
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('orders'), state='*')
+async def orders_button(call):
+    start = max(0, int(call.data.split()[1]))
+    await show_orders(call, {'user_id': {'$ne': call.from_user.id}}, start, 'orders')
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('my_orders'), state='*')
+async def my_orders_button(call):
+    start = max(0, int(call.data.split()[1]))
+    await show_orders(call, {'user_id': call.from_user.id}, start, 'my_orders')
 
 
 def order_handler(handler):
@@ -166,32 +184,32 @@ def order_handler(handler):
     return decorator
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('get_order'), state='*')
-@order_handler
-async def get_order_button(call, order):
+async def show_order(order, chat_id, user_id, can_hide):
     keyboard = types.InlineKeyboardMarkup()
 
-    if order['user_id'] == call.from_user.id:
+    if order['user_id'] == user_id:
         keyboard.row(
             types.InlineKeyboardButton(text=_('Delete'), callback_data='delete {}'.format(order['_id']))
         )
 
     if order.get('latitude') is not None and order.get('longitude') is not None:
         location_message = await bot.send_location(
-            call.message.chat.id, order['latitude'], order['longitude']
+            chat_id, order['latitude'], order['longitude']
         )
         location_message_id = location_message.message_id
     else:
         location_message_id = -1
 
-    keyboard.row(
-        types.InlineKeyboardButton(text=_('Hide'), callback_data='hide {}'.format(location_message_id))
-    )
+    if can_hide:
+        keyboard.row(
+            types.InlineKeyboardButton(text=_('Hide'), callback_data='hide {}'.format(location_message_id))
+        )
 
     lines = [
-        '{} {} {} for {}'.format(
+        '{}{} {} {} for {}\n'.format(
+            'ID: {}\n'.format(order['_id']) if can_hide else '',
             order['username'],
-            _('sells') if order['type'] == 'sell' else _('buys'),
+            _('sells') if order['type'] else _('buys'),
             order['crypto'],
             order['fiat']
         )
@@ -200,7 +218,7 @@ async def get_order_button(call, order):
         if order['sum_currency'] == 'fiat':
             lines.append(
                 _('Transaction sum:') +
-                ' {:.2g} {}'.format(order['sum'], order['fiat'])
+                ' {:.2f} {}'.format(order['sum'], order['fiat'])
             )
         elif order['sum_currency'] == 'crypto':
             lines.append(
@@ -209,24 +227,49 @@ async def get_order_button(call, order):
             )
     if order.get('price'):
         lines.append(
-            _('Price:') + ' {:.2f}'.format(order['price'])
+            _('Price:') + ' {:.2f} {}'.format(order['price'], order['fiat'])
+        )
+    if order.get('payment_method'):
+        lines.append(
+            _('Payment method:') + ' ' + order['payment_method']
         )
     if order.get('duration'):
         lines.append(
             _('Duration: {} days').format(order['duration'])
         )
-    if order['comments']:
+    if order.get('comments'):
         lines.append(
             _('Comments:') + ' «{}»'.format(order['comments'])
         )
-
-    await bot.answer_callback_query(callback_query_id=call.id)
     await bot.send_message(
-        call.message.chat.id,
+        chat_id,
         '\n'.join(lines),
         reply_markup=keyboard,
         parse_mode='Markdown'
     )
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('get_order'), state='*')
+@order_handler
+async def get_order_button(call, order):
+    await show_order(order, call.message.chat.id, call.from_user.id, True)
+    await bot.answer_callback_query(callback_query_id=call.id)
+
+
+@private_handler(commands=['id'])
+@private_handler(regexp='ID: [a-f0-9]{24}')
+async def get_order_command(message):
+    try:
+        order_id = message.text.split()[1]
+    except IndexError:
+        await bot.send_message(message.chat.id, _("Send order's ID as an argument."))
+        return
+
+    order = await database.orders.find_one({'_id': ObjectId(order_id)})
+    if not order:
+        await bot.send_message(message.chat.id, _('Order is not found.'))
+        return
+    await show_order(order, message.chat.id, message.from_user.id, False)
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('delete'), state='*')
@@ -262,7 +305,7 @@ async def create_order(message, order_type):
         'type': order_type
     })
     await storage.set_state(message.from_user.id, 'crypto')
-    if order_type == 'sell':
+    if order_type:
         answer = _('What currency do you want to sell?')
     else:
         answer = _('What currency do you want to buy?')
@@ -279,7 +322,7 @@ async def create_order(message, order_type):
     lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4bb')
 )
 async def handle_buy(message):
-    await create_order(message, 'buy')
+    await create_order(message, order_type=0)
 
 
 @private_handler(commands=['sell'])
@@ -287,7 +330,17 @@ async def handle_buy(message):
     lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4b5')
 )
 async def handle_sell(message):
-    await create_order(message, 'sell')
+    await create_order(message, order_type=1)
+
+
+@private_handler(commands=['my'])
+@private_handler(
+    lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f464')
+)
+async def handle_my_orders(message):
+    query = {'user_id': message.from_user.id}
+    quantity = await database.orders.count_documents(query)
+    await orders_list(query, message.chat.id, 0, quantity, 'my_orders')
 
 
 @private_handler(commands=['book'])
@@ -295,8 +348,9 @@ async def handle_sell(message):
     lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4d5')
 )
 async def handle_book(message):
-    quantity = await database.orders.count_documents({})
-    await orders_list(message.chat.id, 0, quantity)
+    query = {'user_id': {'$ne': message.from_user.id}}
+    quantity = await database.orders.count_documents(query)
+    await orders_list(query, message.chat.id, 0, quantity, 'orders')
 
 
 @private_handler(state='*', commands=['cancel'])
@@ -334,7 +388,7 @@ async def choose_crypto(message, state):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     markup.add('USD', 'EUR', 'RUB')
 
-    if order['type'] == 'sell':
+    if order['type']:
         answer = _('What currency do you want to buy?')
     else:
         answer = _('What currency do you want to sell?')
@@ -411,7 +465,7 @@ async def skip_sum(call, state):
     )
     await state.set_state('price')
     await bot.edit_message_text(
-        _('At what price do you want to sell?') if order['type'] == 'sell' else
+        _('At what price do you want to sell?') if order['type'] else
         _('At what price do you want to buy?'),
         call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
@@ -438,7 +492,7 @@ async def choose_sum(message, state):
     await state.set_state('price')
     await bot.send_message(
         message.chat.id,
-        _('At what price do you want to sell?') if order['type'] == 'sell' else
+        _('At what price do you want to sell?') if order['type'] else
         _('At what price do you want to buy?'),
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
@@ -506,7 +560,8 @@ async def cash_payment_type(call):
     await storage.set_state(call.from_user.id, 'location')
     await bot.edit_message_text(
         _('Send location of a preferred meeting point.'),
-        call.message.chat.id, call.message.message_id
+        call.message.chat.id, call.message.message_id,
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
 
 
@@ -514,7 +569,8 @@ async def cash_payment_type(call):
 async def wrong_location(message, state):
     await bot.send_message(
         message.chat.id,
-        _('Send location object with point on the map.')
+        _('Send location object with point on the map.'),
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
 
 
@@ -548,7 +604,8 @@ async def cashless_payment_type(call):
     await storage.set_state(call.from_user.id, 'payment_method_cashless')
     await bot.edit_message_text(
         _('Send payment method.'),
-        message.chat.id, message.message_id
+        call.message.chat.id, call.message.message_id,
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[[inline_skip_button]])
     )
 
 
@@ -638,12 +695,14 @@ async def choose_duration(message, state):
 @dp.callback_query_handler(lambda call: call.data == 'skip', state='comments')
 async def skip_comments(call, state):
     order = await database.creation.find_one_and_delete({'user_id': call.from_user.id})
-    await database.orders.insert_one(order)
-    await bot.edit_message_text(
-        _('Order is set.'),
-        call.message.chat.id, call.message.message_id,
-        reply_markup=start_keyboard
-    )
+    await bot.answer_callback_query(callback_query_id=call.id)
+    if order:
+        inserted_order = await database.orders.insert_one(order)
+        await bot.send_message(
+            call.message.chat.id,
+            _('Order is set.') + '\nID: {}'.format(inserted_order.inserted_id),
+            reply_markup=start_keyboard
+        )
     await state.finish()
 
 
@@ -655,10 +714,14 @@ async def choose_comments(message, state):
         return
 
     order = await database.creation.find_one_and_delete({'user_id': message.from_user.id})
-    order['comments'] = comments
-    await database.orders.insert_one(order)
-
-    await bot.send_message(message.chat.id, _('Order is set.'), reply_markup=start_keyboard)
+    if order:
+        order['comments'] = comments
+        inserted_order = await database.orders.insert_one(order)
+        await bot.send_message(
+            message.chat.id,
+            _('Order is set.') + '\nID: {}'.format(inserted_order.inserted_id),
+            reply_markup=start_keyboard
+        )
     await state.finish()
 
 
