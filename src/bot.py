@@ -110,14 +110,14 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
         price = order.get('price')
         if order['type']:
             if price:
-                line += '1 {} \U0001f846 {:.2f} {}'.format(order['crypto'], price, order['fiat'])
+                line += '1 {} → {:.2f} {}'.format(order['crypto'], price, order['fiat'])
             else:
-                line += '{} \U0001f846 {}'.format(order['crypto'], order['fiat'])
+                line += '{} → {}'.format(order['crypto'], order['fiat'])
         else:
             if price:
-                line += '{:.2f} {} \U0001f846 1 {}'.format(price, order['fiat'], order['crypto'])
+                line += '{:.2f} {} → 1 {}'.format(price, order['fiat'], order['crypto'])
             else:
-                line += '{} \U0001f846 {}'.format(order['fiat'], order['crypto'])
+                line += '{} → {}'.format(order['fiat'], order['crypto'])
         line += ' ({})'.format(order['username'])
         lines.append(line)
         buttons.append(
