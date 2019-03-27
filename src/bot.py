@@ -31,6 +31,7 @@ from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.contrib.middlewares.i18n import I18nMiddleware
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
+from aiogram.utils.emoji import emojize
 from aiogram.utils.exceptions import MessageNotModified
 
 
@@ -49,10 +50,10 @@ inline_skip_button = types.InlineKeyboardButton(text='Skip', callback_data='skip
 
 start_keyboard = types.ReplyKeyboardMarkup(row_width=2)
 start_keyboard.add(
-    types.KeyboardButton('\U0001f4bb ' + _('Buy')),
-    types.KeyboardButton('\U0001f4b5 ' + _('Sell')),
-    types.KeyboardButton('\U0001f464 ' + _('My orders')),
-    types.KeyboardButton('\U0001f4d5 ' + _('Order book'))
+    types.KeyboardButton(emojize(':computer: ') + _('Buy')),
+    types.KeyboardButton(emojize(':dollar: ') + _('Sell')),
+    types.KeyboardButton(emojize(':bust_in_silhouette: ') + _('My orders')),
+    types.KeyboardButton(emojize(':closed_book: ') + _('Order book'))
 )
 
 
@@ -73,8 +74,8 @@ async def handle_start_command(message):
     await database.users.update_one(user, {'$setOnInsert': user}, upsert=True)
     await bot.send_message(
         message.chat.id,
-        _("I can help you meet with people that you "
-          "can swap money with.\n\nChoose one of the options on your keyboard."),
+        _('I can help you meet with people that you '
+          'can swap money with.\n\nChoose one of the options on your keyboard.'),
         reply_markup=start_keyboard
     )
 
@@ -93,7 +94,7 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
 
     if quantity == 0:
         keyboard.row(*inline_orders_buttons)
-        text = _("There are no orders.")
+        text = _('There are no orders.')
         if message_id is None:
             await bot.send_message(chat_id, text, reply_markup=keyboard)
         else:
@@ -178,7 +179,7 @@ def order_handler(handler):
         if not order:
             await bot.answer_callback_query(
                 callback_query_id=call.id,
-                text=_("Order is not found.")
+                text=_('Order is not found.')
             )
             return
 
@@ -321,7 +322,7 @@ async def create_order(message, order_type):
 
 @private_handler(commands=['buy'])
 @private_handler(
-    lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4bb')
+    lambda msg: msg.text.startswith(emojize(':computer:'))
 )
 async def handle_buy(message):
     await create_order(message, order_type=0)
@@ -329,7 +330,7 @@ async def handle_buy(message):
 
 @private_handler(commands=['sell'])
 @private_handler(
-    lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4b5')
+    lambda msg: msg.text.startswith(emojize(':dollar:'))
 )
 async def handle_sell(message):
     await create_order(message, order_type=1)
@@ -337,7 +338,7 @@ async def handle_sell(message):
 
 @private_handler(commands=['my'])
 @private_handler(
-    lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f464')
+    lambda msg: msg.text.startswith(emojize(':bust_in_silhouette:'))
 )
 async def handle_my_orders(message):
     query = {'user_id': message.from_user.id}
@@ -347,7 +348,7 @@ async def handle_my_orders(message):
 
 @private_handler(commands=['book'])
 @private_handler(
-    lambda msg: msg.text.encode('unicode-escape').startswith(b'\\U0001f4d5')
+    lambda msg: msg.text.startswith(emojize(':closed_book:'))
 )
 async def handle_book(message):
     query = {'user_id': {'$ne': message.from_user.id}}
@@ -443,7 +444,7 @@ async def choose_sum_currency(call):
     )
     await bot.answer_callback_query(
         callback_query_id=call.id,
-        text=_("Currency of sum set. Send sum in the next message.")
+        text=_('Currency of sum set. Send sum in the next message.')
     )
 
 
@@ -451,10 +452,10 @@ async def validate_money(data, chat_id):
     try:
         money = float(data)
     except ValueError:
-        await bot.send_message(chat_id, _("Send decimal number."))
+        await bot.send_message(chat_id, _('Send decimal number.'))
         return
     if money <= 0:
-        await bot.send_message(chat_id, _("Send positive number."))
+        await bot.send_message(chat_id, _('Send positive number.'))
         return
 
     return money
@@ -719,7 +720,7 @@ async def choose_comments(message, state):
     if len(comments) > 150:
         await bot.send_message(
             message.chat.id,
-            _("Comment should have less than 150 characters (your comment has {} characters).").format(len(comments))
+            _('Comment should have less than 150 characters (your comment has {} characters).').format(len(comments))
         )
         return
 
