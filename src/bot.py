@@ -434,7 +434,7 @@ async def choose_fiat(message, state):
     await state.set_state('sum')
     await bot.send_message(
         message.chat.id,
-        _('Send order sum in...'),
+        _('Choose currency of order sum.'),
         reply_markup=keyboard
     )
 
@@ -446,9 +446,10 @@ async def choose_sum_currency(call):
         {'user_id': call.from_user.id},
         {'$set': {'sum_currency': sum_currency}}
     )
-    await bot.answer_callback_query(
-        callback_query_id=call.id,
-        text=_('Currency of sum set. Send sum in the next message.')
+    await bot.answer_callback_query(callback_query_id=call.id)
+    await bot.send_message(
+        call.message.chat.id,
+        _('Currency of order sum set. Send order sum in the next message.')
     )
 
 
