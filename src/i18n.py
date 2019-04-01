@@ -22,5 +22,3 @@ class I18nMiddlewareManual(I18nMiddleware):
 
 
 i18n = I18nMiddlewareManual('bot', config.LOCALES_DIR)
-dp.middleware.setup(i18n)
-_ = i18n.gettext

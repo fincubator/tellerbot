@@ -19,6 +19,7 @@
 import math
 from string import ascii_letters
 
+from babel import Locale
 from bson.objectid import ObjectId
 from pymongo.collection import ReturnDocument
 
@@ -29,8 +30,11 @@ from aiogram.utils.exceptions import MessageNotModified
 import config
 from .bot import bot, dp, private_handler
 from .database import database, storage
-from .i18n import _
+from .i18n import i18n
 
+
+dp.middleware.setup(i18n)
+_ = i18n.gettext
 
 inline_skip_buttons = [
     types.InlineKeyboardButton(text='Cancel', callback_data='cancel'),
@@ -43,18 +47,83 @@ start_keyboard.add(
     types.KeyboardButton(emojize(':computer: ') + _('Buy')),
     types.KeyboardButton(emojize(':dollar: ') + _('Sell')),
     types.KeyboardButton(emojize(':bust_in_silhouette: ') + _('My orders')),
-    types.KeyboardButton(emojize(':closed_book: ') + _('Order book'))
+    types.KeyboardButton(emojize(':closed_book: ') + _('Order book')),
+    types.KeyboardButton(emojize(':abcd: ') + _('Choose language'))
+)
+
+help_message = _(
+    'I can help you meet with people that you can swap money with.\n\n'
+    'Choose one of the options on your keyboard.'
 )
 
 
-@private_handler(commands=['start', 'help'])
+@private_handler(commands=['help'])
+async def handle_help_command(message):
+    await bot.send_message(
+        message.chat.id, help_message,
+        reply_markup=start_keyboard
+    )
+
+
+@private_handler(commands=['start'])
 async def handle_start_command(message):
     user = {'id': message.from_user.id}
-    await database.users.update_one(user, {'$setOnInsert': user}, upsert=True)
+    result = await database.users.update_one(
+        user, {'$setOnInsert': user}, upsert=True
+    )
+
+    if not result.matched_count:
+        keyboard = types.InlineKeyboardMarkup(row_width=8)
+        keyboard.add(
+            *[types.InlineKeyboardButton(
+                text=emojize(':{}:'.format(locale)),
+                callback_data='locale {}'.format(locale)
+            ) for locale in i18n.available_locales]
+        )
+        await bot.send_message(
+            message.chat.id,
+            _('Please, choose your language.'),
+            reply_markup=keyboard
+        )
+        return
+
     await bot.send_message(
         message.chat.id,
-        _('I can help you meet with people that you '
-          'can swap money with.\n\nChoose one of the options on your keyboard.'),
+        _("Hello, I'm BailsBot.") + ' ' + help_message,
+        reply_markup=start_keyboard
+    )
+
+
+@private_handler(commands=['locale'])
+@private_handler(lambda msg: msg.text.startswith(emojize(':abcd:')))
+async def choose_locale(message):
+    keyboard = types.InlineKeyboardMarkup()
+    for language in i18n.available_locales:
+        keyboard.row(
+            types.InlineKeyboardButton(
+                text=Locale(language).display_name,
+                callback_data='locale {}'.format(language)
+            )
+        )
+    await bot.send_message(
+        message.chat.id,
+        _('Choose your language.'),
+        reply_markup=keyboard
+    )
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('locale'), state='*')
+async def locale_button(call):
+    locale = call.data.split()[1]
+    await database.users.update_one(
+        {'id': call.from_user.id},
+        {'$set': {'locale': locale}}
+    )
+
+    await bot.answer_callback_query(callback_query_id=call.id)
+    await bot.send_message(
+        call.message.chat.id,
+        _("Hello, I'm BailsBot.") + ' ' + help_message,
         reply_markup=start_keyboard
     )
 
@@ -115,7 +184,7 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
     text = '\\[' + _('Page {} of {}').format(
         math.ceil(start / config.ORDERS_COUNT) + 1,
         math.ceil(quantity / config.ORDERS_COUNT)
-    ) + '\\]\n' + '\n'.join(lines)
+    ) + ']\n' + '\n'.join(lines)
 
     if message_id is None:
         await bot.send_message(
