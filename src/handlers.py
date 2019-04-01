@@ -418,12 +418,12 @@ async def handle_book(message):
 
 
 @dp.callback_query_handler(lambda call: call.data == 'cancel', state='*')
-async def cancel_order_creation(message, state):
-    order = await database.creation.delete_one({'user_id': message.from_user.id})
+async def cancel_order_creation(call, state):
+    order = await database.creation.delete_one({'user_id': call.from_user.id})
 
     if not order.deleted_count:
         await bot.send_message(
-            message.chat.id,
+            call.message.chat.id,
             _('You are not creating order.'),
             reply_markup=start_keyboard
         )
@@ -431,7 +431,7 @@ async def cancel_order_creation(message, state):
 
     await state.finish()
     await bot.send_message(
-        message.chat.id,
+        call.message.chat.id,
         _('Order is cancelled.'),
         reply_markup=start_keyboard
     )
