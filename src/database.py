@@ -44,3 +44,6 @@ class MongoStorage(BaseStorage):
 
     async def close(self):
         client.close()
+
+
+storage = MongoStorage()
