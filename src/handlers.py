@@ -36,32 +36,38 @@ from .i18n import i18n
 dp.middleware.setup(i18n)
 _ = i18n.gettext
 
-inline_skip_buttons = [
-    types.InlineKeyboardButton(text='Cancel', callback_data='cancel'),
-    types.InlineKeyboardButton(text='Previous', callback_data='previous'),
-    types.InlineKeyboardButton(text='Skip', callback_data='skip')
-]
 
-start_keyboard = types.ReplyKeyboardMarkup(row_width=2)
-start_keyboard.add(
-    types.KeyboardButton(emojize(':computer: ') + _('Buy')),
-    types.KeyboardButton(emojize(':dollar: ') + _('Sell')),
-    types.KeyboardButton(emojize(':bust_in_silhouette: ') + _('My orders')),
-    types.KeyboardButton(emojize(':closed_book: ') + _('Order book')),
-    types.KeyboardButton(emojize(':abcd: ') + _('Choose language'))
-)
+def help_message():
+    return _(
+        'I can help you meet with people that you can swap money with.\n\n'
+        'Choose one of the options on your keyboard.'
+    )
 
-help_message = _(
-    'I can help you meet with people that you can swap money with.\n\n'
-    'Choose one of the options on your keyboard.'
-)
+
+def inline_skip_buttons():
+    return [
+        types.InlineKeyboardButton(text=_('Cancel'), callback_data='cancel'),
+        types.InlineKeyboardButton(text=_('Next'), callback_data='skip')
+    ]
+
+
+def start_keyboard():
+    keyboard = types.ReplyKeyboardMarkup(row_width=2)
+    keyboard.add(
+        types.KeyboardButton(emojize(':computer: ') + _('Buy')),
+        types.KeyboardButton(emojize(':dollar: ') + _('Sell')),
+        types.KeyboardButton(emojize(':bust_in_silhouette: ') + _('My orders')),
+        types.KeyboardButton(emojize(':closed_book: ') + _('Order book')),
+        types.KeyboardButton(emojize(':abcd: ') + _('Choose language'))
+    )
+    return keyboard
 
 
 @private_handler(commands=['help'])
 async def handle_help_command(message):
     await bot.send_message(
-        message.chat.id, help_message,
-        reply_markup=start_keyboard
+        message.chat.id, help_message(),
+        reply_markup=start_keyboard()
     )
 
 
@@ -73,13 +79,14 @@ async def handle_start_command(message):
     )
 
     if not result.matched_count:
-        keyboard = types.InlineKeyboardMarkup(row_width=8)
-        keyboard.add(
-            *[types.InlineKeyboardButton(
-                text=emojize(':{}:'.format(locale)),
-                callback_data='locale {}'.format(locale)
-            ) for locale in i18n.available_locales]
-        )
+        keyboard = types.InlineKeyboardMarkup()
+        for language in i18n.available_locales:
+            keyboard.row(
+                types.InlineKeyboardButton(
+                    text=Locale(language).display_name,
+                    callback_data='locale {}'.format(language)
+                )
+            )
         await bot.send_message(
             message.chat.id,
             _('Please, choose your language.'),
@@ -89,8 +96,8 @@ async def handle_start_command(message):
 
     await bot.send_message(
         message.chat.id,
-        _("Hello, I'm BailsBot.") + ' ' + help_message,
-        reply_markup=start_keyboard
+        _("Hello, I'm BailsBot.") + ' ' + help_message(),
+        reply_markup=start_keyboard()
     )
 
 
@@ -120,11 +127,12 @@ async def locale_button(call):
         {'$set': {'locale': locale}}
     )
 
+    i18n.ctx_locale.set(locale)
     await bot.answer_callback_query(callback_query_id=call.id)
     await bot.send_message(
         call.message.chat.id,
-        _("Hello, I'm BailsBot.") + ' ' + help_message,
-        reply_markup=start_keyboard
+        _("Hello, I'm BailsBot.") + ' ' + help_message(),
+        reply_markup=start_keyboard()
     )
 
 
@@ -377,7 +385,9 @@ async def create_order(message, order_type):
 
     await bot.send_message(
         message.chat.id, answer,
-        reply_markup=types.ReplyKeyboardRemove()
+        reply_markup=types.InlineKeyboardMarkup(
+            inline_keyboard=[[inline_skip_buttons()[0]]]
+        )
     )
 
 
@@ -425,15 +435,16 @@ async def cancel_order_creation(call, state):
         await bot.send_message(
             call.message.chat.id,
             _('You are not creating order.'),
-            reply_markup=start_keyboard
+            reply_markup=start_keyboard()
         )
         return
 
     await state.finish()
+    await bot.answer_callback_query(callback_query_id=call.id)
     await bot.send_message(
         call.message.chat.id,
         _('Order is cancelled.'),
-        reply_markup=start_keyboard
+        reply_markup=start_keyboard()
     )
 
 
@@ -459,7 +470,12 @@ async def choose_crypto(message, state):
         answer = _('What currency do you want to buy?')
     else:
         answer = _('What currency do you want to sell?')
-    await bot.send_message(message.chat.id, answer, reply_markup=markup)
+    await bot.send_message(
+        message.chat.id, answer,
+        reply_markup=types.InlineKeyboardMarkup(
+            inline_keyboard=[[inline_skip_buttons()[0]]]
+        )
+    )
 
 
 @private_handler(state='fiat')
@@ -486,7 +502,7 @@ async def choose_fiat(message, state):
             callback_data='sum fiat'
         )
     )
-    keyboard.row(*inline_skip_buttons)
+    keyboard.row(*inline_skip_buttons())
 
     await state.set_state('sum')
     await bot.send_message(
@@ -539,7 +555,7 @@ async def skip_sum(call, state):
         _('At what price do you want to sell?') if order['type'] else
         _('At what price do you want to buy?'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons()])
     )
 
 
@@ -565,7 +581,7 @@ async def choose_sum(message, state):
         message.chat.id,
         _('At what price do you want to sell?') if order['type'] else
         _('At what price do you want to buy?'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons()])
     )
 
 
@@ -576,7 +592,7 @@ async def skip_price(call, state):
         types.InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
         types.InlineKeyboardButton(text=_('Cashless'), callback_data='cashless type')
     )
-    keyboard.row(*inline_skip_buttons)
+    keyboard.row(*inline_skip_buttons())
     await state.set_state('payment_type')
     await bot.edit_message_text(
         _('Choose payment type.'),
@@ -599,7 +615,7 @@ async def choose_price(message, state):
         types.InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
         types.InlineKeyboardButton(text=_('Cashless'), callback_data='cashless type')
     )
-    keyboard.row(*inline_skip_buttons)
+    keyboard.row(*inline_skip_buttons())
     await state.set_state('payment_type')
     await bot.send_message(
         message.chat.id,
@@ -614,7 +630,7 @@ async def skip_payment_type(call, state):
     await bot.edit_message_text(
         _('Send payment method.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons()])
     )
 
 
@@ -632,7 +648,7 @@ async def cash_payment_type(call):
     await bot.edit_message_text(
         _('Send location of a preferred meeting point.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons()])
     )
 
 
@@ -641,7 +657,7 @@ async def wrong_location(message, state):
     await bot.send_message(
         message.chat.id,
         _('Send location object with point on the map.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons()])
     )
 
 
@@ -651,7 +667,7 @@ async def skip_location(call, state):
     await bot.edit_message_text(
         _('Send duration of order in days.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons()])
     )
 
 
@@ -666,7 +682,7 @@ async def choose_location(message, state):
     await bot.send_message(
         message.chat.id,
         _('Send duration of order in days.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons()])
     )
 
 
@@ -676,7 +692,7 @@ async def cashless_payment_type(call):
     await bot.edit_message_text(
         _('Send payment method.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons()])
     )
 
 
@@ -686,7 +702,7 @@ async def skip_payment_method(call, state):
     await bot.edit_message_text(
         _('Send location of a preferred meeting point.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons()])
     )
 
 
@@ -700,7 +716,7 @@ async def choose_payment_method(message, state):
     await bot.send_message(
         message.chat.id,
         _('Send duration of order in days.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons()])
     )
 
 
@@ -710,7 +726,7 @@ async def skip_payment_method_cashless(call, state):
     await bot.edit_message_text(
         _('Send duration of order in days.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons()])
     )
 
 
@@ -725,7 +741,7 @@ async def choose_payment_method_cashless(message, state):
     await bot.send_message(
         message.chat.id,
         _('Send duration of order in days.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons()])
     )
 
 
@@ -735,7 +751,7 @@ async def skip_duration(call, state):
     await bot.edit_message_text(
         _('Add any additional comments.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons()])
     )
 
 
@@ -758,7 +774,7 @@ async def choose_duration(message, state):
     await bot.send_message(
         message.chat.id,
         _('Add any additional comments.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons])
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[inline_skip_buttons()])
     )
 
 
@@ -773,7 +789,7 @@ async def skip_comments(call, state):
         await bot.send_message(
             call.message.chat.id,
             _('Order is set.') + '\nID: {}'.format(inserted_order.inserted_id),
-            reply_markup=start_keyboard
+            reply_markup=start_keyboard()
         )
     await state.finish()
 
@@ -798,7 +814,7 @@ async def choose_comments(message, state):
         await bot.send_message(
             message.chat.id,
             _('Order is set.') + '\nID: {}'.format(inserted_order.inserted_id),
-            reply_markup=start_keyboard
+            reply_markup=start_keyboard()
         )
     await state.finish()
 
