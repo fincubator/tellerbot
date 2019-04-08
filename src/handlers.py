@@ -39,18 +39,19 @@ _ = i18n.gettext
 
 
 class OrderCreation(StatesGroup):
-    crypto = State()
-    fiat = State()
-    sum = State()
+    buy = State()
+    sell = State()
     price = State()
+    sum = State()
     payment_type = State()
-    payment_method = State()
+    payment_system = State()
     location = State()
     duration = State()
     comments = State()
+    set_order = State()
 
 
-payment_method_cashless = State(group_name='OrderCreation')
+payment_system_cashless = State(group_name='OrderCreation')
 state_handlers = {}
 
 
@@ -87,8 +88,7 @@ def inline_control_buttons(no_back=False, no_next=False, no_cancel=False):
 def start_keyboard():
     keyboard = types.ReplyKeyboardMarkup(row_width=2)
     keyboard.add(
-        types.KeyboardButton(emojize(':computer: ') + _('Buy')),
-        types.KeyboardButton(emojize(':dollar: ') + _('Sell')),
+        types.KeyboardButton(emojize(':heavy_plus_sign: ') + _('Create order')),
         types.KeyboardButton(emojize(':bust_in_silhouette: ') + _('My orders')),
         types.KeyboardButton(emojize(':closed_book: ') + _('Order book')),
         types.KeyboardButton(emojize(':abcd: ') + _('Language'))
@@ -199,18 +199,17 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
     buttons = []
     for i, order in enumerate(orders):
         line = f'{i + 1}. '
-        price = order.get('price')
-        if order['type']:
-            if price:
-                line += '1 {} → {:.2f} {}'.format(order['crypto'], price, order['fiat'])
-            else:
-                line += '{} → {}'.format(order['crypto'], order['fiat'])
-        else:
-            if price:
-                line += '{:.2f} {} → 1 {}'.format(price, order['fiat'], order['crypto'])
-            else:
-                line += '{} → {}'.format(order['fiat'], order['crypto'])
-        line += ' ({})'.format(order['username'])
+        if 'sum_sell' in order:
+            line += '{:.8g} '.format(order['sum_sell'])
+        line += '{} → '.format(order['sell'])
+
+        if 'sum_buy' in order:
+            line += '{:.8g} '.format(order['sum_buy'])
+        line += order['buy']
+
+        if 'price' in order:
+            line += ' ({:.8g} {}/{})'.format(order['price'], order['sell'], order['buy'])
+
         lines.append(line)
         buttons.append(
             types.InlineKeyboardButton(
@@ -288,14 +287,67 @@ def order_handler(handler):
     return decorator
 
 
-async def show_order(order, chat_id, user_id, show_id):
+async def show_order(order, chat_id, user_id, show_id, message_id=None, invert=False):
     keyboard = types.InlineKeyboardMarkup()
+
+    header = ''
+    if show_id:
+        header += 'ID: {}\n'.format(order['_id'])
+    header += order['username'] + ' '
+    if invert:
+        callback_command = 'revert'
+        header += _('sells {} for {}').format(order['sell'], order['buy'])
+    else:
+        callback_command = 'invert'
+        header += _('buys {} for {}').format(order['buy'], order['sell'])
+    header += '\n'
+
+    keyboard.row(
+        types.InlineKeyboardButton(
+            text=_('Invert'), callback_data='{} {} {}'.format(
+                callback_command, order['_id'], int(show_id)
+            )
+        )
+    )
+
+    lines = [header]
+    if 'sum_buy' in order:
+        lines.append(
+            _('Amount of buying:') + ' {:.8g} {}'.format(
+                order['sum_buy'], order['buy']
+            )
+        )
+    if 'sum_sell' in order:
+        lines.append(
+            _('Amount of selling:') + ' {:.8g} {}'.format(
+                order['sum_sell'], order['sell']
+            )
+        )
+    if 'price' in order:
+        if invert:
+            price = ' {:.8g} {}/{}'.format(1 / order['price'], order['buy'], order['sell'])
+        else:
+            price = ' {:.8g} {}/{}'.format(order['price'], order['sell'], order['buy'])
+        lines.append(_('Price:') + price)
+    if 'payment_system' in order:
+        lines.append(
+            _('Payment system:') + ' ' + order['payment_system']
+        )
+    if 'duration' in order:
+        lines.append(
+            _('Duration: {} days').format(order['duration'])
+        )
+    if 'comments' in order:
+        lines.append(
+            _('Comments:') + ' «{}»'.format(order['comments'])
+        )
+
+    answer = '\n'.join(lines)
 
     if order['user_id'] == user_id:
         keyboard.row(
             types.InlineKeyboardButton(
-                text=_('Delete'),
-                callback_data='delete {}'.format(order['_id'])
+                text=_('Delete'), callback_data='delete {}'.format(order['_id'])
             )
         )
 
@@ -309,54 +361,24 @@ async def show_order(order, chat_id, user_id, show_id):
 
     keyboard.row(
         types.InlineKeyboardButton(
-            text=_('Hide'),
-            callback_data='hide {}'.format(location_message_id)
+            text=_('Hide'), callback_data='hide {}'.format(location_message_id)
         )
     )
 
-    lines = [
-        '{}{} {} {} for {}\n'.format(
-            'ID: {}\n'.format(order['_id']) if show_id else '',
-            order['username'],
-            _('sells') if order['type'] else _('buys'),
-            order['crypto'],
-            order['fiat']
+    if message_id is not None:
+        await bot.edit_message_text(
+            answer, chat_id, message_id, reply_markup=keyboard, parse_mode='Markdown'
         )
-    ]
-    if order.get('sum'):
-        if order['sum_currency'] == 'fiat':
-            lines.append(
-                _('Transaction sum:') + ' {:.2f} {}'.format(order['sum'], order['fiat'])
-            )
-        elif order['sum_currency'] == 'crypto':
-            lines.append(
-                _('Transaction sum:') + ' {:.8g} {}'.format(order['sum'], order['crypto'])
-            )
-    if order.get('price'):
-        lines.append(
-            _('Price:') + ' {:.2f} {}'.format(order['price'], order['fiat'])
+    else:
+        await bot.send_message(
+            chat_id, answer, reply_markup=keyboard, parse_mode='Markdown'
         )
-    if order.get('payment_method'):
-        lines.append(
-            _('Payment method:') + ' ' + order['payment_method']
-        )
-    if order.get('duration'):
-        lines.append(
-            _('Duration: {} days').format(order['duration'])
-        )
-    if order.get('comments'):
-        lines.append(
-            _('Comments:') + ' «{}»'.format(order['comments'])
-        )
-    await bot.send_message(
-        chat_id, '\n'.join(lines), reply_markup=keyboard, parse_mode='Markdown'
-    )
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('get_order'), state=any_state)
 @order_handler
 async def get_order_button(call, order):
-    await show_order(order, call.message.chat.id, call.from_user.id, True)
+    await show_order(order, call.message.chat.id, call.from_user.id, show_id=True)
     await bot.answer_callback_query(callback_query_id=call.id)
 
 
@@ -373,7 +395,27 @@ async def get_order_command(message):
     if not order:
         await bot.send_message(message.chat.id, _('Order is not found.'))
         return
-    await show_order(order, message.chat.id, message.from_user.id, False)
+    await show_order(order, message.chat.id, message.from_user.id, show_id=False)
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('invert'), state=any_state)
+@order_handler
+async def invert_button(call, order):
+    show_id = bool(int(call.data.split()[2]))
+    await show_order(
+        order, call.message.chat.id, call.from_user.id,
+        show_id=show_id, message_id=call.message.message_id, invert=True
+    )
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('revert'), state=any_state)
+@order_handler
+async def revert_button(call, order):
+    show_id = bool(int(call.data.split()[2]))
+    await show_order(
+        order, call.message.chat.id, call.from_user.id,
+        show_id=show_id, message_id=call.message.message_id
+    )
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('delete'), state=any_state)
@@ -436,7 +478,11 @@ async def next_state(call, state):
     )
 
 
-async def create_order(message, order_type):
+@private_handler(commands=['create'])
+@private_handler(
+    lambda msg: msg.text.startswith(emojize(':heavy_plus_sign:'))
+)
+async def handle_create(message):
     if message.from_user.username:
         username = '@' + message.from_user.username
     else:
@@ -448,23 +494,19 @@ async def create_order(message, order_type):
     await database.creation.insert_one({
         'user_id': message.from_user.id,
         'username': username,
-        'type': order_type
     })
     await OrderCreation.first()
-    if order_type:
-        answer = _('What currency do you want to sell?')
-    else:
-        answer = _('What currency do you want to buy?')
 
     await bot.send_message(
-        message.chat.id, answer,
+        message.chat.id,
+        _('What currency do you want to buy?'),
         reply_markup=types.InlineKeyboardMarkup(
             inline_keyboard=inline_control_buttons(no_back=True, no_next=True)
         )
     )
 
 
-@state_handler(OrderCreation.crypto)
+@state_handler(OrderCreation.buy)
 async def create_order_handler(call):
     order = await database.creation.find_one({'user_id': call.from_user.id})
 
@@ -475,33 +517,13 @@ async def create_order_handler(call):
         )
         return True
 
-    if order['type']:
-        answer = _('What currency do you want to sell?')
-    else:
-        answer = _('What currency do you want to buy?')
-
     await bot.edit_message_text(
-        answer, call.message.chat.id, call.message.message_id,
+        _('What currency do you want to buy?'),
+        call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(
             inline_keyboard=inline_control_buttons(no_back=True)
         )
     )
-
-
-@private_handler(commands=['buy'])
-@private_handler(
-    lambda msg: msg.text.startswith(emojize(':computer:'))
-)
-async def handle_buy(message):
-    await create_order(message, order_type=0)
-
-
-@private_handler(commands=['sell'])
-@private_handler(
-    lambda msg: msg.text.startswith(emojize(':dollar:'))
-)
-async def handle_sell(message):
-    await create_order(message, order_type=1)
 
 
 @private_handler(commands=['my'])
@@ -545,83 +567,96 @@ async def cancel_order_creation(call, state):
     )
 
 
-@private_handler(state=OrderCreation.crypto)
-async def choose_crypto(message, state):
+@private_handler(state=OrderCreation.buy)
+async def choose_buy(message, state):
     if not all(ch in ascii_letters for ch in message.text):
         return _('Currency may only contain letters.')
 
-    currency = message.text
-
-    order = await database.creation.find_one_and_update(
+    await database.creation.update_one(
         {'user_id': message.from_user.id},
-        {'$set': {'crypto': currency}},
-        return_document=ReturnDocument.AFTER
+        {'$set': {'buy': message.text}}
     )
-
-    await OrderCreation.fiat.set()
-
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    markup.add('USD', 'EUR', 'RUB')
-
-    if order['type']:
-        answer = _('What currency do you want to buy?')
-    else:
-        answer = _('What currency do you want to sell?')
-
+    await OrderCreation.sell.set()
     await bot.send_message(
-        message.chat.id, answer,
+        message.chat.id,
+        _('What currency do you want to sell?'),
         reply_markup=types.InlineKeyboardMarkup(
             inline_keyboard=inline_control_buttons(no_next=True)
         )
     )
 
 
-@state_handler(OrderCreation.fiat)
-async def choose_crypto_handler(call):
-    order = await database.creation.find_one({'user_id': call.from_user.id})
-
-    if not order:
-        await bot.answer_callback_query(
-            callback_query_id=call.id,
-            text=_('You are not creating order.')
-        )
-        return True
-
-    if order['type']:
-        answer = _('What currency do you want to buy?')
-    else:
-        answer = _('What currency do you want to sell?')
-
+@state_handler(OrderCreation.sell)
+async def choose_buy_handler(call):
     await bot.edit_message_text(
-        answer, call.message.chat.id, call.message.message_id,
+        _('What currency do you want to sell?'),
+        call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(
             inline_keyboard=inline_control_buttons()
         )
     )
 
 
-@private_handler(state=OrderCreation.fiat)
-async def choose_fiat(message, state):
+@private_handler(state=OrderCreation.sell)
+async def choose_sell(message, state):
     if not all(ch in ascii_letters for ch in message.text):
         return _('Currency may only contain letters.')
 
-    currency = message.text.upper()
+    await database.creation.update_one(
+        {'user_id': message.from_user.id},
+        {'$set': {'sell': message.text.upper()}}
+    )
+    await OrderCreation.price.set()
+    await bot.send_message(
+        message.chat.id,
+        _('At what price do you want to buy?'),
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+    )
+
+
+@state_handler(OrderCreation.price)
+async def price_handler(call):
+    await bot.edit_message_text(
+        _('At what price do you want to buy?'),
+        call.message.chat.id, call.message.message_id,
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+    )
+
+
+async def validate_money(data, chat_id):
+    try:
+        money = float(data)
+    except ValueError:
+        await bot.send_message(chat_id, _('Send decimal number.'))
+        return
+    if money <= 0:
+        await bot.send_message(chat_id, _('Send positive number.'))
+        return
+
+    return money
+
+
+@private_handler(state=OrderCreation.price)
+async def choose_price(message, state):
+    price = await validate_money(message.text, message.chat.id)
+    if not price:
+        return
 
     order = await database.creation.find_one_and_update(
         {'user_id': message.from_user.id},
-        {'$set': {'fiat': currency}},
+        {'$set': {'price': price}},
         return_document=ReturnDocument.AFTER
     )
 
     keyboard = types.InlineKeyboardMarkup()
     keyboard.add(
         types.InlineKeyboardButton(
-            text=order['crypto'],
-            callback_data='sum crypto'
+            text=order['buy'],
+            callback_data='sum buy'
         ),
         types.InlineKeyboardButton(
-            text=order['fiat'],
-            callback_data='sum fiat'
+            text=order['sell'],
+            callback_data='sum sell'
         )
     )
     for row in inline_control_buttons():
@@ -631,6 +666,53 @@ async def choose_fiat(message, state):
     await bot.send_message(
         message.chat.id,
         _('Choose currency of order sum.'),
+        reply_markup=keyboard
+    )
+
+
+@private_handler(state=OrderCreation.sum)
+async def choose_sum(message, state):
+    transaction_sum = await validate_money(message.text, message.chat.id)
+    if not transaction_sum:
+        return
+
+    order = await database.creation.find_one_and_update(
+        {
+            'user_id': message.from_user.id,
+            'sum_currency': {'$exists': True}
+        },
+        {'$unset': {'sum_currency': True}}
+    )
+    if not order:
+        await bot.send_message(message.chat.id, _('Choose currency of sum with buttons.'))
+
+    update_dict = {}
+    price = order.get('price')
+    if order['sum_currency'] == 'buy':
+        update_dict['sum_buy'] = transaction_sum
+        if price:
+            update_dict['sum_sell'] = transaction_sum * price
+    else:
+        update_dict['sum_sell'] = transaction_sum
+        if price:
+            update_dict['sum_buy'] = transaction_sum / price
+
+    await database.creation.update_one(
+        {'_id': order['_id']},
+        {'$set': update_dict}
+    )
+
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(
+        types.InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
+        types.InlineKeyboardButton(text=_('Cashless'), callback_data='cashless type')
+    )
+    for row in inline_control_buttons():
+        keyboard.row(*row)
+    await OrderCreation.payment_type.set()
+    await bot.send_message(
+        message.chat.id,
+        _('Choose payment type.'),
         reply_markup=keyboard
     )
 
@@ -649,12 +731,12 @@ async def sum_handler(call):
     keyboard = types.InlineKeyboardMarkup()
     keyboard.add(
         types.InlineKeyboardButton(
-            text=order['crypto'],
-            callback_data='sum crypto'
+            text=order['buy'],
+            callback_data='sum buy'
         ),
         types.InlineKeyboardButton(
-            text=order['fiat'],
-            callback_data='sum fiat'
+            text=order['sell'],
+            callback_data='sum sell'
         )
     )
     for row in inline_control_buttons():
@@ -682,73 +764,20 @@ async def choose_sum_currency(call):
     )
 
 
-async def validate_money(data, chat_id):
-    try:
-        money = float(data)
-    except ValueError:
-        await bot.send_message(chat_id, _('Send decimal number.'))
-        return
-    if money <= 0:
-        await bot.send_message(chat_id, _('Send positive number.'))
-        return
+@state_handler(OrderCreation.payment_type)
+async def payment_type_handler(call):
+    result = await database.creation.update_one(
+        {'user_id': call.from_user.id},
+        {'$unset': {'sum_currency': True}}
+    )
 
-    return money
-
-
-@state_handler(OrderCreation.price)
-async def price_handler(call):
-    order = await database.creation.find_one({'user_id': call.from_user.id})
-
-    if not order:
+    if not result.matched_count:
         await bot.answer_callback_query(
             callback_query_id=call.id,
             text=_('You are not creating order.')
         )
         return True
 
-    if 'sum_currency' in order and not 'sum' not in order:
-        order = await database.creation.find_one_and_update(
-            {'_id': order['_id']},
-            {'$unset': {'sum_currency': True}},
-            return_document=ReturnDocument.AFTER
-        )
-
-    await bot.edit_message_text(
-        _('At what price do you want to sell?') if order['type'] else
-        _('At what price do you want to buy?'),
-        call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
-    )
-
-
-@private_handler(state=OrderCreation.sum)
-async def choose_sum(message, state):
-    transaction_sum = await validate_money(message.text, message.chat.id)
-    if not transaction_sum:
-        return
-
-    order = await database.creation.find_one_and_update(
-        {
-            'user_id': message.from_user.id,
-            'sum_currency': {'$exists': True}
-        },
-        {'$set': {'sum': transaction_sum}},
-        return_document=ReturnDocument.AFTER
-    )
-    if not order:
-        await bot.send_message(message.chat.id, _('Choose currency of sum with buttons.'))
-
-    await OrderCreation.price.set()
-    await bot.send_message(
-        message.chat.id,
-        _('At what price do you want to sell?') if order['type'] else
-        _('At what price do you want to buy?'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
-    )
-
-
-@state_handler(OrderCreation.payment_type)
-async def payment_type_handler(call):
     keyboard = types.InlineKeyboardMarkup()
     keyboard.add(
         types.InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
@@ -764,34 +793,10 @@ async def payment_type_handler(call):
     )
 
 
-@private_handler(state=OrderCreation.price)
-async def choose_price(message, state):
-    price = await validate_money(message.text, message.chat.id)
-    if not price:
-        return
-    await database.creation.update_one(
-        {'user_id': message.from_user.id},
-        {'$set': {'price': price}}
-    )
-    keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(
-        types.InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
-        types.InlineKeyboardButton(text=_('Cashless'), callback_data='cashless type')
-    )
-    for row in inline_control_buttons():
-        keyboard.row(*row)
-    await OrderCreation.payment_type.set()
-    await bot.send_message(
-        message.chat.id,
-        _('Choose payment type.'),
-        reply_markup=keyboard
-    )
-
-
-@state_handler(OrderCreation.payment_method)
-async def payment_method_handler(call):
+@state_handler(OrderCreation.payment_system)
+async def payment_system_handler(call):
     await bot.edit_message_text(
-        _('Send payment method.'),
+        _('Send payment system.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
@@ -801,7 +806,7 @@ async def payment_method_handler(call):
 async def message_in_payment_type(message, state):
     await bot.send_message(
         message.chat.id,
-        _('Send payment method.'),
+        _('Send payment system.'),
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
@@ -850,11 +855,11 @@ async def choose_location(message, state):
 
 
 @dp.callback_query_handler(lambda call: call.data == 'cashless type', state=OrderCreation.payment_type)
-@dp.callback_query_handler(lambda call: call.data == 'back', state=payment_method_cashless)
+@dp.callback_query_handler(lambda call: call.data == 'back', state=payment_system_cashless)
 async def cashless_payment_type(call):
-    await payment_method_cashless.set()
+    await payment_system_cashless.set()
     await bot.edit_message_text(
-        _('Send payment method.'),
+        _('Send payment system.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
@@ -869,11 +874,11 @@ async def location_handler(call):
     )
 
 
-@private_handler(state=OrderCreation.payment_method)
-async def choose_payment_method(message, state):
+@private_handler(state=OrderCreation.payment_system)
+async def choose_payment_system(message, state):
     await database.creation.update_one(
         {'user_id': message.from_user.id},
-        {'$set': {'payment_method': message.text}}
+        {'$set': {'payment_system': message.text}}
     )
     await OrderCreation.duration.set()
     await bot.send_message(
@@ -883,7 +888,7 @@ async def choose_payment_method(message, state):
     )
 
 
-@dp.callback_query_handler(lambda call: call.data == 'next', state=payment_method_cashless)
+@dp.callback_query_handler(lambda call: call.data == 'next', state=payment_system_cashless)
 @state_handler(OrderCreation.duration)
 async def duration_handler(call):
     await bot.edit_message_text(
@@ -893,11 +898,11 @@ async def duration_handler(call):
     )
 
 
-@private_handler(state=payment_method_cashless)
-async def choose_payment_method_cashless(message, state):
+@private_handler(state=payment_system_cashless)
+async def choose_payment_system_cashless(message, state):
     await database.creation.update_one(
         {'user_id': message.from_user.id},
-        {'$set': {'payment_method': message.text}}
+        {'$set': {'payment_system': message.text}}
     )
     await OrderCreation.duration.set()
     await bot.send_message(
@@ -939,7 +944,7 @@ async def choose_duration(message, state):
     )
 
 
-@state_handler(OrderCreation.comments)
+@state_handler(OrderCreation.set_order)
 async def choose_comments_handler(call):
     order = await database.creation.find_one_and_delete(
         {'user_id': call.from_user.id}
