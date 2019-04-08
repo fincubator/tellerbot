@@ -18,6 +18,7 @@
 
 import math
 from string import ascii_letters
+from time import time
 
 from babel import Locale
 from bson.objectid import ObjectId
@@ -262,7 +263,10 @@ async def show_orders(call, query, start, buttons_data):
 @dp.callback_query_handler(lambda call: call.data.startswith('orders'), state=any_state)
 async def orders_button(call):
     start = max(0, int(call.data.split()[1]))
-    await show_orders(call, {'user_id': {'$ne': call.from_user.id}}, start, 'orders')
+    await show_orders(call, {
+        'user_id': {'$ne': call.from_user.id},
+        'expiration_time': {'$gt': time()}
+    }, start, 'orders')
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('my_orders'), state=any_state)
@@ -541,7 +545,10 @@ async def handle_my_orders(message):
     lambda msg: msg.text.startswith(emojize(':closed_book:'))
 )
 async def handle_book(message):
-    query = {'user_id': {'$ne': message.from_user.id}}
+    query = {
+        'user_id': {'$ne': message.from_user.id},
+        'expiration_time': {'$gt': time()}
+    }
     quantity = await database.orders.count_documents(query)
     await orders_list(query, message.chat.id, 0, quantity, 'orders')
 
@@ -951,6 +958,8 @@ async def choose_comments_handler(call):
     )
     await bot.answer_callback_query(callback_query_id=call.id)
     if order:
+        order['start_time'] = time()
+        order['expiration_time'] = time() + order['duration'] * 24 * 60 * 60
         inserted_order = await database.orders.insert_one(order)
         await bot.send_message(
             call.message.chat.id,
