@@ -91,7 +91,7 @@ def start_keyboard():
         types.KeyboardButton(emojize(':dollar: ') + _('Sell')),
         types.KeyboardButton(emojize(':bust_in_silhouette: ') + _('My orders')),
         types.KeyboardButton(emojize(':closed_book: ') + _('Order book')),
-        types.KeyboardButton(emojize(':abcd: ') + _('Choose language'))
+        types.KeyboardButton(emojize(':abcd: ') + _('Language'))
     )
     return keyboard
 
@@ -288,7 +288,7 @@ def order_handler(handler):
     return decorator
 
 
-async def show_order(order, chat_id, user_id, can_hide):
+async def show_order(order, chat_id, user_id, show_id):
     keyboard = types.InlineKeyboardMarkup()
 
     if order['user_id'] == user_id:
@@ -307,17 +307,16 @@ async def show_order(order, chat_id, user_id, can_hide):
     else:
         location_message_id = -1
 
-    if can_hide:
-        keyboard.row(
-            types.InlineKeyboardButton(
-                text=_('Hide'),
-                callback_data='hide {}'.format(location_message_id)
-            )
+    keyboard.row(
+        types.InlineKeyboardButton(
+            text=_('Hide'),
+            callback_data='hide {}'.format(location_message_id)
         )
+    )
 
     lines = [
         '{}{} {} {} for {}\n'.format(
-            'ID: {}\n'.format(order['_id']) if can_hide else '',
+            'ID: {}\n'.format(order['_id']) if show_id else '',
             order['username'],
             _('sells') if order['type'] else _('buys'),
             order['crypto'],
@@ -551,7 +550,7 @@ async def choose_crypto(message, state):
     if not all(ch in ascii_letters for ch in message.text):
         return _('Currency may only contain letters.')
 
-    currency = message.text.upper()
+    currency = message.text
 
     order = await database.creation.find_one_and_update(
         {'user_id': message.from_user.id},
@@ -802,7 +801,8 @@ async def payment_method_handler(call):
 async def message_in_payment_type(message, state):
     await bot.send_message(
         message.chat.id,
-        _('Press on one of the buttons to choose payment type.')
+        _('Send payment method.'),
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
@@ -897,8 +897,7 @@ async def duration_handler(call):
 async def choose_payment_method_cashless(message, state):
     await database.creation.update_one(
         {'user_id': message.from_user.id},
-        {'$set': {'payment_method': message.text}},
-        return_document=ReturnDocument.AFTER
+        {'$set': {'payment_method': message.text}}
     )
     await OrderCreation.duration.set()
     await bot.send_message(
