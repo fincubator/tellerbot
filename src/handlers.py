@@ -953,10 +953,10 @@ async def choose_payment_system(message, state):
         {'user_id': message.from_user.id},
         {'$set': {'payment_system': message.text}}
     )
-    await OrderCreation.duration.set()
-    await tg.send_message(
-        message.chat.id,
-        _('Send duration of order in days.'),
+    await OrderCreation.location.set()
+    await tg.edit_message_text(
+        _('Send location of a preferred meeting point.'),
+        message.chat.id, message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
