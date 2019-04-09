@@ -16,6 +16,7 @@
 # along with BailsBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
+from datetime import datetime
 import decimal
 import math
 from string import ascii_letters
@@ -25,6 +26,7 @@ from babel import Locale
 from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
 from pymongo.collection import ReturnDocument
+import requests
 
 from aiogram import types
 from aiogram.dispatcher.filters.state import any_state
@@ -349,9 +351,9 @@ async def show_order(order, chat_id, user_id, show_id, message_id=None, invert=F
             )
         )
 
-    if order.get('latitude') is not None and order.get('longitude') is not None:
+    if order.get('lat') is not None and order.get('lon') is not None:
         location_message = await tg.send_location(
-            chat_id, order['latitude'], order['longitude']
+            chat_id, order['lat'], order['lon']
         )
         location_message_id = location_message.message_id
     else:
@@ -400,6 +402,7 @@ async def get_order_command(message):
 @order_handler
 async def invert_button(call, order):
     show_id = bool(int(call.data.split()[2]))
+    await tg.answer_callback_query(callback_query_id=call.id)
     await show_order(
         order, call.message.chat.id, call.from_user.id,
         show_id=show_id, message_id=call.message.message_id, invert=True
@@ -410,6 +413,7 @@ async def invert_button(call, order):
 @order_handler
 async def revert_button(call, order):
     show_id = bool(int(call.data.split()[2]))
+    await tg.answer_callback_query(callback_query_id=call.id)
     await show_order(
         order, call.message.chat.id, call.from_user.id,
         show_id=show_id, message_id=call.message.message_id
@@ -545,8 +549,10 @@ async def handle_book(message):
 
 @dp.callback_query_handler(lambda call: call.data == 'cancel', state=any_state)
 async def cancel_order_creation(call, state):
-    order = await database.creation.delete_one({'user_id': call.from_user.id})
+    await state.finish()
+    await tg.answer_callback_query(callback_query_id=call.id)
 
+    order = await database.creation.delete_one({'user_id': call.from_user.id})
     if not order.deleted_count:
         await tg.send_message(
             call.message.chat.id,
@@ -555,8 +561,6 @@ async def cancel_order_creation(call, state):
         )
         return True
 
-    await state.finish()
-    await tg.answer_callback_query(callback_query_id=call.id)
     await tg.send_message(
         call.message.chat.id,
         _('Order is cancelled.'),
@@ -828,19 +832,86 @@ async def cash_payment_type(call):
 
 
 @bot.private_handler(state=OrderCreation.location, content_types=types.ContentType.TEXT)
-async def wrong_location(message, state):
-    await tg.send_message(
-        message.chat.id,
-        _('Send location object with point on the map.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+async def text_location(message, state):
+    query = message.text
+
+    language = await i18n.get_user_locale()
+    location_cache = await database.locations.find_one(
+        {'q': query, 'lang': language}
     )
 
+    if location_cache:
+        results = location_cache['results']
+    else:
+        params = {
+            'q': query,
+            'format': 'json',
+            'accept-language': language
+        }
+        request = requests.get(
+            'https://nominatim.openstreetmap.org/search',
+            params=params, headers={'User-Agent': 'BailsBot'}
+        )
 
-@bot.state_handler(OrderCreation.duration)
-async def duration(call):
-    await tg.edit_message_text(
+        results = [{
+            'display_name': result['display_name'],
+            'lat': result['lat'],
+            'lon': result['lon']
+        } for result in request.json()[:10]]
+
+        await database.locations.insert_one({
+            'q': query, 'lang': language, 'results': results,
+            'date': datetime.utcnow()
+        })
+
+    if not results:
+        await tg.send_message(message.chat.id, _('Location is not found.'))
+        return
+
+    if len(results) == 1:
+        location = results[0]
+        await database.creation.update_one(
+            {'user_id': message.from_user.id},
+            {'$set': {
+                'lat': float(location['lat']), 'lon': float(location['lon'])
+            }}
+        )
+        await OrderCreation.duration.set()
+        await tg.send_message(
+            message.chat.id,
+            _('Send duration of order in days.'),
+            reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        )
+        return
+
+    keyboard = types.InlineKeyboardMarkup(row_width=5)
+
+    answer = _('Choose one of these locations:') + '\n\n'
+    buttons = []
+    for i, result in enumerate(results):
+        answer += '{}. {}\n'.format(i + 1, result['display_name'])
+        buttons.append(
+            types.InlineKeyboardButton(
+                text=f'{i + 1}',
+                callback_data='location {} {}'.format(result['lat'], result['lon'])
+            )
+        )
+    keyboard.add(*buttons)
+
+    await tg.send_message(message.chat.id, answer, reply_markup=keyboard)
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('location'), state=OrderCreation.location)
+async def geocoded_location(call):
+    latitude, longitude = call.data.split()[1:]
+    await database.creation.update_one(
+        {'user_id': call.from_user.id},
+        {'$set': {'lat': float(latitude), 'lon': float(longitude)}}
+    )
+    await OrderCreation.duration.set()
+    await tg.send_message(
+        call.message.chat.id,
         _('Send duration of order in days.'),
-        call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
@@ -850,7 +921,7 @@ async def choose_location(message, state):
     location = message.location
     await database.creation.update_one(
         {'user_id': message.from_user.id},
-        {'$set': {'latitude': location.latitude, 'longitude': location.longitude}}
+        {'$set': {'lat': location.latitude, 'lon': location.longitude}}
     )
     await OrderCreation.duration.set()
     await tg.send_message(
