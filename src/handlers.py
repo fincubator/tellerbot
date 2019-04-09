@@ -335,7 +335,10 @@ async def show_order(order, chat_id, user_id, show_id, message_id=None, invert=F
         )
     if 'price' in order:
         if invert:
-            price = ' {} {}/{}'.format(1 / order['price'], order['buy'], order['sell'])
+            price = ' {} {}/{}'.format(
+                normalize_money(decimal.Decimal(1) / order['price'].to_decimal()),
+                order['buy'], order['sell']
+            )
         else:
             price = ' {} {}/{}'.format(order['price'], order['sell'], order['buy'])
         lines.append(_('Price:') + price)
