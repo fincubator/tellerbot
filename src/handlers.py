@@ -284,7 +284,10 @@ def order_handler(handler):
     return decorator
 
 
-async def show_order(order, chat_id, user_id, show_id, message_id=None, invert=False):
+async def show_order(
+    order, chat_id, user_id, show_id,
+    location_message_id=None, message_id=None, invert=False
+):
     keyboard = types.InlineKeyboardMarkup()
 
     header = ''
@@ -298,14 +301,6 @@ async def show_order(order, chat_id, user_id, show_id, message_id=None, invert=F
         callback_command = 'invert'
         header += _('buys {} for {}').format(order['buy'], order['sell'])
     header += '\n'
-
-    keyboard.row(
-        types.InlineKeyboardButton(
-            text=_('Invert'), callback_data='{} {} {}'.format(
-                callback_command, order['_id'], int(show_id)
-            )
-        )
-    )
 
     lines = [header]
     if 'sum_buy' in order:
@@ -351,14 +346,22 @@ async def show_order(order, chat_id, user_id, show_id, message_id=None, invert=F
             )
         )
 
-    if order.get('lat') is not None and order.get('lon') is not None:
-        location_message = await tg.send_location(
-            chat_id, order['lat'], order['lon']
-        )
-        location_message_id = location_message.message_id
-    else:
-        location_message_id = -1
+    if location_message_id is None:
+        if order.get('lat') is not None and order.get('lon') is not None:
+            location_message = await tg.send_location(
+                chat_id, order['lat'], order['lon']
+            )
+            location_message_id = location_message.message_id
+        else:
+            location_message_id = -1
 
+    keyboard.row(
+        types.InlineKeyboardButton(
+            text=_('Invert'), callback_data='{} {} {} {}'.format(
+                callback_command, order['_id'], int(show_id), location_message_id
+            )
+        )
+    )
     keyboard.row(
         types.InlineKeyboardButton(
             text=_('Hide'), callback_data='hide {}'.format(location_message_id)
@@ -398,25 +401,18 @@ async def get_order_command(message):
     await show_order(order, message.chat.id, message.from_user.id, show_id=False)
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('invert'), state=any_state)
+@dp.callback_query_handler(lambda call: call.data.startswith(('invert', 'revert')), state=any_state)
 @order_handler
 async def invert_button(call, order):
-    show_id = bool(int(call.data.split()[2]))
+    args = call.data.split()
+    invert = args[0] == 'invert'
+    show_id = bool(int(args[2]))
+    location_message_id = int(args[3])
+
     await tg.answer_callback_query(callback_query_id=call.id)
     await show_order(
-        order, call.message.chat.id, call.from_user.id,
-        show_id=show_id, message_id=call.message.message_id, invert=True
-    )
-
-
-@dp.callback_query_handler(lambda call: call.data.startswith('revert'), state=any_state)
-@order_handler
-async def revert_button(call, order):
-    show_id = bool(int(call.data.split()[2]))
-    await tg.answer_callback_query(callback_query_id=call.id)
-    await show_order(
-        order, call.message.chat.id, call.from_user.id,
-        show_id=show_id, message_id=call.message.message_id
+        order, call.message.chat.id, call.from_user.id, show_id=show_id,
+        message_id=call.message.message_id, location_message_id=location_message_id, invert=invert
     )
 
 
