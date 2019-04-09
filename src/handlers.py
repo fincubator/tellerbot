@@ -265,7 +265,10 @@ async def orders_button(call):
     start = max(0, int(call.data.split()[1]))
     await show_orders(call, {
         'user_id': {'$ne': call.from_user.id},
-        'expiration_time': {'$gt': time()}
+        '$or': [
+            {'expiration_time': {'$exists': False}},
+            {'expiration_time': {'$gt': time()}}
+        ]
     }, start, 'orders')
 
 
@@ -547,7 +550,10 @@ async def handle_my_orders(message):
 async def handle_book(message):
     query = {
         'user_id': {'$ne': message.from_user.id},
-        'expiration_time': {'$gt': time()}
+        '$or': [
+            {'expiration_time': {'$exists': False}},
+            {'expiration_time': {'$gt': time()}}
+        ]
     }
     quantity = await database.orders.count_documents(query)
     await orders_list(query, message.chat.id, 0, quantity, 'orders')
@@ -959,7 +965,8 @@ async def choose_comments_handler(call):
     await bot.answer_callback_query(callback_query_id=call.id)
     if order:
         order['start_time'] = time()
-        order['expiration_time'] = time() + order['duration'] * 24 * 60 * 60
+        if 'duration' in order:
+            order['expiration_time'] = time() + order['duration'] * 24 * 60 * 60
         inserted_order = await database.orders.insert_one(order)
         await bot.send_message(
             call.message.chat.id,
