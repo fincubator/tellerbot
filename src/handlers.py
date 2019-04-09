@@ -16,11 +16,13 @@
 # along with BailsBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
+import decimal
 import math
 from string import ascii_letters
 from time import time
 
 from babel import Locale
+from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
 from pymongo.collection import ReturnDocument
 
@@ -33,6 +35,7 @@ import config
 from .bot import bot, dp, private_handler
 from .database import database
 from .i18n import i18n
+from .utils import normalize_money, exp
 
 
 dp.middleware.setup(i18n)
@@ -201,15 +204,15 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
     for i, order in enumerate(orders):
         line = f'{i + 1}. '
         if 'sum_sell' in order:
-            line += '{:.8g} '.format(order['sum_sell'])
+            line += '{} '.format(order['sum_sell'])
         line += '{} → '.format(order['sell'])
 
         if 'sum_buy' in order:
-            line += '{:.8g} '.format(order['sum_buy'])
+            line += '{} '.format(order['sum_buy'])
         line += order['buy']
 
         if 'price' in order:
-            line += ' ({:.8g} {}/{})'.format(order['price'], order['sell'], order['buy'])
+            line += ' ({} {}/{})'.format(order['price'], order['sell'], order['buy'])
 
         lines.append(line)
         buttons.append(
@@ -320,21 +323,21 @@ async def show_order(order, chat_id, user_id, show_id, message_id=None, invert=F
     lines = [header]
     if 'sum_buy' in order:
         lines.append(
-            _('Amount of buying:') + ' {:.8g} {}'.format(
+            _('Amount of buying:') + ' {} {}'.format(
                 order['sum_buy'], order['buy']
             )
         )
     if 'sum_sell' in order:
         lines.append(
-            _('Amount of selling:') + ' {:.8g} {}'.format(
+            _('Amount of selling:') + ' {} {}'.format(
                 order['sum_sell'], order['sell']
             )
         )
     if 'price' in order:
         if invert:
-            price = ' {:.8g} {}/{}'.format(1 / order['price'], order['buy'], order['sell'])
+            price = ' {} {}/{}'.format(1 / order['price'], order['buy'], order['sell'])
         else:
-            price = ' {:.8g} {}/{}'.format(order['price'], order['sell'], order['buy'])
+            price = ' {} {}/{}'.format(order['price'], order['sell'], order['buy'])
         lines.append(_('Price:') + price)
     if 'payment_system' in order:
         lines.append(
@@ -638,15 +641,23 @@ async def price_handler(call):
 
 async def validate_money(data, chat_id):
     try:
-        money = float(data)
-    except ValueError:
+        money = decimal.Decimal(data)
+    except decimal.InvalidOperation:
         await bot.send_message(chat_id, _('Send decimal number.'))
         return
     if money <= 0:
         await bot.send_message(chat_id, _('Send positive number.'))
         return
 
-    return money
+    normalized = normalize_money(money)
+    if normalized.is_zero():
+        await bot.send_message(
+            chat_id,
+            _('Send number greater than') + f' {exp:.8f}'
+        )
+        return
+
+    return normalized
 
 
 @private_handler(state=OrderCreation.price)
@@ -657,7 +668,7 @@ async def choose_price(message, state):
 
     order = await database.creation.find_one_and_update(
         {'user_id': message.from_user.id},
-        {'$set': {'price': price}},
+        {'$set': {'price': Decimal128(price)}},
         return_document=ReturnDocument.AFTER
     )
 
@@ -702,13 +713,13 @@ async def choose_sum(message, state):
     update_dict = {}
     price = order.get('price')
     if order['sum_currency'] == 'buy':
-        update_dict['sum_buy'] = transaction_sum
+        update_dict['sum_buy'] = Decimal128(transaction_sum)
         if price:
-            update_dict['sum_sell'] = transaction_sum * price
+            update_dict['sum_sell'] = Decimal128(normalize_money(transaction_sum * price.to_decimal()))
     else:
-        update_dict['sum_sell'] = transaction_sum
+        update_dict['sum_sell'] = Decimal128(transaction_sum)
         if price:
-            update_dict['sum_buy'] = transaction_sum / price
+            update_dict['sum_buy'] = Decimal128(normalize_money(transaction_sum / price.to_decimal()))
 
     await database.creation.update_one(
         {'_id': order['_id']},
