@@ -4,7 +4,6 @@ from babel import Locale
 from typing import Any, Tuple
 
 import config
-from .bot import dp
 from .database import database
 
 

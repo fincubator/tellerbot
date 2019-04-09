@@ -17,15 +17,15 @@
 
 
 import config
-from .bot import bot, dp
+from .bot import tg, dp
 
 from aiogram.utils.executor import start_webhook
 
 
 async def on_startup(dp):
-    await bot.delete_webhook()
+    await tg.delete_webhook()
     url = 'https://{}'.format(config.SERVER_HOST)
-    await bot.set_webhook(url + config.WEBHOOK_PATH)
+    await tg.set_webhook(url + config.WEBHOOK_PATH)
 
 
 def main():

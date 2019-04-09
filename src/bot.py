@@ -27,8 +27,8 @@ import config
 from .database import storage
 
 
-bot = Bot(token=config.TOKEN, loop=asyncio.get_event_loop())
-dp = Dispatcher(bot, storage=storage)
+tg = Bot(token=config.TOKEN, loop=asyncio.get_event_loop())
+dp = Dispatcher(tg, storage=storage)
 
 logging.basicConfig(level=logging.INFO)
 dp.middleware.setup(LoggingMiddleware())
@@ -41,5 +41,15 @@ def private_handler(*args, **kwargs):
             lambda message: message.chat.type == types.ChatType.PRIVATE,
             *args, **kwargs
         )
+        return handler
+    return decorator
+
+
+state_handlers = {}
+
+
+def state_handler(state):
+    def decorator(handler):
+        state_handlers[state.state] = handler
         return handler
     return decorator

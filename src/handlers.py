@@ -27,36 +27,21 @@ from bson.objectid import ObjectId
 from pymongo.collection import ReturnDocument
 
 from aiogram import types
-from aiogram.dispatcher.filters.state import State, StatesGroup, any_state
+from aiogram.dispatcher.filters.state import any_state
 from aiogram.utils.emoji import emojize
 from aiogram.utils.exceptions import MessageNotModified
 
 import config
-from .bot import bot, dp, private_handler
+from . import bot
+from .bot import tg, dp
 from .database import database
 from .i18n import i18n
+from .states import OrderCreation, payment_system_cashless
 from .utils import normalize_money, exp
 
 
 dp.middleware.setup(i18n)
 _ = i18n.gettext
-
-
-class OrderCreation(StatesGroup):
-    buy = State()
-    sell = State()
-    price = State()
-    sum = State()
-    payment_type = State()
-    payment_system = State()
-    location = State()
-    duration = State()
-    comments = State()
-    set_order = State()
-
-
-payment_system_cashless = State(group_name='OrderCreation')
-state_handlers = {}
 
 
 def help_message():
@@ -100,15 +85,15 @@ def start_keyboard():
     return keyboard
 
 
-@private_handler(commands=['help'])
+@bot.private_handler(commands=['help'])
 async def handle_help_command(message):
-    await bot.send_message(
+    await tg.send_message(
         message.chat.id, help_message(),
         reply_markup=start_keyboard()
     )
 
 
-@private_handler(commands=['start'])
+@bot.private_handler(commands=['start'])
 async def handle_start_command(message):
     user = {'id': message.from_user.id}
     result = await database.users.update_one(
@@ -124,22 +109,22 @@ async def handle_start_command(message):
                     callback_data='locale {}'.format(language)
                 )
             )
-        await bot.send_message(
+        await tg.send_message(
             message.chat.id,
             _('Please, choose your language.'),
             reply_markup=keyboard
         )
         return
 
-    await bot.send_message(
+    await tg.send_message(
         message.chat.id,
         _("Hello, I'm BailsBot.") + ' ' + help_message(),
         reply_markup=start_keyboard()
     )
 
 
-@private_handler(commands=['locale'])
-@private_handler(lambda msg: msg.text.startswith(emojize(':abcd:')))
+@bot.private_handler(commands=['locale'])
+@bot.private_handler(lambda msg: msg.text.startswith(emojize(':abcd:')))
 async def choose_locale(message):
     keyboard = types.InlineKeyboardMarkup()
     for language in i18n.available_locales:
@@ -149,7 +134,7 @@ async def choose_locale(message):
                 callback_data='locale {}'.format(language)
             )
         )
-    await bot.send_message(
+    await tg.send_message(
         message.chat.id,
         _('Choose your language.'),
         reply_markup=keyboard
@@ -165,8 +150,8 @@ async def locale_button(call):
     )
 
     i18n.ctx_locale.set(locale)
-    await bot.answer_callback_query(callback_query_id=call.id)
-    await bot.send_message(
+    await tg.answer_callback_query(callback_query_id=call.id)
+    await tg.send_message(
         call.message.chat.id,
         _("Hello, I'm BailsBot.") + ' ' + help_message(),
         reply_markup=start_keyboard()
@@ -191,9 +176,9 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
         keyboard.row(*inline_orders_buttons)
         text = _('There are no orders.')
         if message_id is None:
-            await bot.send_message(chat_id, text, reply_markup=keyboard)
+            await tg.send_message(chat_id, text, reply_markup=keyboard)
         else:
-            await bot.edit_message_text(text, chat_id, message_id, reply_markup=keyboard)
+            await tg.edit_message_text(text, chat_id, message_id, reply_markup=keyboard)
         return
 
     all_orders = await database.orders.find(query).to_list(length=start + config.ORDERS_COUNT)
@@ -231,11 +216,11 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
     ) + ']\n' + '\n'.join(lines)
 
     if message_id is None:
-        await bot.send_message(
+        await tg.send_message(
             chat_id, text, reply_markup=keyboard, parse_mode='Markdown'
         )
     else:
-        await bot.edit_message_text(
+        await tg.edit_message_text(
             text, chat_id, message_id, reply_markup=keyboard, parse_mode='Markdown'
         )
 
@@ -244,20 +229,20 @@ async def show_orders(call, query, start, buttons_data):
     quantity = await database.orders.count_documents(query)
 
     if start >= quantity > 0:
-        await bot.answer_callback_query(
+        await tg.answer_callback_query(
             callback_query_id=call.id,
             text=_("There are no more orders.")
         )
         return
 
     try:
-        await bot.answer_callback_query(callback_query_id=call.id)
+        await tg.answer_callback_query(callback_query_id=call.id)
         await orders_list(
             query, call.message.chat.id, start, quantity, buttons_data,
             message_id=call.message.message_id
         )
     except MessageNotModified:
-        await bot.answer_callback_query(
+        await tg.answer_callback_query(
             callback_query_id=call.id,
             text=_("There are no previous orders.")
         )
@@ -287,7 +272,7 @@ def order_handler(handler):
         order = await database.orders.find_one({'_id': ObjectId(order_id)})
 
         if not order:
-            await bot.answer_callback_query(
+            await tg.answer_callback_query(
                 callback_query_id=call.id,
                 text=_('Order is not found.')
             )
@@ -365,7 +350,7 @@ async def show_order(order, chat_id, user_id, show_id, message_id=None, invert=F
         )
 
     if order.get('latitude') is not None and order.get('longitude') is not None:
-        location_message = await bot.send_location(
+        location_message = await tg.send_location(
             chat_id, order['latitude'], order['longitude']
         )
         location_message_id = location_message.message_id
@@ -379,11 +364,11 @@ async def show_order(order, chat_id, user_id, show_id, message_id=None, invert=F
     )
 
     if message_id is not None:
-        await bot.edit_message_text(
+        await tg.edit_message_text(
             answer, chat_id, message_id, reply_markup=keyboard, parse_mode='Markdown'
         )
     else:
-        await bot.send_message(
+        await tg.send_message(
             chat_id, answer, reply_markup=keyboard, parse_mode='Markdown'
         )
 
@@ -392,21 +377,21 @@ async def show_order(order, chat_id, user_id, show_id, message_id=None, invert=F
 @order_handler
 async def get_order_button(call, order):
     await show_order(order, call.message.chat.id, call.from_user.id, show_id=True)
-    await bot.answer_callback_query(callback_query_id=call.id)
+    await tg.answer_callback_query(callback_query_id=call.id)
 
 
-@private_handler(commands=['id'])
-@private_handler(regexp='ID: [a-f0-9]{24}')
+@bot.private_handler(commands=['id'])
+@bot.private_handler(regexp='ID: [a-f0-9]{24}')
 async def get_order_command(message):
     try:
         order_id = message.text.split()[1]
     except IndexError:
-        await bot.send_message(message.chat.id, _("Send order's ID as an argument."))
+        await tg.send_message(message.chat.id, _("Send order's ID as an argument."))
         return
 
     order = await database.orders.find_one({'_id': ObjectId(order_id)})
     if not order:
-        await bot.send_message(message.chat.id, _('Order is not found.'))
+        await tg.send_message(message.chat.id, _('Order is not found.'))
         return
     await show_order(order, message.chat.id, message.from_user.id, show_id=False)
 
@@ -435,7 +420,7 @@ async def revert_button(call, order):
 @order_handler
 async def delete_button(call, order):
     delete_result = await database.orders.delete_one({'_id': order['_id'], 'user_id': call.from_user.id})
-    await bot.answer_callback_query(
+    await tg.answer_callback_query(
         callback_query_id=call.id,
         text=_('Order was deleted.') if delete_result.deleted_count > 0 else
         _("Couldn't delete order.")
@@ -444,17 +429,10 @@ async def delete_button(call, order):
 
 @dp.callback_query_handler(lambda call: call.data.startswith('hide'), state=any_state)
 async def hide_button(call):
-    await bot.delete_message(call.message.chat.id, call.message.message_id)
+    await tg.delete_message(call.message.chat.id, call.message.message_id)
     location_message_id = call.data.split()[1]
     if location_message_id != '-1':
-        await bot.delete_message(call.message.chat.id, location_message_id)
-
-
-def state_handler(state):
-    def decorator(handler):
-        state_handlers[state.state] = handler
-        return handler
-    return decorator
+        await tg.delete_message(call.message.chat.id, location_message_id)
 
 
 @dp.callback_query_handler(lambda call: call.data == 'back', state=any_state)
@@ -462,13 +440,13 @@ async def previous_state(call, state):
     state_name = await state.get_state()
     if state_name in OrderCreation:
         new_state = await OrderCreation.previous()
-        handler = state_handlers.get(new_state)
+        handler = bot.state_handlers.get(new_state)
         if handler:
             error = await handler(call)
             if not error:
                 return
         await state.set_state(state_name)
-    return await bot.answer_callback_query(
+    return await tg.answer_callback_query(
         callback_query_id=call.id,
         text=_('You are not creating order.')
     )
@@ -479,20 +457,20 @@ async def next_state(call, state):
     state_name = await state.get_state()
     if state_name in OrderCreation:
         new_state = await OrderCreation.next()
-        handler = state_handlers.get(new_state)
+        handler = bot.state_handlers.get(new_state)
         if handler:
             error = await handler(call)
             if not error:
                 return
         await state.set_state(state_name)
-    return await bot.answer_callback_query(
+    return await tg.answer_callback_query(
         callback_query_id=call.id,
         text=_('You are not creating order.')
     )
 
 
-@private_handler(commands=['create'])
-@private_handler(
+@bot.private_handler(commands=['create'])
+@bot.private_handler(
     lambda msg: msg.text.startswith(emojize(':heavy_plus_sign:'))
 )
 async def handle_create(message):
@@ -510,7 +488,7 @@ async def handle_create(message):
     })
     await OrderCreation.first()
 
-    await bot.send_message(
+    await tg.send_message(
         message.chat.id,
         _('What currency do you want to buy?'),
         reply_markup=types.InlineKeyboardMarkup(
@@ -519,18 +497,18 @@ async def handle_create(message):
     )
 
 
-@state_handler(OrderCreation.buy)
+@bot.state_handler(OrderCreation.buy)
 async def create_order_handler(call):
     order = await database.creation.find_one({'user_id': call.from_user.id})
 
     if not order:
-        await bot.answer_callback_query(
+        await tg.answer_callback_query(
             callback_query_id=call.id,
             text=_('You are not creating order.')
         )
         return True
 
-    await bot.edit_message_text(
+    await tg.edit_message_text(
         _('What currency do you want to buy?'),
         call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(
@@ -539,8 +517,8 @@ async def create_order_handler(call):
     )
 
 
-@private_handler(commands=['my'])
-@private_handler(
+@bot.private_handler(commands=['my'])
+@bot.private_handler(
     lambda msg: msg.text.startswith(emojize(':bust_in_silhouette:'))
 )
 async def handle_my_orders(message):
@@ -549,8 +527,8 @@ async def handle_my_orders(message):
     await orders_list(query, message.chat.id, 0, quantity, 'my_orders')
 
 
-@private_handler(commands=['book'])
-@private_handler(
+@bot.private_handler(commands=['book'])
+@bot.private_handler(
     lambda msg: msg.text.startswith(emojize(':closed_book:'))
 )
 async def handle_book(message):
@@ -570,7 +548,7 @@ async def cancel_order_creation(call, state):
     order = await database.creation.delete_one({'user_id': call.from_user.id})
 
     if not order.deleted_count:
-        await bot.send_message(
+        await tg.send_message(
             call.message.chat.id,
             _('You are not creating order.'),
             reply_markup=start_keyboard()
@@ -578,15 +556,15 @@ async def cancel_order_creation(call, state):
         return True
 
     await state.finish()
-    await bot.answer_callback_query(callback_query_id=call.id)
-    await bot.send_message(
+    await tg.answer_callback_query(callback_query_id=call.id)
+    await tg.send_message(
         call.message.chat.id,
         _('Order is cancelled.'),
         reply_markup=start_keyboard()
     )
 
 
-@private_handler(state=OrderCreation.buy)
+@bot.private_handler(state=OrderCreation.buy)
 async def choose_buy(message, state):
     if not all(ch in ascii_letters for ch in message.text):
         return _('Currency may only contain letters.')
@@ -596,7 +574,7 @@ async def choose_buy(message, state):
         {'$set': {'buy': message.text}}
     )
     await OrderCreation.sell.set()
-    await bot.send_message(
+    await tg.send_message(
         message.chat.id,
         _('What currency do you want to sell?'),
         reply_markup=types.InlineKeyboardMarkup(
@@ -605,9 +583,9 @@ async def choose_buy(message, state):
     )
 
 
-@state_handler(OrderCreation.sell)
+@bot.state_handler(OrderCreation.sell)
 async def choose_buy_handler(call):
-    await bot.edit_message_text(
+    await tg.edit_message_text(
         _('What currency do you want to sell?'),
         call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(
@@ -616,7 +594,7 @@ async def choose_buy_handler(call):
     )
 
 
-@private_handler(state=OrderCreation.sell)
+@bot.private_handler(state=OrderCreation.sell)
 async def choose_sell(message, state):
     if not all(ch in ascii_letters for ch in message.text):
         return _('Currency may only contain letters.')
@@ -626,16 +604,16 @@ async def choose_sell(message, state):
         {'$set': {'sell': message.text.upper()}}
     )
     await OrderCreation.price.set()
-    await bot.send_message(
+    await tg.send_message(
         message.chat.id,
         _('At what price do you want to buy?'),
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
-@state_handler(OrderCreation.price)
+@bot.state_handler(OrderCreation.price)
 async def price_handler(call):
-    await bot.edit_message_text(
+    await tg.edit_message_text(
         _('At what price do you want to buy?'),
         call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
@@ -646,15 +624,15 @@ async def validate_money(data, chat_id):
     try:
         money = decimal.Decimal(data)
     except decimal.InvalidOperation:
-        await bot.send_message(chat_id, _('Send decimal number.'))
+        await tg.send_message(chat_id, _('Send decimal number.'))
         return
     if money <= 0:
-        await bot.send_message(chat_id, _('Send positive number.'))
+        await tg.send_message(chat_id, _('Send positive number.'))
         return
 
     normalized = normalize_money(money)
     if normalized.is_zero():
-        await bot.send_message(
+        await tg.send_message(
             chat_id,
             _('Send number greater than') + f' {exp:.8f}'
         )
@@ -663,7 +641,7 @@ async def validate_money(data, chat_id):
     return normalized
 
 
-@private_handler(state=OrderCreation.price)
+@bot.private_handler(state=OrderCreation.price)
 async def choose_price(message, state):
     price = await validate_money(message.text, message.chat.id)
     if not price:
@@ -690,14 +668,14 @@ async def choose_price(message, state):
         keyboard.row(*row)
 
     await OrderCreation.sum.set()
-    await bot.send_message(
+    await tg.send_message(
         message.chat.id,
         _('Choose currency of order sum.'),
         reply_markup=keyboard
     )
 
 
-@private_handler(state=OrderCreation.sum)
+@bot.private_handler(state=OrderCreation.sum)
 async def choose_sum(message, state):
     transaction_sum = await validate_money(message.text, message.chat.id)
     if not transaction_sum:
@@ -711,7 +689,7 @@ async def choose_sum(message, state):
         {'$unset': {'sum_currency': True}}
     )
     if not order:
-        await bot.send_message(message.chat.id, _('Choose currency of sum with buttons.'))
+        await tg.send_message(message.chat.id, _('Choose currency of sum with buttons.'))
         return
 
     update_dict = {}
@@ -738,19 +716,19 @@ async def choose_sum(message, state):
     for row in inline_control_buttons():
         keyboard.row(*row)
     await OrderCreation.payment_type.set()
-    await bot.send_message(
+    await tg.send_message(
         message.chat.id,
         _('Choose payment type.'),
         reply_markup=keyboard
     )
 
 
-@state_handler(OrderCreation.sum)
+@bot.state_handler(OrderCreation.sum)
 async def sum_handler(call):
     order = await database.creation.find_one({'user_id': call.from_user.id})
 
     if not order:
-        await bot.answer_callback_query(
+        await tg.answer_callback_query(
             callback_query_id=call.id,
             text=_('You are not creating order.')
         )
@@ -771,7 +749,7 @@ async def sum_handler(call):
         keyboard.row(*row)
 
     await OrderCreation.sum.set()
-    await bot.edit_message_text(
+    await tg.edit_message_text(
         _('Choose currency of order sum.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=keyboard
@@ -785,14 +763,14 @@ async def choose_sum_currency(call):
         {'user_id': call.from_user.id},
         {'$set': {'sum_currency': sum_currency}}
     )
-    await bot.answer_callback_query(callback_query_id=call.id)
-    await bot.send_message(
+    await tg.answer_callback_query(callback_query_id=call.id)
+    await tg.send_message(
         call.message.chat.id,
         _('Currency of order sum set. Send order sum in the next message.')
     )
 
 
-@state_handler(OrderCreation.payment_type)
+@bot.state_handler(OrderCreation.payment_type)
 async def payment_type_handler(call):
     result = await database.creation.update_one(
         {'user_id': call.from_user.id},
@@ -800,7 +778,7 @@ async def payment_type_handler(call):
     )
 
     if not result.matched_count:
-        await bot.answer_callback_query(
+        await tg.answer_callback_query(
             callback_query_id=call.id,
             text=_('You are not creating order.')
         )
@@ -814,25 +792,25 @@ async def payment_type_handler(call):
     for row in inline_control_buttons():
         keyboard.row(*row)
 
-    await bot.edit_message_text(
+    await tg.edit_message_text(
         _('Choose payment type.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=keyboard
     )
 
 
-@state_handler(OrderCreation.payment_system)
+@bot.state_handler(OrderCreation.payment_system)
 async def payment_system_handler(call):
-    await bot.edit_message_text(
+    await tg.edit_message_text(
         _('Send payment system.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
-@private_handler(state=OrderCreation.payment_type)
+@bot.private_handler(state=OrderCreation.payment_type)
 async def message_in_payment_type(message, state):
-    await bot.send_message(
+    await tg.send_message(
         message.chat.id,
         _('Send payment system.'),
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
@@ -842,32 +820,32 @@ async def message_in_payment_type(message, state):
 @dp.callback_query_handler(lambda call: call.data == 'cash type', state=OrderCreation.payment_type)
 async def cash_payment_type(call):
     await OrderCreation.location.set()
-    await bot.edit_message_text(
+    await tg.edit_message_text(
         _('Send location of a preferred meeting point.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
-@private_handler(state=OrderCreation.location, content_types=types.ContentType.TEXT)
+@bot.private_handler(state=OrderCreation.location, content_types=types.ContentType.TEXT)
 async def wrong_location(message, state):
-    await bot.send_message(
+    await tg.send_message(
         message.chat.id,
         _('Send location object with point on the map.'),
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
-@state_handler(OrderCreation.duration)
+@bot.state_handler(OrderCreation.duration)
 async def duration(call):
-    await bot.edit_message_text(
+    await tg.edit_message_text(
         _('Send duration of order in days.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
-@private_handler(state=OrderCreation.location, content_types=types.ContentType.LOCATION)
+@bot.private_handler(state=OrderCreation.location, content_types=types.ContentType.LOCATION)
 async def choose_location(message, state):
     location = message.location
     await database.creation.update_one(
@@ -875,7 +853,7 @@ async def choose_location(message, state):
         {'$set': {'latitude': location.latitude, 'longitude': location.longitude}}
     )
     await OrderCreation.duration.set()
-    await bot.send_message(
+    await tg.send_message(
         message.chat.id,
         _('Send duration of order in days.'),
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
@@ -886,30 +864,30 @@ async def choose_location(message, state):
 @dp.callback_query_handler(lambda call: call.data == 'back', state=payment_system_cashless)
 async def cashless_payment_type(call):
     await payment_system_cashless.set()
-    await bot.edit_message_text(
+    await tg.edit_message_text(
         _('Send payment system.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
-@state_handler(OrderCreation.location)
+@bot.state_handler(OrderCreation.location)
 async def location_handler(call):
-    await bot.edit_message_text(
+    await tg.edit_message_text(
         _('Send location of a preferred meeting point.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
-@private_handler(state=OrderCreation.payment_system)
+@bot.private_handler(state=OrderCreation.payment_system)
 async def choose_payment_system(message, state):
     await database.creation.update_one(
         {'user_id': message.from_user.id},
         {'$set': {'payment_system': message.text}}
     )
     await OrderCreation.duration.set()
-    await bot.send_message(
+    await tg.send_message(
         message.chat.id,
         _('Send duration of order in days.'),
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
@@ -917,46 +895,46 @@ async def choose_payment_system(message, state):
 
 
 @dp.callback_query_handler(lambda call: call.data == 'next', state=payment_system_cashless)
-@state_handler(OrderCreation.duration)
+@bot.state_handler(OrderCreation.duration)
 async def duration_handler(call):
-    await bot.edit_message_text(
+    await tg.edit_message_text(
         _('Send duration of order in days.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
-@private_handler(state=payment_system_cashless)
+@bot.private_handler(state=payment_system_cashless)
 async def choose_payment_system_cashless(message, state):
     await database.creation.update_one(
         {'user_id': message.from_user.id},
         {'$set': {'payment_system': message.text}}
     )
     await OrderCreation.duration.set()
-    await bot.send_message(
+    await tg.send_message(
         message.chat.id,
         _('Send duration of order in days.'),
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
-@state_handler(OrderCreation.comments)
+@bot.state_handler(OrderCreation.comments)
 async def comment_handler(call):
-    await bot.edit_message_text(
+    await tg.edit_message_text(
         _('Add any additional comments.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
-@private_handler(state=OrderCreation.duration)
+@bot.private_handler(state=OrderCreation.duration)
 async def choose_duration(message, state):
     try:
         duration = int(message.text)
         if duration <= 0:
             raise ValueError
     except ValueError:
-        await bot.send_message(message.chat.id, _('Send integer.'))
+        await tg.send_message(message.chat.id, _('Send integer.'))
         return
 
     await database.creation.update_one(
@@ -965,25 +943,25 @@ async def choose_duration(message, state):
     )
 
     await OrderCreation.comments.set()
-    await bot.send_message(
+    await tg.send_message(
         message.chat.id,
         _('Add any additional comments.'),
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
-@state_handler(OrderCreation.set_order)
+@bot.state_handler(OrderCreation.set_order)
 async def choose_comments_handler(call):
     order = await database.creation.find_one_and_delete(
         {'user_id': call.from_user.id}
     )
-    await bot.answer_callback_query(callback_query_id=call.id)
+    await tg.answer_callback_query(callback_query_id=call.id)
     if order:
         order['start_time'] = time()
         if 'duration' in order:
             order['expiration_time'] = time() + order['duration'] * 24 * 60 * 60
         inserted_order = await database.orders.insert_one(order)
-        await bot.send_message(
+        await tg.send_message(
             call.message.chat.id,
             _('Order is set.') + '\nID: {}'.format(inserted_order.inserted_id),
             reply_markup=start_keyboard()
@@ -991,11 +969,11 @@ async def choose_comments_handler(call):
     await dp.get_current().current_state().finish()
 
 
-@private_handler(state=OrderCreation.comments)
+@bot.private_handler(state=OrderCreation.comments)
 async def choose_comments(message, state):
     comments = message.text
     if len(comments) > 150:
-        await bot.send_message(
+        await tg.send_message(
             message.chat.id,
             _('Comment should have less than 150 characters '
               '(your comment has {} characters).').format(len(comments))
@@ -1008,7 +986,7 @@ async def choose_comments(message, state):
     if order:
         order['comments'] = comments
         inserted_order = await database.orders.insert_one(order)
-        await bot.send_message(
+        await tg.send_message(
             message.chat.id,
             _('Order is set.') + '\nID: {}'.format(inserted_order.inserted_id),
             reply_markup=start_keyboard()
@@ -1016,6 +994,6 @@ async def choose_comments(message, state):
     await state.finish()
 
 
-@private_handler()
+@bot.private_handler()
 async def handle_default(message):
-    await bot.send_message(message.chat.id, _('Unknown command.'))
+    await tg.send_message(message.chat.id, _('Unknown command.'))
