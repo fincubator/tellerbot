@@ -709,6 +709,7 @@ async def choose_sum(message, state):
     )
     if not order:
         await bot.send_message(message.chat.id, _('Choose currency of sum with buttons.'))
+        return
 
     update_dict = {}
     price = order.get('price')
