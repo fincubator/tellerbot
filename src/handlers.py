@@ -954,9 +954,9 @@ async def choose_payment_system(message, state):
         {'$set': {'payment_system': message.text}}
     )
     await OrderCreation.location.set()
-    await tg.edit_message_text(
+    await tg.send_message(
+        message.chat.id,
         _('Send location of a preferred meeting point.'),
-        message.chat.id, message.message_id,
         reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
