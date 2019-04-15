@@ -168,11 +168,11 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
 
     inline_orders_buttons = (
         InlineKeyboardButton(
-            text='\u2b05\ufe0f',
+            text=emojize(':arrow_left:'),
             callback_data='{} {}'.format(buttons_data, start - config.ORDERS_COUNT)
         ),
         InlineKeyboardButton(
-            text='\u27a1\ufe0f',
+            text=emojize(':arrow_right:'),
             callback_data='{} {}'.format(buttons_data, start + config.ORDERS_COUNT)
         )
     )
