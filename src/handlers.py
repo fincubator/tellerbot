@@ -79,7 +79,7 @@ def inline_control_buttons(no_back=False, no_next=False, no_cancel=False):
 
 
 def start_keyboard():
-    keyboard = ReplyKeyboardMarkup(row_width=2)
+    keyboard = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     keyboard.add(
         KeyboardButton(emojize(':heavy_plus_sign: ') + _('Create order')),
         KeyboardButton(emojize(':bust_in_silhouette: ') + _('My orders')),
