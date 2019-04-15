@@ -28,7 +28,9 @@ from bson.objectid import ObjectId
 from pymongo.collection import ReturnDocument
 import requests
 
-from aiogram import types
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import ContentType, ParseMode
 from aiogram.dispatcher.filters.state import any_state
 from aiogram.utils.emoji import emojize
 from aiogram.utils.exceptions import MessageNotModified
@@ -59,30 +61,30 @@ def inline_control_buttons(no_back=False, no_next=False, no_cancel=False):
     row = []
     if not no_back:
         row.append(
-            types.InlineKeyboardButton(text=_('Back'), callback_data='back')
+            InlineKeyboardButton(text=_('Back'), callback_data='back')
         )
     if not no_next:
         row.append(
-            types.InlineKeyboardButton(text=_('Next'), callback_data='next')
+            InlineKeyboardButton(text=_('Next'), callback_data='next')
         )
     if row:
         buttons.append(row)
 
     if not no_cancel:
         buttons.append([
-            types.InlineKeyboardButton(text=_('Cancel'), callback_data='cancel')
+            InlineKeyboardButton(text=_('Cancel'), callback_data='cancel')
         ])
 
     return buttons
 
 
 def start_keyboard():
-    keyboard = types.ReplyKeyboardMarkup(row_width=2)
+    keyboard = ReplyKeyboardMarkup(row_width=2)
     keyboard.add(
-        types.KeyboardButton(emojize(':heavy_plus_sign: ') + _('Create order')),
-        types.KeyboardButton(emojize(':bust_in_silhouette: ') + _('My orders')),
-        types.KeyboardButton(emojize(':closed_book: ') + _('Order book')),
-        types.KeyboardButton(emojize(':abcd: ') + _('Language'))
+        KeyboardButton(emojize(':heavy_plus_sign: ') + _('Create order')),
+        KeyboardButton(emojize(':bust_in_silhouette: ') + _('My orders')),
+        KeyboardButton(emojize(':closed_book: ') + _('Order book')),
+        KeyboardButton(emojize(':abcd: ') + _('Language'))
     )
     return keyboard
 
@@ -103,10 +105,10 @@ async def handle_start_command(message, state):
     )
 
     if not result.matched_count:
-        keyboard = types.InlineKeyboardMarkup()
+        keyboard = InlineKeyboardMarkup()
         for language in i18n.available_locales:
             keyboard.row(
-                types.InlineKeyboardButton(
+                InlineKeyboardButton(
                     text=Locale(language).display_name,
                     callback_data='locale {}'.format(language)
                 )
@@ -129,10 +131,10 @@ async def handle_start_command(message, state):
 @bot.private_handler(commands=['locale'])
 @bot.private_handler(lambda msg: msg.text.startswith(emojize(':abcd:')))
 async def choose_locale(message):
-    keyboard = types.InlineKeyboardMarkup()
+    keyboard = InlineKeyboardMarkup()
     for language in i18n.available_locales:
         keyboard.row(
-            types.InlineKeyboardButton(
+            InlineKeyboardButton(
                 text=Locale(language).display_name,
                 callback_data='locale {}'.format(language)
             )
@@ -162,14 +164,14 @@ async def locale_button(call):
 
 
 async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=None):
-    keyboard = types.InlineKeyboardMarkup(row_width=5)
+    keyboard = InlineKeyboardMarkup(row_width=5)
 
     inline_orders_buttons = (
-        types.InlineKeyboardButton(
+        InlineKeyboardButton(
             text='\u2b05\ufe0f',
             callback_data='{} {}'.format(buttons_data, start - config.ORDERS_COUNT)
         ),
-        types.InlineKeyboardButton(
+        InlineKeyboardButton(
             text='\u27a1\ufe0f',
             callback_data='{} {}'.format(buttons_data, start + config.ORDERS_COUNT)
         )
@@ -204,7 +206,7 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
 
         lines.append(line)
         buttons.append(
-            types.InlineKeyboardButton(
+            InlineKeyboardButton(
                 text='{}'.format(i + 1),
                 callback_data='get_order {}'.format(order['_id'])
             )
@@ -220,11 +222,13 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
 
     if message_id is None:
         await tg.send_message(
-            chat_id, text, reply_markup=keyboard, parse_mode='Markdown'
+            chat_id, text,
+            reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
         )
     else:
         await tg.edit_message_text(
-            text, chat_id, message_id, reply_markup=keyboard, parse_mode='Markdown'
+            text, chat_id, message_id,
+            reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
         )
 
 
@@ -289,7 +293,7 @@ async def show_order(
     order, chat_id, user_id, show_id,
     location_message_id=None, message_id=None, invert=False
 ):
-    keyboard = types.InlineKeyboardMarkup()
+    keyboard = InlineKeyboardMarkup()
 
     header = ''
     if show_id:
@@ -342,7 +346,7 @@ async def show_order(
 
     if order['user_id'] == user_id:
         keyboard.row(
-            types.InlineKeyboardButton(
+            InlineKeyboardButton(
                 text=_('Delete'), callback_data='delete {}'.format(order['_id'])
             )
         )
@@ -357,25 +361,27 @@ async def show_order(
             location_message_id = -1
 
     keyboard.row(
-        types.InlineKeyboardButton(
+        InlineKeyboardButton(
             text=_('Invert'), callback_data='{} {} {} {}'.format(
                 callback_command, order['_id'], int(show_id), location_message_id
             )
         )
     )
     keyboard.row(
-        types.InlineKeyboardButton(
+        InlineKeyboardButton(
             text=_('Hide'), callback_data='hide {}'.format(location_message_id)
         )
     )
 
     if message_id is not None:
         await tg.edit_message_text(
-            answer, chat_id, message_id, reply_markup=keyboard, parse_mode='Markdown'
+            answer, chat_id, message_id,
+            reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
         )
     else:
         await tg.send_message(
-            chat_id, answer, reply_markup=keyboard, parse_mode='Markdown'
+            chat_id, answer,
+            reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
         )
 
 
@@ -492,7 +498,7 @@ async def handle_create(message):
     await tg.send_message(
         message.chat.id,
         _('What currency do you want to buy?'),
-        reply_markup=types.InlineKeyboardMarkup(
+        reply_markup=InlineKeyboardMarkup(
             inline_keyboard=inline_control_buttons(no_back=True, no_next=True)
         )
     )
@@ -512,7 +518,7 @@ async def create_order_handler(call):
     await tg.edit_message_text(
         _('What currency do you want to buy?'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(
+        reply_markup=InlineKeyboardMarkup(
             inline_keyboard=inline_control_buttons(no_back=True)
         )
     )
@@ -582,7 +588,7 @@ async def choose_buy(message, state):
     await tg.send_message(
         message.chat.id,
         _('What currency do you want to sell?'),
-        reply_markup=types.InlineKeyboardMarkup(
+        reply_markup=InlineKeyboardMarkup(
             inline_keyboard=inline_control_buttons(no_next=True)
         )
     )
@@ -593,7 +599,7 @@ async def choose_buy_handler(call):
     await tg.edit_message_text(
         _('What currency do you want to sell?'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(
+        reply_markup=InlineKeyboardMarkup(
             inline_keyboard=inline_control_buttons()
         )
     )
@@ -616,7 +622,7 @@ async def choose_sell(message, state):
     await tg.send_message(
         message.chat.id,
         _('At what price do you want to buy?'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
@@ -625,7 +631,7 @@ async def price_handler(call):
     await tg.edit_message_text(
         _('At what price do you want to buy?'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
@@ -662,13 +668,13 @@ async def choose_price(message, state):
         return_document=ReturnDocument.AFTER
     )
 
-    keyboard = types.InlineKeyboardMarkup()
+    keyboard = InlineKeyboardMarkup()
     keyboard.add(
-        types.InlineKeyboardButton(
+        InlineKeyboardButton(
             text=order['buy'],
             callback_data='sum buy'
         ),
-        types.InlineKeyboardButton(
+        InlineKeyboardButton(
             text=order['sell'],
             callback_data='sum sell'
         )
@@ -717,10 +723,10 @@ async def choose_sum(message, state):
         {'$set': update_dict}
     )
 
-    keyboard = types.InlineKeyboardMarkup()
+    keyboard = InlineKeyboardMarkup()
     keyboard.add(
-        types.InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
-        types.InlineKeyboardButton(text=_('Cashless'), callback_data='cashless type')
+        InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
+        InlineKeyboardButton(text=_('Cashless'), callback_data='cashless type')
     )
     for row in inline_control_buttons():
         keyboard.row(*row)
@@ -743,13 +749,13 @@ async def sum_handler(call):
         )
         return True
 
-    keyboard = types.InlineKeyboardMarkup()
+    keyboard = InlineKeyboardMarkup()
     keyboard.add(
-        types.InlineKeyboardButton(
+        InlineKeyboardButton(
             text=order['buy'],
             callback_data='sum buy'
         ),
-        types.InlineKeyboardButton(
+        InlineKeyboardButton(
             text=order['sell'],
             callback_data='sum sell'
         )
@@ -793,10 +799,10 @@ async def payment_type_handler(call):
         )
         return True
 
-    keyboard = types.InlineKeyboardMarkup()
+    keyboard = InlineKeyboardMarkup()
     keyboard.add(
-        types.InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
-        types.InlineKeyboardButton(text=_('Cashless'), callback_data='cashless type')
+        InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
+        InlineKeyboardButton(text=_('Cashless'), callback_data='cashless type')
     )
     for row in inline_control_buttons():
         keyboard.row(*row)
@@ -813,7 +819,7 @@ async def payment_system_handler(call):
     await tg.edit_message_text(
         _('Send payment system.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
@@ -822,7 +828,7 @@ async def message_in_payment_type(message, state):
     await tg.send_message(
         message.chat.id,
         _('Send payment system.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
@@ -832,11 +838,11 @@ async def cash_payment_type(call):
     await tg.edit_message_text(
         _('Send location of a preferred meeting point.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
-@bot.private_handler(state=OrderCreation.location, content_types=types.ContentType.TEXT)
+@bot.private_handler(state=OrderCreation.location, content_ContentType.TEXT)
 async def text_location(message, state):
     query = message.text
 
@@ -885,18 +891,18 @@ async def text_location(message, state):
         await tg.send_message(
             message.chat.id,
             _('Send duration of order in days.'),
-            reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
         )
         return
 
-    keyboard = types.InlineKeyboardMarkup(row_width=5)
+    keyboard = InlineKeyboardMarkup(row_width=5)
 
     answer = _('Choose one of these locations:') + '\n\n'
     buttons = []
     for i, result in enumerate(results):
         answer += '{}. {}\n'.format(i + 1, result['display_name'])
         buttons.append(
-            types.InlineKeyboardButton(
+            InlineKeyboardButton(
                 text=f'{i + 1}',
                 callback_data='location {} {}'.format(result['lat'], result['lon'])
             )
@@ -917,11 +923,11 @@ async def geocoded_location(call):
     await tg.send_message(
         call.message.chat.id,
         _('Send duration of order in days.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
-@bot.private_handler(state=OrderCreation.location, content_types=types.ContentType.LOCATION)
+@bot.private_handler(state=OrderCreation.location, content_ContentType.LOCATION)
 async def choose_location(message, state):
     location = message.location
     await database.creation.update_one(
@@ -932,7 +938,7 @@ async def choose_location(message, state):
     await tg.send_message(
         message.chat.id,
         _('Send duration of order in days.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
@@ -943,7 +949,7 @@ async def cashless_payment_type(call):
     await tg.edit_message_text(
         _('Send payment system.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
@@ -952,7 +958,7 @@ async def location_handler(call):
     await tg.edit_message_text(
         _('Send location of a preferred meeting point.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
@@ -966,7 +972,7 @@ async def choose_payment_system(message, state):
     await tg.send_message(
         message.chat.id,
         _('Send location of a preferred meeting point.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
@@ -976,7 +982,7 @@ async def duration_handler(call):
     await tg.edit_message_text(
         _('Send duration of order in days.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
@@ -990,7 +996,7 @@ async def choose_payment_system_cashless(message, state):
     await tg.send_message(
         message.chat.id,
         _('Send duration of order in days.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
@@ -999,7 +1005,7 @@ async def comment_handler(call):
     await tg.edit_message_text(
         _('Add any additional comments.'),
         call.message.chat.id, call.message.message_id,
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
@@ -1022,7 +1028,7 @@ async def choose_duration(message, state):
     await tg.send_message(
         message.chat.id,
         _('Add any additional comments.'),
-        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
