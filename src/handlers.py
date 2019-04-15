@@ -95,8 +95,8 @@ async def handle_help_command(message):
     )
 
 
-@bot.private_handler(commands=['start'])
-async def handle_start_command(message):
+@bot.private_handler(commands=['start'], state=any_state)
+async def handle_start_command(message, state):
     user = {'id': message.from_user.id}
     result = await database.users.update_one(
         user, {'$setOnInsert': user}, upsert=True
@@ -118,6 +118,7 @@ async def handle_start_command(message):
         )
         return
 
+    await state.finish()
     await tg.send_message(
         message.chat.id,
         _("Hello, I'm BailsBot.") + ' ' + help_message(),
@@ -567,7 +568,11 @@ async def cancel_order_creation(call, state):
 @bot.private_handler(state=OrderCreation.buy)
 async def choose_buy(message, state):
     if not all(ch in ascii_letters for ch in message.text):
-        return _('Currency may only contain letters.')
+        await tg.send_message(
+            message.chat.id,
+            _('Currency may only contain latin characters.'),
+        )
+        return
 
     await database.creation.update_one(
         {'user_id': message.from_user.id},
@@ -597,11 +602,15 @@ async def choose_buy_handler(call):
 @bot.private_handler(state=OrderCreation.sell)
 async def choose_sell(message, state):
     if not all(ch in ascii_letters for ch in message.text):
-        return _('Currency may only contain letters.')
+        await tg.send_message(
+            message.chat.id,
+            _('Currency may only contain latin characters.'),
+        )
+        return
 
     await database.creation.update_one(
         {'user_id': message.from_user.id},
-        {'$set': {'sell': message.text.upper()}}
+        {'$set': {'sell': message.text}}
     )
     await OrderCreation.price.set()
     await tg.send_message(
