@@ -614,22 +614,28 @@ async def choose_sell(message, state):
         )
         return
 
-    await database.creation.update_one(
+    order = await database.creation.find_one_and_update(
         {'user_id': message.from_user.id},
-        {'$set': {'sell': message.text}}
+        {'$set': {'sell': message.text}},
+        return_document=ReturnDocument.AFTER
     )
     await OrderCreation.price.set()
     await tg.send_message(
         message.chat.id,
-        _('At what price do you want to buy?'),
+        _('At what price (in {}/{}) do you want to buy?').format(
+            order['sell'], order['buy']
+        ),
         reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
 
 @bot.state_handler(OrderCreation.price)
 async def price_handler(call):
+    order = await database.creation.find_one({'user_id': call.from_user.id})
     await tg.edit_message_text(
-        _('At what price do you want to buy?'),
+        _('At what price (in {}/{}) do you want to buy?').format(
+            order['sell'], order['buy']
+        ),
         call.message.chat.id, call.message.message_id,
         reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
