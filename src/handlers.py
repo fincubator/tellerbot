@@ -848,7 +848,7 @@ async def cash_payment_type(call):
     )
 
 
-@bot.private_handler(state=OrderCreation.location, content_ContentType.TEXT)
+@bot.private_handler(state=OrderCreation.location, content_types=ContentType.TEXT)
 async def text_location(message, state):
     query = message.text
 
@@ -933,7 +933,7 @@ async def geocoded_location(call):
     )
 
 
-@bot.private_handler(state=OrderCreation.location, content_ContentType.LOCATION)
+@bot.private_handler(state=OrderCreation.location, content_types=ContentType.LOCATION)
 async def choose_location(message, state):
     location = message.location
     await database.creation.update_one(
