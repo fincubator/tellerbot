@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-04-17 21:33+0300\n"
+"POT-Creation-Date: 2019-04-18 02:50+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -18,229 +18,265 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.6.0\n"
 
-#: src/handlers.py:52
+#: src/handlers.py:55
+msgid "Send decimal number."
+msgstr ""
+
+#: src/handlers.py:57
+msgid "Send positive number."
+msgstr ""
+
+#: src/handlers.py:61
+msgid "Send number greater than"
+msgstr ""
+
+#: src/handlers.py:67
 msgid ""
 "I can help you meet with people that you can swap money with.\n"
 "\n"
 "Choose one of the options on your keyboard."
 msgstr ""
 
-#: src/handlers.py:64
+#: src/handlers.py:79
 msgid "Back"
 msgstr ""
 
-#: src/handlers.py:68
+#: src/handlers.py:83
 msgid "Next"
 msgstr ""
 
-#: src/handlers.py:75
+#: src/handlers.py:90
 msgid "Cancel"
 msgstr ""
 
-#: src/handlers.py:84
+#: src/handlers.py:99
 msgid "Create order"
 msgstr ""
 
-#: src/handlers.py:85
+#: src/handlers.py:100
 msgid "My orders"
 msgstr ""
 
-#: src/handlers.py:86
+#: src/handlers.py:101
 msgid "Order book"
 msgstr ""
 
-#: src/handlers.py:87
+#: src/handlers.py:102
 msgid "Language"
 msgstr ""
 
-#: src/handlers.py:118
+#: src/handlers.py:133
 msgid "Please, choose your language."
 msgstr ""
 
-#: src/handlers.py:126 src/handlers.py:161
+#: src/handlers.py:141 src/handlers.py:176
 msgid "Hello, I'm TellerBot."
 msgstr ""
 
-#: src/handlers.py:144
+#: src/handlers.py:159
 msgid "Choose your language."
 msgstr ""
 
-#: src/handlers.py:182
+#: src/handlers.py:197
 msgid "There are no orders."
 msgstr ""
 
-#: src/handlers.py:218
+#: src/handlers.py:233
 msgid "Page {} of {}"
 msgstr ""
 
-#: src/handlers.py:241
+#: src/handlers.py:256
 msgid "There are no more orders."
 msgstr ""
 
-#: src/handlers.py:254
+#: src/handlers.py:269
 msgid "There are no previous orders."
 msgstr ""
 
-#: src/handlers.py:284 src/handlers.py:406
-msgid "Order is not found."
-msgstr ""
-
-#: src/handlers.py:304
-msgid "sells {} for {}"
-msgstr ""
-
-#: src/handlers.py:307
-msgid "buys {} for {}"
-msgstr ""
-
-#: src/handlers.py:313
+#: src/handlers.py:293
 msgid "Amount of buying:"
 msgstr ""
 
-#: src/handlers.py:319
+#: src/handlers.py:294
 msgid "Amount of selling:"
 msgstr ""
 
-#: src/handlers.py:331
+#: src/handlers.py:295
 msgid "Price:"
 msgstr ""
 
-#: src/handlers.py:334
+#: src/handlers.py:296
 msgid "Payment system:"
 msgstr ""
 
-#: src/handlers.py:338
-msgid "Duration: {} days"
+#: src/handlers.py:297
+msgid "Duration:"
 msgstr ""
 
-#: src/handlers.py:342
+#: src/handlers.py:298
 msgid "Comments:"
 msgstr ""
 
-#: src/handlers.py:350
-msgid "Delete"
+#: src/handlers.py:321
+msgid "sells {} for {}"
 msgstr ""
 
-#: src/handlers.py:365
+#: src/handlers.py:323
+msgid "buys {} for {}"
+msgstr ""
+
+#: src/handlers.py:347
+msgid "{} days"
+msgstr ""
+
+#: src/handlers.py:355
 msgid "Invert"
 msgstr ""
 
-#: src/handlers.py:372
+#: src/handlers.py:380
+msgid "Finish"
+msgstr ""
+
+#: src/handlers.py:395
+msgid "Edit"
+msgstr ""
+
+#: src/handlers.py:403
+msgid "Delete"
+msgstr ""
+
+#: src/handlers.py:408
 msgid "Hide"
 msgstr ""
 
-#: src/handlers.py:401
+#: src/handlers.py:434 src/handlers.py:460
+msgid "Order is not found."
+msgstr ""
+
+#: src/handlers.py:455
 msgid "Send order's ID as an argument."
 msgstr ""
 
-#: src/handlers.py:432
+#: src/handlers.py:491
+msgid "Send new amount of buying."
+msgstr ""
+
+#: src/handlers.py:493
+msgid "Send new amount of selling."
+msgstr ""
+
+#: src/handlers.py:495
+msgid "Send new price."
+msgstr ""
+
+#: src/handlers.py:497
+msgid "Send new payment system."
+msgstr ""
+
+#: src/handlers.py:499
+msgid "Send new duration."
+msgstr ""
+
+#: src/handlers.py:501
+msgid "Send new comments."
+msgstr ""
+
+#: src/handlers.py:574 src/handlers.py:1184
+msgid "Send natural number."
+msgstr ""
+
+#: src/handlers.py:611
 msgid "Order was deleted."
 msgstr ""
 
-#: src/handlers.py:433
+#: src/handlers.py:612
 msgid "Couldn't delete order."
 msgstr ""
 
-#: src/handlers.py:458 src/handlers.py:475 src/handlers.py:514
-#: src/handlers.py:562 src/handlers.py:754 src/handlers.py:804
+#: src/handlers.py:637 src/handlers.py:654 src/handlers.py:693
+#: src/handlers.py:741 src/handlers.py:913 src/handlers.py:963
 msgid "You are not creating order."
 msgstr ""
 
-#: src/handlers.py:500 src/handlers.py:519
+#: src/handlers.py:679 src/handlers.py:698
 msgid "What currency do you want to buy?"
 msgstr ""
 
-#: src/handlers.py:569
+#: src/handlers.py:748
 msgid "Order is cancelled."
 msgstr ""
 
-#: src/handlers.py:579 src/handlers.py:613
+#: src/handlers.py:758 src/handlers.py:792
 msgid "Currency may only contain latin characters."
 msgstr ""
 
-#: src/handlers.py:590 src/handlers.py:600
+#: src/handlers.py:769 src/handlers.py:779
 msgid "What currency do you want to sell?"
 msgstr ""
 
-#: src/handlers.py:625 src/handlers.py:636
+#: src/handlers.py:804 src/handlers.py:815
 msgid "At what price (in {}/{}) do you want to buy?"
 msgstr ""
 
-#: src/handlers.py:648
-msgid "Send decimal number."
-msgstr ""
-
-#: src/handlers.py:651
-msgid "Send positive number."
-msgstr ""
-
-#: src/handlers.py:658
-msgid "Send number greater than"
-msgstr ""
-
-#: src/handlers.py:694 src/handlers.py:774
+#: src/handlers.py:854 src/handlers.py:933
 msgid "Choose currency of order sum."
 msgstr ""
 
-#: src/handlers.py:713
+#: src/handlers.py:872
 msgid "Choose currency of sum with buttons."
 msgstr ""
 
-#: src/handlers.py:734 src/handlers.py:810
+#: src/handlers.py:893 src/handlers.py:969
 msgid "Cash"
 msgstr ""
 
-#: src/handlers.py:735 src/handlers.py:811
+#: src/handlers.py:894 src/handlers.py:970
 msgid "Cashless"
 msgstr ""
 
-#: src/handlers.py:742 src/handlers.py:817
+#: src/handlers.py:901 src/handlers.py:976
 msgid "Choose payment type."
 msgstr ""
 
-#: src/handlers.py:790
+#: src/handlers.py:949
 msgid "Currency of order sum set. Send order sum in the next message."
 msgstr ""
 
-#: src/handlers.py:826 src/handlers.py:836 src/handlers.py:956
+#: src/handlers.py:985 src/handlers.py:995 src/handlers.py:1115
 msgid "Send payment system."
 msgstr ""
 
-#: src/handlers.py:845 src/handlers.py:965 src/handlers.py:980
+#: src/handlers.py:1004 src/handlers.py:1124 src/handlers.py:1139
 msgid "Send location of a preferred meeting point."
 msgstr ""
 
-#: src/handlers.py:885
+#: src/handlers.py:1044
 msgid "Location is not found."
 msgstr ""
 
-#: src/handlers.py:899 src/handlers.py:931 src/handlers.py:946
-#: src/handlers.py:989 src/handlers.py:1004
+#: src/handlers.py:1058 src/handlers.py:1090 src/handlers.py:1105
+#: src/handlers.py:1148 src/handlers.py:1163
 msgid "Send duration of order in days."
 msgstr ""
 
-#: src/handlers.py:906
+#: src/handlers.py:1065
 msgid "Choose one of these locations:"
 msgstr ""
 
-#: src/handlers.py:1012 src/handlers.py:1036
+#: src/handlers.py:1171 src/handlers.py:1195
 msgid "Add any additional comments."
 msgstr ""
 
-#: src/handlers.py:1025
-msgid "Send integer."
-msgstr ""
-
-#: src/handlers.py:1054 src/handlers.py:1079
+#: src/handlers.py:1213 src/handlers.py:1238
 msgid "Order is set."
 msgstr ""
 
-#: src/handlers.py:1066
+#: src/handlers.py:1225
 msgid ""
 "Comment should have less than 150 characters (your comment has {} "
 "characters)."
 msgstr ""
 
-#: src/handlers.py:1087
+#: src/handlers.py:1246
 msgid "Unknown command."
 msgstr ""

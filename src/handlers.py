@@ -36,16 +36,31 @@ from aiogram.utils.emoji import emojize
 from aiogram.utils.exceptions import MessageNotModified
 
 import config
-from . import bot
+from . import bot, states
 from .bot import tg, dp
-from .database import database
+from .database import database, STATE_KEY
 from .i18n import i18n
-from .states import OrderCreation, payment_system_cashless
-from .utils import normalize_money, exp
+from .states import OrderCreation
+from .utils import normalize_money, exp, MoneyValidationError
 
 
 dp.middleware.setup(i18n)
 _ = i18n.gettext
+
+
+async def validate_money(data, chat_id):
+    try:
+        money = decimal.Decimal(data)
+    except decimal.InvalidOperation:
+        raise MoneyValidationError(_('Send decimal number.'))
+    if money <= 0:
+        raise MoneyValidationError(_('Send positive number.'))
+
+    normalized = normalize_money(money)
+    if normalized.is_zero():
+        raise MoneyValidationError(_('Send number greater than') + f' {exp:.8f}')
+
+    return normalized
 
 
 def help_message():
@@ -273,6 +288,141 @@ async def my_orders_button(call):
     await show_orders(call, {'user_id': call.from_user.id}, start, 'my_orders')
 
 
+def get_order_field_names():
+    return {
+        'sum_buy': _('Amount of buying:'),
+        'sum_sell': _('Amount of selling:'),
+        'price': _('Price:'),
+        'payment_system': _('Payment system:'),
+        'duration': _('Duration:'),
+        'comments': _('Comments:')
+    }
+
+
+async def show_order(
+    order, chat_id, user_id,
+    message_id=None, location_message_id=None,
+    show_id=False, invert=False, edit=False
+):
+    if location_message_id is None:
+        if order.get('lat') is not None and order.get('lon') is not None:
+            location_message = await tg.send_location(
+                chat_id, order['lat'], order['lon']
+            )
+            location_message_id = location_message.message_id
+        else:
+            location_message_id = -1
+
+    header = ''
+    if show_id:
+        header += 'ID: {}\n'.format(order['_id'])
+    header += order['username'] + ' '
+    if invert:
+        header += _('sells {} for {}').format(order['sell'], order['buy'])
+    else:
+        header += _('buys {} for {}').format(order['buy'], order['sell'])
+    header += '\n'
+
+    lines = [header]
+    field_names = get_order_field_names()
+    lines_format = {k: None for k in field_names}
+
+    if 'sum_buy' in order:
+        lines_format['sum_buy'] = '{} {}'.format(order['sum_buy'], order['buy'])
+    if 'sum_sell' in order:
+        lines_format['sum_sell'] = '{} {}'.format(order['sum_sell'], order['sell'])
+    if 'price' in order:
+        if invert:
+            lines_format['price'] = '{} {}/{}'.format(
+                normalize_money(decimal.Decimal(1) / order['price'].to_decimal()),
+                order['buy'], order['sell']
+            )
+        else:
+            lines_format['price'] = '{} {}/{}'.format(
+                order['price'], order['sell'], order['buy']
+            )
+    if 'payment_system' in order:
+        lines_format['payment_system'] = order['payment_system']
+    if 'duration' in order:
+        lines_format['duration'] = _('{} days').format(order['duration'])
+    if 'comments' in order:
+        lines_format['comments'] = '«{}»'.format(order['comments'])
+
+    keyboard = InlineKeyboardMarkup(row_width=6)
+
+    keyboard.row(
+        InlineKeyboardButton(
+            text=_('Invert'), callback_data='{} {} {} {}'.format(
+                'revert' if invert else 'invert',
+                order['_id'], location_message_id, int(edit)
+            )
+        )
+    )
+
+    if edit:
+        buttons = []
+        for i, (field, value) in enumerate(lines_format.items()):
+            if value is not None:
+                lines.append(f'{i + 1}. {field_names[field]} {value}')
+            elif edit:
+                lines.append(f'{i + 1}. {field_names[field]} -')
+            buttons.append(
+                InlineKeyboardButton(
+                    text=f'{i + 1}', callback_data='edit {} {} {} {}'.format(
+                        order['_id'], field, location_message_id, int(invert)
+                    )
+                )
+            )
+
+        keyboard.add(*buttons)
+        keyboard.row(
+            InlineKeyboardButton(
+                text=_('Finish'), callback_data='{} {} {} 0'.format(
+                    'invert' if invert else 'revert',
+                    order['_id'], location_message_id
+                )
+            )
+        )
+
+    else:
+        for field, value in lines_format.items():
+            if value is not None:
+                lines.append(field_names[field] + ' ' + value)
+
+        if order['user_id'] == user_id:
+            keyboard.row(
+                InlineKeyboardButton(
+                    text=_('Edit'), callback_data='{} {} {} 1'.format(
+                        'invert' if invert else 'revert',
+                        order['_id'], location_message_id
+                    )
+                )
+            )
+            keyboard.row(
+                InlineKeyboardButton(
+                    text=_('Delete'), callback_data='delete {}'.format(order['_id'])
+                )
+            )
+        keyboard.row(
+            InlineKeyboardButton(
+                text=_('Hide'), callback_data='hide {}'.format(location_message_id)
+            )
+        )
+
+    answer = '\n'.join(lines)
+
+    if message_id is not None:
+        await tg.edit_message_text(
+            answer, chat_id, message_id,
+            reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
+        )
+    else:
+        await tg.send_message(
+            chat_id, answer,
+            reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
+        )
+
+
 def order_handler(handler):
     async def decorator(call):
         order_id = call.data.split()[1]
@@ -289,107 +439,11 @@ def order_handler(handler):
     return decorator
 
 
-async def show_order(
-    order, chat_id, user_id, show_id,
-    location_message_id=None, message_id=None, invert=False
-):
-    keyboard = InlineKeyboardMarkup()
-
-    header = ''
-    if show_id:
-        header += 'ID: {}\n'.format(order['_id'])
-    header += order['username'] + ' '
-    if invert:
-        callback_command = 'revert'
-        header += _('sells {} for {}').format(order['sell'], order['buy'])
-    else:
-        callback_command = 'invert'
-        header += _('buys {} for {}').format(order['buy'], order['sell'])
-    header += '\n'
-
-    lines = [header]
-    if 'sum_buy' in order:
-        lines.append(
-            _('Amount of buying:') + ' {} {}'.format(
-                order['sum_buy'], order['buy']
-            )
-        )
-    if 'sum_sell' in order:
-        lines.append(
-            _('Amount of selling:') + ' {} {}'.format(
-                order['sum_sell'], order['sell']
-            )
-        )
-    if 'price' in order:
-        if invert:
-            price = ' {} {}/{}'.format(
-                normalize_money(decimal.Decimal(1) / order['price'].to_decimal()),
-                order['buy'], order['sell']
-            )
-        else:
-            price = ' {} {}/{}'.format(order['price'], order['sell'], order['buy'])
-        lines.append(_('Price:') + price)
-    if 'payment_system' in order:
-        lines.append(
-            _('Payment system:') + ' ' + order['payment_system']
-        )
-    if 'duration' in order:
-        lines.append(
-            _('Duration: {} days').format(order['duration'])
-        )
-    if 'comments' in order:
-        lines.append(
-            _('Comments:') + ' «{}»'.format(order['comments'])
-        )
-
-    answer = '\n'.join(lines)
-
-    if order['user_id'] == user_id:
-        keyboard.row(
-            InlineKeyboardButton(
-                text=_('Delete'), callback_data='delete {}'.format(order['_id'])
-            )
-        )
-
-    if location_message_id is None:
-        if order.get('lat') is not None and order.get('lon') is not None:
-            location_message = await tg.send_location(
-                chat_id, order['lat'], order['lon']
-            )
-            location_message_id = location_message.message_id
-        else:
-            location_message_id = -1
-
-    keyboard.row(
-        InlineKeyboardButton(
-            text=_('Invert'), callback_data='{} {} {} {}'.format(
-                callback_command, order['_id'], int(show_id), location_message_id
-            )
-        )
-    )
-    keyboard.row(
-        InlineKeyboardButton(
-            text=_('Hide'), callback_data='hide {}'.format(location_message_id)
-        )
-    )
-
-    if message_id is not None:
-        await tg.edit_message_text(
-            answer, chat_id, message_id,
-            reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
-        )
-    else:
-        await tg.send_message(
-            chat_id, answer,
-            reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
-        )
-
-
 @dp.callback_query_handler(lambda call: call.data.startswith('get_order'), state=any_state)
 @order_handler
 async def get_order_button(call, order):
-    await show_order(order, call.message.chat.id, call.from_user.id, show_id=True)
     await tg.answer_callback_query(callback_query_id=call.id)
+    await show_order(order, call.message.chat.id, call.from_user.id, show_id=True)
 
 
 @bot.private_handler(commands=['id'])
@@ -405,28 +459,153 @@ async def get_order_command(message):
     if not order:
         await tg.send_message(message.chat.id, _('Order is not found.'))
         return
-    await show_order(order, message.chat.id, message.from_user.id, show_id=False)
+    await show_order(order, message.chat.id, message.from_user.id)
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith(('invert', 'revert')), state=any_state)
 @order_handler
 async def invert_button(call, order):
     args = call.data.split()
+
     invert = args[0] == 'invert'
-    show_id = bool(int(args[2]))
-    location_message_id = int(args[3])
+    location_message_id = int(args[2])
+    edit = bool(int(args[3]))
+    show_id = call.message.text.startswith('ID')
 
     await tg.answer_callback_query(callback_query_id=call.id)
     await show_order(
-        order, call.message.chat.id, call.from_user.id, show_id=show_id,
-        message_id=call.message.message_id, location_message_id=location_message_id, invert=invert
+        order, call.message.chat.id, call.from_user.id,
+        message_id=call.message.message_id,
+        location_message_id=location_message_id, show_id=show_id,
+        invert=invert, edit=edit
     )
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('edit'), state=any_state)
+@order_handler
+async def edit_button(call, order):
+    args = call.data.split()
+    field = args[2]
+
+    if field == 'sum_buy':
+        answer = _('Send new amount of buying.')
+    elif field == 'sum_sell':
+        answer = _('Send new amount of selling.')
+    elif field == 'price':
+        answer = _('Send new price.')
+    elif field == 'payment_system':
+        answer = _('Send new payment system.')
+    elif field == 'duration':
+        answer = _('Send new duration.')
+    elif field == 'comments':
+        answer = _('Send new comments.')
+    else:
+        answer = None
+
+    await tg.answer_callback_query(callback_query_id=call.id)
+    if answer:
+        result = await tg.send_message(call.message.chat.id, answer)
+        await database.users.update_one(
+            {'id': call.from_user.id},
+            {'$set': {
+                'edit.order_message_id': call.message.message_id,
+                'edit.message_id': result.message_id,
+                'edit.order_id': order['_id'],
+                'edit.field': field,
+                'edit.location_message_id': int(args[3]),
+                'edit.invert': bool(int(args[4])),
+                'edit.show_id': call.message.text.startswith('ID')
+            }}
+        )
+        await states.field_editing.set()
+
+
+@bot.private_handler(state=states.field_editing)
+async def edit_field(message, state):
+    user = await database.users.find_one({'id': message.from_user.id})
+    edit = user['edit']
+    field = edit['field']
+    update_dict = {}
+    error = None
+
+    if field == 'sum_buy':
+        try:
+            transaction_sum = await validate_money(message.text, message.chat.id)
+        except MoneyValidationError as exception:
+            error = str(exception)
+        else:
+            order = await database.orders.find_one({'_id': edit['order_id']})
+            update_dict['sum_buy'] = Decimal128(transaction_sum)
+            if order['price']:
+                update_dict['sum_sell'] = Decimal128(normalize_money(transaction_sum * order['price'].to_decimal()))
+
+    elif field == 'sum_sell':
+        try:
+            transaction_sum = await validate_money(message.text, message.chat.id)
+        except MoneyValidationError as exception:
+            error = str(exception)
+        else:
+            order = await database.orders.find_one({'_id': edit['order_id']})
+            update_dict['sum_sell'] = Decimal128(transaction_sum)
+            if order['price']:
+                update_dict['sum_buy'] = Decimal128(normalize_money(transaction_sum / order['price'].to_decimal()))
+
+    elif field == 'price':
+        try:
+            price = await validate_money(message.text, message.chat.id)
+        except MoneyValidationError as exception:
+            error = str(exception)
+        else:
+            update_dict['price'] = Decimal128(price)
+            if order['sum_currency'] == 'buy':
+                update_dict['sum_sell'] = Decimal128(normalize_money(order['sum_buy'].to_decimal() * price))
+            else:
+                update_dict['sum_buy'] = Decimal128(normalize_money(order['sum_sell'].to_decimal() / price))
+
+    elif field == 'payment_system':
+        update_dict['payment_system'] = message.text
+
+    elif field == 'duration':
+        try:
+            duration = int(message.text)
+            if duration <= 0:
+                raise ValueError
+        except ValueError:
+            error = _('Send natural number.')
+        else:
+            update_dict['duration'] = duration
+
+    elif field == 'comments':
+        update_dict['comments'] = message.text
+
+    if update_dict:
+        order = await database.orders.find_one_and_update(
+            {'_id': edit['order_id']},
+            {'$set': update_dict},
+            return_document=ReturnDocument.AFTER
+        )
+        await show_order(
+            order, message.chat.id, message.from_user.id,
+            message_id=edit['order_message_id'], location_message_id=edit['location_message_id'],
+            show_id=edit['show_id'], invert=edit['invert'], edit=True
+        )
+        await database.users.update_one(
+            {'id': message.from_user.id},
+            {'$unset': {'edit': True, STATE_KEY: True}}
+        )
+        await tg.delete_message(message.chat.id, message.message_id)
+        await tg.delete_message(message.chat.id, edit['message_id'])
+    elif error:
+        await tg.delete_message(message.chat.id, message.message_id)
+        await tg.edit_message_text(error, message.chat.id, edit['message_id'])
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('delete'), state=any_state)
 @order_handler
 async def delete_button(call, order):
-    delete_result = await database.orders.delete_one({'_id': order['_id'], 'user_id': call.from_user.id})
+    delete_result = await database.orders.delete_one({
+        '_id': order['_id'], 'user_id': call.from_user.id
+    })
     await tg.answer_callback_query(
         callback_query_id=call.id,
         text=_('Order was deleted.') if delete_result.deleted_count > 0 else
@@ -505,7 +684,7 @@ async def handle_create(message):
 
 
 @bot.state_handler(OrderCreation.buy)
-async def create_order_handler(call):
+async def create_order_handler(call, order=None):
     order = await database.creation.find_one({'user_id': call.from_user.id})
 
     if not order:
@@ -576,7 +755,7 @@ async def choose_buy(message, state):
     if not all(ch in ascii_letters for ch in message.text):
         await tg.send_message(
             message.chat.id,
-            _('Currency may only contain latin characters.'),
+            _('Currency may only contain latin characters.')
         )
         return
 
@@ -610,7 +789,7 @@ async def choose_sell(message, state):
     if not all(ch in ascii_letters for ch in message.text):
         await tg.send_message(
             message.chat.id,
-            _('Currency may only contain latin characters.'),
+            _('Currency may only contain latin characters.')
         )
         return
 
@@ -641,31 +820,12 @@ async def price_handler(call):
     )
 
 
-async def validate_money(data, chat_id):
-    try:
-        money = decimal.Decimal(data)
-    except decimal.InvalidOperation:
-        await tg.send_message(chat_id, _('Send decimal number.'))
-        return
-    if money <= 0:
-        await tg.send_message(chat_id, _('Send positive number.'))
-        return
-
-    normalized = normalize_money(money)
-    if normalized.is_zero():
-        await tg.send_message(
-            chat_id,
-            _('Send number greater than') + f' {exp:.8f}'
-        )
-        return
-
-    return normalized
-
-
 @bot.private_handler(state=OrderCreation.price)
 async def choose_price(message, state):
-    price = await validate_money(message.text, message.chat.id)
-    if not price:
+    try:
+        price = await validate_money(message.text, message.chat.id)
+    except MoneyValidationError as exception:
+        await tg.send_message(message.chat.id, str(exception))
         return
 
     order = await database.creation.find_one_and_update(
@@ -698,17 +858,16 @@ async def choose_price(message, state):
 
 @bot.private_handler(state=OrderCreation.sum)
 async def choose_sum(message, state):
-    transaction_sum = await validate_money(message.text, message.chat.id)
-    if not transaction_sum:
+    try:
+        transaction_sum = await validate_money(message.text, message.chat.id)
+    except MoneyValidationError as exception:
+        await tg.send_message(message.chat.id, str(exception))
         return
 
-    order = await database.creation.find_one_and_update(
-        {
-            'user_id': message.from_user.id,
-            'sum_currency': {'$exists': True}
-        },
-        {'$unset': {'sum_currency': True}}
-    )
+    order = await database.creation.find_one({
+        'user_id': message.from_user.id,
+        'sum_currency': {'$exists': True}
+    })
     if not order:
         await tg.send_message(message.chat.id, _('Choose currency of sum with buttons.'))
         return
@@ -949,9 +1108,9 @@ async def choose_location(message, state):
 
 
 @dp.callback_query_handler(lambda call: call.data == 'cashless type', state=OrderCreation.payment_type)
-@dp.callback_query_handler(lambda call: call.data == 'back', state=payment_system_cashless)
+@dp.callback_query_handler(lambda call: call.data == 'back', state=states.payment_system_cashless)
 async def cashless_payment_type(call):
-    await payment_system_cashless.set()
+    await states.payment_system_cashless.set()
     await tg.edit_message_text(
         _('Send payment system.'),
         call.message.chat.id, call.message.message_id,
@@ -982,7 +1141,7 @@ async def choose_payment_system(message, state):
     )
 
 
-@dp.callback_query_handler(lambda call: call.data == 'next', state=payment_system_cashless)
+@dp.callback_query_handler(lambda call: call.data == 'next', state=states.payment_system_cashless)
 @bot.state_handler(OrderCreation.duration)
 async def duration_handler(call):
     await tg.edit_message_text(
@@ -992,7 +1151,7 @@ async def duration_handler(call):
     )
 
 
-@bot.private_handler(state=payment_system_cashless)
+@bot.private_handler(state=states.payment_system_cashless)
 async def choose_payment_system_cashless(message, state):
     await database.creation.update_one(
         {'user_id': message.from_user.id},
@@ -1022,7 +1181,7 @@ async def choose_duration(message, state):
         if duration <= 0:
             raise ValueError
     except ValueError:
-        await tg.send_message(message.chat.id, _('Send integer.'))
+        await tg.send_message(message.chat.id, _('Send natural number.'))
         return
 
     await database.creation.update_one(

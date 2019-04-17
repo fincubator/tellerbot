@@ -21,6 +21,10 @@ from decimal import Decimal, ROUND_HALF_UP
 exp = Decimal('1e-8')
 
 
+class MoneyValidationError(Exception):
+    pass
+
+
 def normalize_money(money):
     if money == money.to_integral_value():
         return money.quantize(Decimal(1))

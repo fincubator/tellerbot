@@ -32,4 +32,6 @@ class OrderCreation(StatesGroup):
     set_order = State()
 
 
-payment_system_cashless = State(group_name='OrderCreation')
+payment_system_cashless = State('payment_system_cashless', 'OrderCreation')
+
+field_editing = State('field_editing')
