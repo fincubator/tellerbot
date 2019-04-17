@@ -10,7 +10,7 @@ To ensure your work comes from a trusted source, you are required to sign your c
 **Commits that do not have a cryptographically verifiable signature will not be accepted.**
 
 ## Contributor License Agreement
-In order to give project's owner permission to use and redistribute your contributions as part of the project, you must accept the [Contributor License Agreement](https://github.com/PreICO/bailsbot/blob/master/CLA.md) (CLA):
+In order to give project's owner permission to use and redistribute your contributions as part of the project, you must accept the [Contributor License Agreement](https://github.com/PreICO/tellerbot/blob/master/CLA.md) (CLA):
 
 To accept the CLA, contributors should:
 

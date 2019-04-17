@@ -1,8 +1,8 @@
 # Copyright (C) 2019  alfred richardsn
 #
-# This file is part of BailsBot.
+# This file is part of TellerBot.
 #
-# BailsBot is free software: you can redistribute it and/or modify
+# TellerBot is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
@@ -13,7 +13,7 @@
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with BailsBot.  If not, see <https://www.gnu.org/licenses/>.
+# along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
 from datetime import datetime
@@ -123,7 +123,7 @@ async def handle_start_command(message, state):
     await state.finish()
     await tg.send_message(
         message.chat.id,
-        _("Hello, I'm BailsBot.") + ' ' + help_message(),
+        _("Hello, I'm TellerBot.") + ' ' + help_message(),
         reply_markup=start_keyboard()
     )
 
@@ -158,7 +158,7 @@ async def locale_button(call):
     await tg.answer_callback_query(callback_query_id=call.id)
     await tg.send_message(
         call.message.chat.id,
-        _("Hello, I'm BailsBot.") + ' ' + help_message(),
+        _("Hello, I'm TellerBot.") + ' ' + help_message(),
         reply_markup=start_keyboard()
     )
 
@@ -867,7 +867,7 @@ async def text_location(message, state):
         }
         request = requests.get(
             'https://nominatim.openstreetmap.org/search',
-            params=params, headers={'User-Agent': 'BailsBot'}
+            params=params, headers={'User-Agent': 'TellerBot'}
         )
 
         results = [{

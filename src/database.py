@@ -1,8 +1,8 @@
 # Copyright (C) 2019  alfred richardsn
 #
-# This file is part of BailsBot.
+# This file is part of TellerBot.
 #
-# BailsBot is free software: you can redistribute it and/or modify
+# TellerBot is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
@@ -13,13 +13,13 @@
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with BailsBot.  If not, see <https://www.gnu.org/licenses/>.
+# along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from aiogram.dispatcher.storage import BaseStorage
 
 client = AsyncIOMotorClient()
-database = client.bailsbot
+database = client.tellerbot
 
 STATE_KEY = 'state'
 

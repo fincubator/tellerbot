@@ -3,7 +3,7 @@ import logging
 
 TOKEN = '344999817:tiEnlKcJ46Y43xJdbF7Czt3EBPSNWfNUWrj'
 SERVER_HOST = 'example.com'
-WEBHOOK_PATH = '/bailsbot/webhook'
+WEBHOOK_PATH = '/tellerbot/webhook'
 SERVER_PORT = 5000
 LOCALES_DIR = Path(__file__).parent / 'locale'
 LOGGER_LEVEL = logging.DEBUG
