@@ -1320,11 +1320,9 @@ async def set_order(order, chat_id):
             order['sum_buy'].to_decimal() / order['sum_sell'].to_decimal()
         ))
     inserted_order = await database.orders.insert_one(order)
-    await tg.send_message(
-        chat_id,
-        _('Order is set.') + '\nID: {}'.format(inserted_order.inserted_id),
-        reply_markup=start_keyboard()
-    )
+    order['_id'] = inserted_order.inserted_id
+    await tg.send_message(chat_id, _('Order is set.'), reply_markup=start_keyboard())
+    await show_order(order, chat_id, order['user_id'], show_id=True)
 
 
 @bot.state_handler(OrderCreation.set_order)
