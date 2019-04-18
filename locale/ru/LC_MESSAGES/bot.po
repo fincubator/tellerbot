@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-04-18 02:50+0300\n"
+"POT-Creation-Date: 2019-04-18 04:31+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
@@ -198,14 +198,22 @@ msgstr "Заказ удалён."
 msgid "Couldn't delete order."
 msgstr "Не удалось удалить заказ."
 
-#: src/handlers.py:637 src/handlers.py:654 src/handlers.py:693
-#: src/handlers.py:741 src/handlers.py:913 src/handlers.py:963
-msgid "You are not creating order."
-msgstr "Вы не создаёте заказ."
+#: src/handlers.py:637
+msgid "Couldn't go back."
+msgstr "Не удалось пойти назад."
+
+#: src/handlers.py:654
+msgid "Couldn't go next."
+msgstr "Не удалось пойти вперёд."
 
 #: src/handlers.py:679 src/handlers.py:698
 msgid "What currency do you want to buy?"
 msgstr "Какую валюту вы хотите купить?"
+
+#: src/handlers.py:693 src/handlers.py:741 src/handlers.py:913
+#: src/handlers.py:963
+msgid "You are not creating order."
+msgstr "Вы не создаёте заказ."
 
 #: src/handlers.py:748
 msgid "Order is cancelled."
@@ -289,3 +297,4 @@ msgstr ""
 #: src/handlers.py:1246
 msgid "Unknown command."
 msgstr "Неизвестная команда."
+

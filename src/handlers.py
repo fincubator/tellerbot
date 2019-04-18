@@ -634,7 +634,7 @@ async def previous_state(call, state):
         await state.set_state(state_name)
     return await tg.answer_callback_query(
         callback_query_id=call.id,
-        text=_('You are not creating order.')
+        text=_("Couldn't go back.")
     )
 
 
@@ -651,7 +651,7 @@ async def next_state(call, state):
         await state.set_state(state_name)
     return await tg.answer_callback_query(
         callback_query_id=call.id,
-        text=_('You are not creating order.')
+        text=_("Couldn't go next.")
     )
 
 
