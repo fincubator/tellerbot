@@ -875,7 +875,7 @@ async def price_handler(call):
     price_currency = order.get('price_currency')
     if not price_currency:
         price_currency = 'sell'
-        order = await database.creation.update_one(
+        await database.creation.update_one(
             {'_id': order['_id']},
             {'$set': {'price_currency': price_currency}}
         )
