@@ -216,8 +216,8 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
             line += '{} '.format(order['sum_buy'])
         line += order['buy']
 
-        if 'price' in order:
-            line += ' ({} {}/{})'.format(order['price'], order['sell'], order['buy'])
+        if 'price_sell' in order:
+            line += ' ({} {}/{})'.format(order['price_sell'], order['sell'], order['buy'])
 
         lines.append(line)
         buttons.append(
@@ -331,15 +331,14 @@ async def show_order(
         lines_format['sum_buy'] = '{} {}'.format(order['sum_buy'], order['buy'])
     if 'sum_sell' in order:
         lines_format['sum_sell'] = '{} {}'.format(order['sum_sell'], order['sell'])
-    if 'price' in order:
+    if 'price_sell' in order:
         if invert:
             lines_format['price'] = '{} {}/{}'.format(
-                normalize_money(decimal.Decimal(1) / order['price'].to_decimal()),
-                order['buy'], order['sell']
+                order['price_buy'], order['buy'], order['sell']
             )
         else:
             lines_format['price'] = '{} {}/{}'.format(
-                order['price'], order['sell'], order['buy']
+                order['price_sell'], order['sell'], order['buy']
             )
     if 'payment_system' in order:
         lines_format['payment_system'] = order['payment_system']
@@ -537,8 +536,10 @@ async def edit_field(message, state):
         else:
             order = await database.orders.find_one({'_id': edit['order_id']})
             update_dict['sum_buy'] = Decimal128(transaction_sum)
-            if order['price']:
-                update_dict['sum_sell'] = Decimal128(normalize_money(transaction_sum * order['price'].to_decimal()))
+            if order['price_sell']:
+                update_dict['sum_sell'] = Decimal128(normalize_money(
+                    transaction_sum * order['price_sell'].to_decimal()
+                ))
 
     elif field == 'sum_sell':
         try:
@@ -548,8 +549,10 @@ async def edit_field(message, state):
         else:
             order = await database.orders.find_one({'_id': edit['order_id']})
             update_dict['sum_sell'] = Decimal128(transaction_sum)
-            if order['price']:
-                update_dict['sum_buy'] = Decimal128(normalize_money(transaction_sum / order['price'].to_decimal()))
+            if order['price_buy']:
+                update_dict['sum_buy'] = Decimal128(normalize_money(
+                    transaction_sum * order['price_buy'].to_decimal()
+                ))
 
     elif field == 'price':
         try:
@@ -557,15 +560,22 @@ async def edit_field(message, state):
         except MoneyValidationError as exception:
             error = str(exception)
         else:
-            if invert:
-                price = normalize_money(decimal.Decimal(1) / price)
-
             order = await database.orders.find_one({'_id': edit['order_id']})
-            update_dict['price'] = Decimal128(price)
-            if order['sum_currency'] == 'buy':
-                update_dict['sum_sell'] = Decimal128(normalize_money(order['sum_buy'].to_decimal() * price))
+
+            if invert:
+                update_dict['price_buy'] = Decimal128(price)
+                update_dict['price_sell'] = Decimal128(normalize_money(decimal.Decimal(1) / price))
+                if 'sum_sell' in order:
+                    update_dict['sum_buy'] = Decimal128(normalize_money(
+                        order['sum_sell'].to_decimal() * price
+                    ))
             else:
-                update_dict['sum_buy'] = Decimal128(normalize_money(order['sum_sell'].to_decimal() / price))
+                update_dict['price_buy'] = Decimal128(normalize_money(decimal.Decimal(1) / price))
+                update_dict['price_sell'] = Decimal128(price)
+                if 'sum_buy' in order:
+                    update_dict['sum_sell'] = Decimal128(normalize_money(
+                        order['sum_buy'].to_decimal() * price
+                    ))
 
     elif field == 'payment_system':
         update_dict['payment_system'] = message.text.replace('\n', ' ')
@@ -800,25 +810,67 @@ async def choose_sell(message, state):
 
     order = await database.creation.find_one_and_update(
         {'user_id': message.from_user.id},
-        {'$set': {'sell': message.text}},
+        {'$set': {
+            'sell': message.text,
+            'price_currency': 'sell'
+        }},
         return_document=ReturnDocument.AFTER
     )
+
+    buttons = inline_control_buttons()
+    buttons.insert(0, [InlineKeyboardButton(text=_('Invert'), callback_data='price buy')])
+
     await OrderCreation.price.set()
     await tg.send_message(
         message.chat.id,
         _('At what price (in {}/{}) do you want to buy?').format(order['sell'], order['buy']),
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+    )
+
+
+async def price_ask(call, order, price_currency):
+    if price_currency == 'sell':
+        answer = _('At what price (in {}/{}) do you want to buy?').format(
+            order['sell'], order['buy']
+        )
+        callback_command = 'buy'
+    else:
+        answer = _('At what price (in {}/{}) do you want to sell?').format(
+            order['buy'], order['sell']
+        )
+        callback_command = 'sell'
+
+    buttons = inline_control_buttons()
+    buttons.insert(0, [InlineKeyboardButton(
+        text=_('Invert'), callback_data='price {}'.format(callback_command)
+    )])
+    await tg.edit_message_text(
+        answer, call.message.chat.id, call.message.message_id,
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
     )
 
 
 @bot.state_handler(OrderCreation.price)
 async def price_handler(call):
     order = await database.creation.find_one({'user_id': call.from_user.id})
-    await tg.edit_message_text(
-        _('At what price (in {}/{}) do you want to buy?').format(order['sell'], order['buy']),
-        call.message.chat.id, call.message.message_id,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+    price_currency = order.get('price_currency')
+    if not price_currency:
+        price_currency = 'sell'
+        order = await database.creation.update_one(
+            {'_id': order['_id']},
+            {'set': {'price_currency': price_currency}}
+        )
+    await price_ask(call, order, price_currency)
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('price'), state=OrderCreation.price)
+async def invert_price(call):
+    price_currency = call.data.split()[1]
+    order = await database.creation.find_one_and_update(
+        {'user_id': call.from_user.id},
+        {'$set': {'price_currency': price_currency}}
     )
+    await price_ask(call, order, price_currency)
 
 
 @bot.private_handler(state=OrderCreation.price)
@@ -829,9 +881,24 @@ async def choose_price(message, state):
         await tg.send_message(message.chat.id, str(exception))
         return
 
+    order = await database.creation.find_one({'user_id': message.from_user.id})
+    if order['price_currency'] == 'sell':
+        update_dict = {
+            'price_sell': Decimal128(price),
+            'price_buy': Decimal128(normalize_money(decimal.Decimal(1) / price))
+        }
+    else:
+        update_dict = {
+            'price_buy': Decimal128(price),
+            'price_sell': Decimal128(normalize_money(decimal.Decimal(1) / price))
+        }
+
     order = await database.creation.find_one_and_update(
         {'user_id': message.from_user.id},
-        {'$set': {'price': Decimal128(price)}},
+        {
+            '$set': update_dict,
+            '$unset': {'price_currency': True}
+        },
         return_document=ReturnDocument.AFTER
     )
 
@@ -873,47 +940,19 @@ async def choose_sum(message, state):
         await tg.send_message(message.chat.id, _('Choose currency of sum with buttons.'))
         return
 
-    update_dict = {}
-    price = order.get('price')
-    if order['sum_currency'] == 'buy':
-        update_dict['sum_buy'] = Decimal128(transaction_sum)
-        if price:
-            update_dict['sum_sell'] = Decimal128(normalize_money(
-                transaction_sum * price.to_decimal()
-            ))
-        elif 'sum_sell' in order:
-            update_dict['price'] = Decimal128(normalize_money(
-                order['sum_sell'].to_decimal() / transaction_sum
-            ))
-        else:
-            update_dict['sum_currency'] = 'sell'
-    else:
-        update_dict['sum_sell'] = Decimal128(transaction_sum)
-        if price:
-            update_dict['sum_buy'] = Decimal128(normalize_money(
-                transaction_sum / price.to_decimal()
-            ))
-        elif 'sum_buy' in order:
-            update_dict['price'] = Decimal128(normalize_money(
-                transaction_sum / order['sum_buy'].to_decimal()
-            ))
-        else:
-            update_dict['sum_currency'] = 'buy'
+    update_dict = {'sum_' + order['sum_currency']: Decimal128(transaction_sum)}
 
-    await database.creation.update_one(
-        {'_id': order['_id']},
-        {'$set': update_dict}
-    )
+    new_sum_currency = 'sell' if order['sum_currency'] == 'buy' else 'buy'
+    price_field = 'price_' + new_sum_currency
 
-    if 'sum_currency' in update_dict:
-        await tg.send_message(
-            message.chat.id,
-            _('Send order sum in {}.').format(order[update_dict['sum_currency']]),
-            reply_markup=InlineKeyboardMarkup(
-                inline_keyboard=inline_control_buttons(no_back=True, no_cancel=True)
-            )
+    if price_field in order:
+        update_dict['sum_' + new_sum_currency] = Decimal128(normalize_money(
+            transaction_sum * order[price_field].to_decimal()
+        ))
+        await database.creation.update_one(
+            {'_id': order['_id']},
+            {'$set': update_dict, '$unset': {'sum_currency': True}}
         )
-    else:
         keyboard = InlineKeyboardMarkup()
         keyboard.add(
             InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
@@ -927,11 +966,27 @@ async def choose_sum(message, state):
             _('Choose payment type.'),
             reply_markup=keyboard
         )
+    else:
+        update_dict['sum_currency'] = new_sum_currency
+        await database.creation.update_one(
+            {'_id': order['_id']},
+            {'$set': update_dict}
+        )
+        await tg.send_message(
+            message.chat.id,
+            _('Send order sum in {}.').format(order[update_dict['sum_currency']]),
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=inline_control_buttons(no_back=True, no_cancel=True)
+            )
+        )
 
 
 @bot.state_handler(OrderCreation.sum)
 async def sum_handler(call):
-    order = await database.creation.find_one({'user_id': call.from_user.id})
+    order = await database.creation.find_one_and_update(
+        {'user_id': call.from_user.id},
+        {'$unset': {'price_currency': True}}
+    )
 
     if not order:
         await tg.answer_callback_query(
@@ -978,6 +1033,18 @@ async def choose_sum_currency(call):
 
 @bot.state_handler(OrderCreation.payment_type)
 async def payment_type_handler(call):
+    order = await database.creation.update_one(
+        {'user_id': call.from_user.id},
+        {'$unset': {'sum_currency': True}}
+    )
+
+    if not order.matched_count:
+        await tg.answer_callback_query(
+            callback_query_id=call.id,
+            text=_('You are not creating order.')
+        )
+        return True
+
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
         InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
@@ -1211,6 +1278,25 @@ async def choose_duration(message, state):
     )
 
 
+async def set_order(order, chat_id):
+    order['start_time'] = time()
+    if 'duration' in order:
+        order['expiration_time'] = time() + order['duration'] * 24 * 60 * 60
+    if 'price_sell' not in order and 'sum_buy' in order and 'sum_sell' in order:
+        order['price_sell'] = Decimal128(normalize_money(
+            order['sum_sell'].to_decimal() / order['sum_buy'].to_decimal()
+        ))
+        order['price_buy'] = Decimal128(normalize_money(
+            order['sum_buy'].to_decimal() / order['sum_sell'].to_decimal()
+        ))
+    inserted_order = await database.orders.insert_one(order)
+    await tg.send_message(
+        chat_id,
+        _('Order is set.') + '\nID: {}'.format(inserted_order.inserted_id),
+        reply_markup=start_keyboard()
+    )
+
+
 @bot.state_handler(OrderCreation.set_order)
 async def choose_comments_handler(call):
     order = await database.creation.find_one_and_delete(
@@ -1218,19 +1304,7 @@ async def choose_comments_handler(call):
     )
     await tg.answer_callback_query(callback_query_id=call.id)
     if order:
-        order['start_time'] = time()
-        if 'duration' in order:
-            order['expiration_time'] = time() + order['duration'] * 24 * 60 * 60
-        if 'price' not in order and 'sum_buy' in order and 'sum_sell' in order:
-            order['price'] = Decimal128(normalize_money(
-                order['sum_sell'].to_decimal() / order['sum_buy'].to_decimal()
-            ))
-        inserted_order = await database.orders.insert_one(order)
-        await tg.send_message(
-            call.message.chat.id,
-            _('Order is set.') + '\nID: {}'.format(inserted_order.inserted_id),
-            reply_markup=start_keyboard()
-        )
+        await set_order(order, call.message.chat.id)
     await dp.get_current().current_state().finish()
 
 
@@ -1250,12 +1324,7 @@ async def choose_comments(message, state):
     )
     if order:
         order['comments'] = comments
-        inserted_order = await database.orders.insert_one(order)
-        await tg.send_message(
-            message.chat.id,
-            _('Order is set.') + '\nID: {}'.format(inserted_order.inserted_id),
-            reply_markup=start_keyboard()
-        )
+        await set_order(order, message.chat.id)
     await state.finish()
 
 
