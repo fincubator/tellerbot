@@ -343,7 +343,10 @@ async def show_order(
     if 'payment_system' in order:
         lines_format['payment_system'] = order['payment_system']
     if 'duration' in order:
-        lines_format['duration'] = _('{} days').format(order['duration'])
+        lines_format['duration'] = '{} - {}'.format(
+            datetime.utcfromtimestamp(order['start_time']).strftime('%d.%m.%Y'),
+            datetime.utcfromtimestamp(order['expiration_time']).strftime('%d.%m.%Y'),
+        )
     if 'comments' in order:
         lines_format['comments'] = '«{}»'.format(order['comments'])
 
