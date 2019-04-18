@@ -861,7 +861,7 @@ async def price_handler(call):
         price_currency = 'sell'
         order = await database.creation.update_one(
             {'_id': order['_id']},
-            {'set': {'price_currency': price_currency}}
+            {'$set': {'price_currency': price_currency}}
         )
     await price_ask(call, order, price_currency)
 
@@ -1012,7 +1012,6 @@ async def sum_handler(call):
     for row in inline_control_buttons():
         keyboard.row(*row)
 
-    await OrderCreation.sum.set()
     await tg.edit_message_text(
         _('Choose currency of order sum.'),
         call.message.chat.id, call.message.message_id,
