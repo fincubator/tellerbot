@@ -599,7 +599,9 @@ async def edit_field(message, state):
         except ValueError:
             error = _('Send natural number.')
         else:
+            order = await database.orders.find_one({'_id': edit['order_id']})
             update_dict['duration'] = duration
+            update_dict['expiration_time'] = order['start_time'] + duration * 24 * 60 * 60
 
     elif field == 'comments':
         comments = message.text
@@ -613,16 +615,17 @@ async def edit_field(message, state):
         update_dict['comments'] = comments
 
     if update_dict:
-        order = await database.orders.find_one_and_update(
+        result = await database.orders.update_one(
             {'_id': edit['order_id']},
-            {'$set': update_dict},
-            return_document=ReturnDocument.AFTER
+            {'$set': update_dict}
         )
-        await show_order(
-            order, message.chat.id, message.from_user.id,
-            message_id=edit['order_message_id'], location_message_id=edit['location_message_id'],
-            show_id=edit['show_id'], invert=edit['invert'], edit=True
-        )
+        if result.modified_count:
+            order = await database.orders.find_one({'_id': edit['order_id']})
+            await show_order(
+                order, message.chat.id, message.from_user.id,
+                message_id=edit['order_message_id'], location_message_id=edit['location_message_id'],
+                show_id=edit['show_id'], invert=edit['invert'], edit=True
+            )
         await database.users.update_one(
             {'id': message.from_user.id},
             {'$unset': {'edit': True, STATE_KEY: True}}
