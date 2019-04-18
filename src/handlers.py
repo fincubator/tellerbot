@@ -563,7 +563,7 @@ async def edit_field(message, state):
                 update_dict['sum_buy'] = Decimal128(normalize_money(order['sum_sell'].to_decimal() / price))
 
     elif field == 'payment_system':
-        update_dict['payment_system'] = message.text
+        update_dict['payment_system'] = message.text.replace('\n', ' ')
 
     elif field == 'duration':
         try:
@@ -1131,7 +1131,7 @@ async def location_handler(call):
 async def choose_payment_system(message, state):
     await database.creation.update_one(
         {'user_id': message.from_user.id},
-        {'$set': {'payment_system': message.text}}
+        {'$set': {'payment_system': message.text.replace('\n', ' ')}}
     )
     await OrderCreation.location.set()
     await tg.send_message(
@@ -1155,7 +1155,7 @@ async def duration_handler(call):
 async def choose_payment_system_cashless(message, state):
     await database.creation.update_one(
         {'user_id': message.from_user.id},
-        {'$set': {'payment_system': message.text}}
+        {'$set': {'payment_system': message.text.replace('\n', ' ')}}
     )
     await OrderCreation.duration.set()
     await tg.send_message(
