@@ -581,7 +581,15 @@ async def edit_field(message, state):
                     ))
 
     elif field == 'payment_system':
-        update_dict['payment_system'] = message.text.replace('\n', ' ')
+        payment_system = message.text.replace('\n', ' ')
+        if len(payment_system) > 150:
+            await tg.send_message(
+                message.chat.id,
+                _('This value should contain less than 150 characters '
+                  '(you sent {} characters).').format(len(payment_system))
+            )
+            return
+        update_dict['payment_system'] = payment_system
 
     elif field == 'duration':
         try:
@@ -594,7 +602,15 @@ async def edit_field(message, state):
             update_dict['duration'] = duration
 
     elif field == 'comments':
-        update_dict['comments'] = message.text
+        comments = message.text
+        if len(comments) > 150:
+            await tg.send_message(
+                message.chat.id,
+                _('This value should contain less than 150 characters '
+                  '(you sent {} characters).').format(len(comments))
+            )
+            return
+        update_dict['comments'] = comments
 
     if update_dict:
         order = await database.orders.find_one_and_update(
@@ -1212,9 +1228,18 @@ async def location_handler(call):
 
 @bot.private_handler(state=OrderCreation.payment_system)
 async def choose_payment_system(message, state):
+    payment_system = message.text.replace('\n', ' ')
+    if len(payment_system) > 150:
+        await tg.send_message(
+            message.chat.id,
+            _('This value should contain less than 150 characters '
+              '(you sent {} characters).').format(len(payment_system))
+        )
+        return
+
     await database.creation.update_one(
         {'user_id': message.from_user.id},
-        {'$set': {'payment_system': message.text.replace('\n', ' ')}}
+        {'$set': {'payment_system': payment_system}}
     )
     await OrderCreation.location.set()
     await tg.send_message(
@@ -1316,8 +1341,8 @@ async def choose_comments(message, state):
     if len(comments) > 150:
         await tg.send_message(
             message.chat.id,
-            _('Comment should have less than 150 characters '
-              '(your comment has {} characters).').format(len(comments))
+            _('This value should contain less than 150 characters '
+              '(you sent {} characters).').format(len(comments))
         )
         return
 
