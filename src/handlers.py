@@ -789,7 +789,7 @@ async def cancel_order_creation(call, state):
 
 @bot.private_handler(state=OrderCreation.buy)
 async def choose_buy(message, state):
-    if not all(ch in ascii_letters for ch in message.text):
+    if not all(ch in ascii_letters + '.' for ch in message.text):
         await tg.send_message(
             message.chat.id,
             _('Currency may only contain latin characters.')
@@ -798,7 +798,7 @@ async def choose_buy(message, state):
 
     await database.creation.update_one(
         {'user_id': message.from_user.id},
-        {'$set': {'buy': message.text}}
+        {'$set': {'buy': message.text.upper()}}
     )
     await OrderCreation.sell.set()
     await tg.send_message(
@@ -833,7 +833,7 @@ async def choose_sell(message, state):
     order = await database.creation.find_one_and_update(
         {'user_id': message.from_user.id},
         {'$set': {
-            'sell': message.text,
+            'sell': message.text.upper(),
             'price_currency': 'sell'
         }},
         return_document=ReturnDocument.AFTER
