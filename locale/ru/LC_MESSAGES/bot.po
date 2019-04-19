@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-04-18 16:40+0300\n"
+"POT-Creation-Date: 2019-04-20 02:10+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
@@ -47,8 +47,8 @@ msgid "Back"
 msgstr "Назад"
 
 #: src/handlers.py:83
-msgid "Next"
-msgstr "Вперёд"
+msgid "Skip"
+msgstr "Пропустить"
 
 #: src/handlers.py:90
 msgid "Cancel"
@@ -130,7 +130,7 @@ msgstr "продаёт {} за {}"
 msgid "buys {} for {}"
 msgstr "покупает {} за {}"
 
-#: src/handlers.py:357 src/handlers.py:840 src/handlers.py:864
+#: src/handlers.py:357 src/handlers.py:843 src/handlers.py:867
 msgid "Invert"
 msgstr "Инвертировать"
 
@@ -182,8 +182,8 @@ msgstr "Отправьте новую продолжительность."
 msgid "Send new comments."
 msgstr "Отправьте новые комментарии."
 
-#: src/handlers.py:588 src/handlers.py:609 src/handlers.py:1235
-#: src/handlers.py:1344
+#: src/handlers.py:588 src/handlers.py:611 src/handlers.py:1238
+#: src/handlers.py:1345
 msgid ""
 "This value should contain less than 150 characters (you sent {} "
 "characters)."
@@ -191,108 +191,108 @@ msgstr ""
 "Это значение должно содержать меньше 150 символов (вы отправили {} "
 "символов)."
 
-#: src/handlers.py:600 src/handlers.py:1292
+#: src/handlers.py:600 src/handlers.py:1295
 msgid "Send natural number."
 msgstr "Отправьте натуральное число."
 
-#: src/handlers.py:645
+#: src/handlers.py:648
 msgid "Order was deleted."
 msgstr "Заказ удалён."
 
-#: src/handlers.py:646
+#: src/handlers.py:649
 msgid "Couldn't delete order."
 msgstr "Не удалось удалить заказ."
 
-#: src/handlers.py:671
+#: src/handlers.py:674
 msgid "Couldn't go back."
 msgstr "Не удалось пойти назад."
 
-#: src/handlers.py:688
+#: src/handlers.py:691
 msgid "Couldn't go next."
 msgstr "Не удалось пойти вперёд."
 
-#: src/handlers.py:713 src/handlers.py:732
+#: src/handlers.py:716 src/handlers.py:735
 msgid "What currency do you want to buy?"
 msgstr "Какую валюту вы хотите купить?"
 
-#: src/handlers.py:727 src/handlers.py:775 src/handlers.py:1013
-#: src/handlers.py:1062
+#: src/handlers.py:730 src/handlers.py:778 src/handlers.py:1016
+#: src/handlers.py:1065
 msgid "You are not creating order."
 msgstr "Вы не создаёте заказ."
 
-#: src/handlers.py:782
+#: src/handlers.py:785
 msgid "Order is cancelled."
 msgstr "Заказ отменён."
 
-#: src/handlers.py:792 src/handlers.py:826
+#: src/handlers.py:795 src/handlers.py:829
 msgid "Currency may only contain latin characters."
 msgstr "Валюта может содержать только латинские символы."
 
-#: src/handlers.py:803 src/handlers.py:813
+#: src/handlers.py:806 src/handlers.py:816
 msgid "What currency do you want to sell?"
 msgstr "Какую валюту вы хотите продать?"
 
-#: src/handlers.py:845 src/handlers.py:852
+#: src/handlers.py:848 src/handlers.py:855
 msgid "At what price (in {}/{}) do you want to buy?"
 msgstr "По какой цене (в {}/{}) вы хотите купить?"
 
-#: src/handlers.py:857
+#: src/handlers.py:860
 msgid "At what price (in {}/{}) do you want to sell?"
 msgstr "По какой цене (в {}/{}) вы хотите продать?"
 
-#: src/handlers.py:941 src/handlers.py:1032
+#: src/handlers.py:944 src/handlers.py:1035
 msgid "Choose currency of order sum."
 msgstr "Выберите валюту суммы заказа."
 
-#: src/handlers.py:959
+#: src/handlers.py:962
 msgid "Choose currency of sum with buttons."
 msgstr "Выберите валюту суммы кнопками."
 
-#: src/handlers.py:977 src/handlers.py:1068
+#: src/handlers.py:980 src/handlers.py:1071
 msgid "Cash"
 msgstr "Наличная"
 
-#: src/handlers.py:978 src/handlers.py:1069
+#: src/handlers.py:981 src/handlers.py:1072
 msgid "Cashless"
 msgstr "Безналичная"
 
-#: src/handlers.py:985 src/handlers.py:1075
+#: src/handlers.py:988 src/handlers.py:1078
 msgid "Choose payment type."
 msgstr "Выберите тип оплаты."
 
-#: src/handlers.py:996 src/handlers.py:1048
+#: src/handlers.py:999 src/handlers.py:1051
 msgid "Send order sum in {}."
 msgstr "Отправьте сумму заказа в {}."
 
-#: src/handlers.py:1084 src/handlers.py:1094 src/handlers.py:1214
+#: src/handlers.py:1087 src/handlers.py:1097 src/handlers.py:1217
 msgid "Send payment system."
 msgstr "Отправьте систему оплаты"
 
-#: src/handlers.py:1103 src/handlers.py:1223 src/handlers.py:1247
+#: src/handlers.py:1106 src/handlers.py:1226 src/handlers.py:1250
 msgid "Send location of a preferred meeting point."
 msgstr "Отправьте локацию предпочитаемого места встречи."
 
-#: src/handlers.py:1143
+#: src/handlers.py:1146
 msgid "Location is not found."
 msgstr "Локация не найдена."
 
-#: src/handlers.py:1157 src/handlers.py:1189 src/handlers.py:1204
-#: src/handlers.py:1256 src/handlers.py:1271
+#: src/handlers.py:1160 src/handlers.py:1192 src/handlers.py:1207
+#: src/handlers.py:1259 src/handlers.py:1274
 msgid "Send duration of order in days."
 msgstr "Отправьте продолжительность заказа в днях."
 
-#: src/handlers.py:1164
+#: src/handlers.py:1167
 msgid "Choose one of these locations:"
 msgstr "Выберите одну из этих локаций:"
 
-#: src/handlers.py:1279 src/handlers.py:1303
+#: src/handlers.py:1282 src/handlers.py:1306
 msgid "Add any additional comments."
 msgstr "Добавьте какие-либо дополнительные комментарии."
 
-#: src/handlers.py:1322
+#: src/handlers.py:1324
 msgid "Order is set."
 msgstr "Заказ установлен."
 
-#: src/handlers.py:1360
+#: src/handlers.py:1361
 msgid "Unknown command."
 msgstr "Неизвестная команда."

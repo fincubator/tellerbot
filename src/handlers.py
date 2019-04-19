@@ -80,7 +80,7 @@ def inline_control_buttons(no_back=False, no_next=False, no_cancel=False):
         )
     if not no_next:
         row.append(
-            InlineKeyboardButton(text=_('Next'), callback_data='next')
+            InlineKeyboardButton(text=_('Skip'), callback_data='next')
         )
     if row:
         buttons.append(row)
