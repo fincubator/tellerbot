@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-04-20 02:10+0300\n"
+"POT-Creation-Date: 2019-04-20 02:43+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -177,14 +177,14 @@ msgstr ""
 msgid "Send new comments."
 msgstr ""
 
-#: src/handlers.py:588 src/handlers.py:611 src/handlers.py:1238
-#: src/handlers.py:1345
+#: src/handlers.py:588 src/handlers.py:611 src/handlers.py:1172
+#: src/handlers.py:1255
 msgid ""
 "This value should contain less than 150 characters (you sent {} "
 "characters)."
 msgstr ""
 
-#: src/handlers.py:600 src/handlers.py:1295
+#: src/handlers.py:600 src/handlers.py:1205
 msgid "Send natural number."
 msgstr ""
 
@@ -208,8 +208,7 @@ msgstr ""
 msgid "What currency do you want to buy?"
 msgstr ""
 
-#: src/handlers.py:730 src/handlers.py:778 src/handlers.py:1016
-#: src/handlers.py:1065
+#: src/handlers.py:730 src/handlers.py:778 src/handlers.py:1009
 msgid "You are not creating order."
 msgstr ""
 
@@ -233,7 +232,7 @@ msgstr ""
 msgid "At what price (in {}/{}) do you want to sell?"
 msgstr ""
 
-#: src/handlers.py:944 src/handlers.py:1035
+#: src/handlers.py:944 src/handlers.py:1028
 msgid "Choose currency of order sum."
 msgstr ""
 
@@ -241,51 +240,38 @@ msgstr ""
 msgid "Choose currency of sum with buttons."
 msgstr ""
 
-#: src/handlers.py:980 src/handlers.py:1071
-msgid "Cash"
+#: src/handlers.py:981 src/handlers.py:1051
+msgid "Send cashless payment system."
 msgstr ""
 
-#: src/handlers.py:981 src/handlers.py:1072
-msgid "Cashless"
-msgstr ""
-
-#: src/handlers.py:988 src/handlers.py:1078
-msgid "Choose payment type."
-msgstr ""
-
-#: src/handlers.py:999 src/handlers.py:1051
+#: src/handlers.py:992 src/handlers.py:1044
 msgid "Send order sum in {}."
 msgstr ""
 
-#: src/handlers.py:1087 src/handlers.py:1097 src/handlers.py:1217
-msgid "Send payment system."
-msgstr ""
-
-#: src/handlers.py:1106 src/handlers.py:1226 src/handlers.py:1250
-msgid "Send location of a preferred meeting point."
-msgstr ""
-
-#: src/handlers.py:1146
+#: src/handlers.py:1091
 msgid "Location is not found."
 msgstr ""
 
-#: src/handlers.py:1160 src/handlers.py:1192 src/handlers.py:1207
-#: src/handlers.py:1259 src/handlers.py:1274
+#: src/handlers.py:1105 src/handlers.py:1137 src/handlers.py:1152
 msgid "Send duration of order in days."
 msgstr ""
 
-#: src/handlers.py:1167
+#: src/handlers.py:1112
 msgid "Choose one of these locations:"
 msgstr ""
 
-#: src/handlers.py:1282 src/handlers.py:1306
+#: src/handlers.py:1160 src/handlers.py:1184
+msgid "Send location of a preferred meeting point for cash payment."
+msgstr ""
+
+#: src/handlers.py:1192 src/handlers.py:1216
 msgid "Add any additional comments."
 msgstr ""
 
-#: src/handlers.py:1324
+#: src/handlers.py:1234
 msgid "Order is set."
 msgstr ""
 
-#: src/handlers.py:1361
+#: src/handlers.py:1271
 msgid "Unknown command."
 msgstr ""

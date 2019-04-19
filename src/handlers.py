@@ -975,18 +975,11 @@ async def choose_sum(message, state):
             {'_id': order['_id']},
             {'$set': update_dict, '$unset': {'sum_currency': True}}
         )
-        keyboard = InlineKeyboardMarkup()
-        keyboard.add(
-            InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
-            InlineKeyboardButton(text=_('Cashless'), callback_data='cashless type')
-        )
-        for row in inline_control_buttons():
-            keyboard.row(*row)
-        await OrderCreation.payment_type.set()
+        await OrderCreation.payment_system.set()
         await tg.send_message(
             message.chat.id,
-            _('Choose payment type.'),
-            reply_markup=keyboard
+            _('Send cashless payment system.'),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
         )
     else:
         update_dict['sum_currency'] = new_sum_currency
@@ -1052,58 +1045,10 @@ async def choose_sum_currency(call):
     )
 
 
-@bot.state_handler(OrderCreation.payment_type)
-async def payment_type_handler(call):
-    order = await database.creation.update_one(
-        {'user_id': call.from_user.id},
-        {'$unset': {'sum_currency': True}}
-    )
-
-    if not order.matched_count:
-        await tg.answer_callback_query(
-            callback_query_id=call.id,
-            text=_('You are not creating order.')
-        )
-        return True
-
-    keyboard = InlineKeyboardMarkup()
-    keyboard.add(
-        InlineKeyboardButton(text=_('Cash'), callback_data='cash type'),
-        InlineKeyboardButton(text=_('Cashless'), callback_data='cashless type')
-    )
-    for row in inline_control_buttons():
-        keyboard.row(*row)
-
-    await tg.edit_message_text(
-        _('Choose payment type.'),
-        call.message.chat.id, call.message.message_id,
-        reply_markup=keyboard
-    )
-
-
 @bot.state_handler(OrderCreation.payment_system)
 async def payment_system_handler(call):
     await tg.edit_message_text(
-        _('Send payment system.'),
-        call.message.chat.id, call.message.message_id,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
-    )
-
-
-@bot.private_handler(state=OrderCreation.payment_type)
-async def message_in_payment_type(message, state):
-    await tg.send_message(
-        message.chat.id,
-        _('Send payment system.'),
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
-    )
-
-
-@dp.callback_query_handler(lambda call: call.data == 'cash type', state=OrderCreation.payment_type)
-async def cash_payment_type(call):
-    await OrderCreation.location.set()
-    await tg.edit_message_text(
-        _('Send location of a preferred meeting point.'),
+        _('Send cashless payment system.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
@@ -1209,21 +1154,10 @@ async def choose_location(message, state):
     )
 
 
-@dp.callback_query_handler(lambda call: call.data == 'cashless type', state=OrderCreation.payment_type)
-@dp.callback_query_handler(lambda call: call.data == 'back', state=states.payment_system_cashless)
-async def cashless_payment_type(call):
-    await states.payment_system_cashless.set()
-    await tg.edit_message_text(
-        _('Send payment system.'),
-        call.message.chat.id, call.message.message_id,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
-    )
-
-
 @bot.state_handler(OrderCreation.location)
 async def location_handler(call):
     await tg.edit_message_text(
-        _('Send location of a preferred meeting point.'),
+        _('Send location of a preferred meeting point for cash payment.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
@@ -1247,31 +1181,7 @@ async def choose_payment_system(message, state):
     await OrderCreation.location.set()
     await tg.send_message(
         message.chat.id,
-        _('Send location of a preferred meeting point.'),
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
-    )
-
-
-@dp.callback_query_handler(lambda call: call.data == 'next', state=states.payment_system_cashless)
-@bot.state_handler(OrderCreation.duration)
-async def duration_handler(call):
-    await tg.edit_message_text(
-        _('Send duration of order in days.'),
-        call.message.chat.id, call.message.message_id,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
-    )
-
-
-@bot.private_handler(state=states.payment_system_cashless)
-async def choose_payment_system_cashless(message, state):
-    await database.creation.update_one(
-        {'user_id': message.from_user.id},
-        {'$set': {'payment_system': message.text.replace('\n', ' ')}}
-    )
-    await OrderCreation.duration.set()
-    await tg.send_message(
-        message.chat.id,
-        _('Send duration of order in days.'),
+        _('Send location of a preferred meeting point for cash payment.'),
         reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
     )
 
