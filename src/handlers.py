@@ -1186,6 +1186,15 @@ async def choose_payment_system(message, state):
     )
 
 
+@bot.state_handler(OrderCreation.duration)
+async def duration_handler(call):
+    await tg.edit_message_text(
+        _('Send duration of order in days.'),
+        call.message.chat.id, call.message.message_id,
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+    )
+
+
 @bot.state_handler(OrderCreation.comments)
 async def comment_handler(call):
     await tg.edit_message_text(
