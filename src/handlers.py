@@ -166,7 +166,7 @@ async def locale_button(call):
     )
 
 
-async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=None):
+async def orders_list(query, chat_id, start, quantity, buttons_data, user_id=None, message_id=None):
     keyboard = InlineKeyboardMarkup(row_width=5)
 
     inline_orders_buttons = (
@@ -194,8 +194,21 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
 
     lines = []
     buttons = []
+    current_time = time()
     for i, order in enumerate(orders):
         line = f'{i + 1}. '
+
+        if user_id is not None:
+            if order['user_id'] != user_id:
+                line += emojize(':black_small_square: ')
+            else:
+                line += emojize(':white_small_square: ')
+        else:
+            if order['expiration_time'] < current_time:
+                line += emojize(':arrow_forward: ')
+            else:
+                line += emojize(':pause_button: ')
+
         if 'sum_sell' in order:
             line += '{} '.format(order['sum_sell'])
         line += '{} → '.format(order['sell'])
@@ -232,7 +245,7 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
         )
 
 
-async def show_orders(call, query, start, buttons_data):
+async def show_orders(call, query, start, buttons_data, user_id=None):
     quantity = await database.orders.count_documents(query)
 
     if start >= quantity > 0:
@@ -243,7 +256,7 @@ async def show_orders(call, query, start, buttons_data):
         await call.answer()
         await orders_list(
             query, call.message.chat.id, start, quantity, buttons_data,
-            message_id=call.message.message_id
+            user_id=user_id, message_id=call.message.message_id
         )
     except MessageNotModified:
         await call.answer(_("There are no previous orders."))
@@ -251,20 +264,21 @@ async def show_orders(call, query, start, buttons_data):
 
 @dp.callback_query_handler(lambda call: call.data.startswith('orders'), state=any_state)
 async def orders_button(call):
-    start = max(0, int(call.data.split()[1]))
-    await show_orders(call, {
-        'user_id': {'$ne': call.from_user.id},
+    query = {
         '$or': [
             {'expiration_time': {'$exists': False}},
             {'expiration_time': {'$gt': time()}}
         ]
-    }, start, 'orders')
+    }
+    start = max(0, int(call.data.split()[1]))
+    await show_orders(call, query, start, 'orders')
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('my_orders'), state=any_state)
 async def my_orders_button(call):
+    query = {'user_id': call.from_user.id}
     start = max(0, int(call.data.split()[1]))
-    await show_orders(call, {'user_id': call.from_user.id}, start, 'my_orders')
+    await show_orders(call, query, start, 'my_orders', user_id=call.from_user.id)
 
 
 def get_order_field_names():
@@ -699,23 +713,12 @@ async def create_order_handler(call, order=None):
     )
 
 
-@bot.private_handler(commands=['my'])
-@bot.private_handler(
-    lambda msg: msg.text.startswith(emojize(':bust_in_silhouette:'))
-)
-async def handle_my_orders(message):
-    query = {'user_id': message.from_user.id}
-    quantity = await database.orders.count_documents(query)
-    await orders_list(query, message.chat.id, 0, quantity, 'my_orders')
-
-
 @bot.private_handler(commands=['book'])
 @bot.private_handler(
     lambda msg: msg.text.startswith(emojize(':closed_book:'))
 )
 async def handle_book(message):
     query = {
-        'user_id': {'$ne': message.from_user.id},
         '$or': [
             {'expiration_time': {'$exists': False}},
             {'expiration_time': {'$gt': time()}}
@@ -723,6 +726,16 @@ async def handle_book(message):
     }
     quantity = await database.orders.count_documents(query)
     await orders_list(query, message.chat.id, 0, quantity, 'orders')
+
+
+@bot.private_handler(commands=['my'])
+@bot.private_handler(
+    lambda msg: msg.text.startswith(emojize(':bust_in_silhouette:'))
+)
+async def handle_my_orders(message):
+    query = {'user_id': message.from_user.id}
+    quantity = await database.orders.count_documents(query)
+    await orders_list(query, message.chat.id, 0, quantity, 'my_orders', user_id=message.from_user.id)
 
 
 @dp.callback_query_handler(lambda call: call.data == 'cancel', state=any_state)
