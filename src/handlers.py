@@ -75,20 +75,14 @@ def inline_control_buttons(no_back=False, no_next=False, no_cancel=False):
 
     row = []
     if not no_back:
-        row.append(
-            InlineKeyboardButton(text=_('Back'), callback_data='back')
-        )
+        row.append(InlineKeyboardButton(_('Back'), 'back'))
     if not no_next:
-        row.append(
-            InlineKeyboardButton(text=_('Skip'), callback_data='next')
-        )
+        row.append(InlineKeyboardButton(_('Skip'), 'next'))
     if row:
         buttons.append(row)
 
     if not no_cancel:
-        buttons.append([
-            InlineKeyboardButton(text=_('Cancel'), callback_data='cancel')
-        ])
+        buttons.append([InlineKeyboardButton(_('Cancel'), 'cancel')])
 
     return buttons
 
@@ -122,12 +116,9 @@ async def handle_start_command(message, state):
     if not result.matched_count:
         keyboard = InlineKeyboardMarkup()
         for language in i18n.available_locales:
-            keyboard.row(
-                InlineKeyboardButton(
-                    text=Locale(language).display_name,
-                    callback_data='locale {}'.format(language)
-                )
-            )
+            keyboard.row(InlineKeyboardButton(
+                Locale(language).display_name, 'locale {}'.format(language)
+            ))
         await tg.send_message(
             message.chat.id,
             _('Please, choose your language.'),
@@ -148,12 +139,9 @@ async def handle_start_command(message, state):
 async def choose_locale(message):
     keyboard = InlineKeyboardMarkup()
     for language in i18n.available_locales:
-        keyboard.row(
-            InlineKeyboardButton(
-                text=Locale(language).display_name,
-                callback_data='locale {}'.format(language)
-            )
-        )
+        keyboard.row(InlineKeyboardButton(
+            Locale(language).display_name, 'locale {}'.format(language)
+        ))
     await tg.send_message(
         message.chat.id,
         _('Choose your language.'),
@@ -183,12 +171,12 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
 
     inline_orders_buttons = (
         InlineKeyboardButton(
-            text=emojize(':arrow_left:'),
-            callback_data='{} {}'.format(buttons_data, start - config.ORDERS_COUNT)
+            emojize(':arrow_left:'),
+            '{} {}'.format(buttons_data, start - config.ORDERS_COUNT)
         ),
         InlineKeyboardButton(
-            text=emojize(':arrow_right:'),
-            callback_data='{} {}'.format(buttons_data, start + config.ORDERS_COUNT)
+            emojize(':arrow_right:'),
+            '{} {}'.format(buttons_data, start + config.ORDERS_COUNT)
         )
     )
 
@@ -220,12 +208,9 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, message_id=
             line += ' ({} {}/{})'.format(order['price_sell'], order['sell'], order['buy'])
 
         lines.append(line)
-        buttons.append(
-            InlineKeyboardButton(
-                text='{}'.format(i + 1),
-                callback_data='get_order {}'.format(order['_id'])
-            )
-        )
+        buttons.append(InlineKeyboardButton(
+            '{}'.format(i + 1), 'get_order {}'.format(order['_id'])
+        ))
 
     keyboard.add(*buttons)
     keyboard.row(*inline_orders_buttons)
@@ -346,14 +331,12 @@ async def show_order(
 
     keyboard = InlineKeyboardMarkup(row_width=6)
 
-    keyboard.row(
-        InlineKeyboardButton(
-            text=_('Invert'), callback_data='{} {} {} {}'.format(
-                'revert' if invert else 'invert',
-                order['_id'], location_message_id, int(edit)
-            )
+    keyboard.row(InlineKeyboardButton(
+        _('Invert'), '{} {} {} {}'.format(
+            'revert' if invert else 'invert',
+            order['_id'], location_message_id, int(edit)
         )
-    )
+    ))
 
     if edit:
         buttons = []
@@ -362,23 +345,19 @@ async def show_order(
                 lines.append(f'{i + 1}. {field_names[field]} {value}')
             elif edit:
                 lines.append(f'{i + 1}. {field_names[field]} -')
-            buttons.append(
-                InlineKeyboardButton(
-                    text=f'{i + 1}', callback_data='edit {} {} {} {}'.format(
-                        order['_id'], field, location_message_id, int(invert)
-                    )
+            buttons.append(InlineKeyboardButton(
+                f'{i + 1}', 'edit {} {} {} {}'.format(
+                    order['_id'], field, location_message_id, int(invert)
                 )
-            )
+            ))
 
         keyboard.add(*buttons)
-        keyboard.row(
-            InlineKeyboardButton(
-                text=_('Finish'), callback_data='{} {} {} 0'.format(
-                    'invert' if invert else 'revert',
-                    order['_id'], location_message_id
-                )
+        keyboard.row(InlineKeyboardButton(
+            _('Finish'), '{} {} {} 0'.format(
+                'invert' if invert else 'revert',
+                order['_id'], location_message_id
             )
-        )
+        ))
 
     else:
         for field, value in lines_format.items():
@@ -386,24 +365,18 @@ async def show_order(
                 lines.append(field_names[field] + ' ' + value)
 
         if order['user_id'] == user_id:
-            keyboard.row(
-                InlineKeyboardButton(
-                    text=_('Edit'), callback_data='{} {} {} 1'.format(
-                        'invert' if invert else 'revert',
-                        order['_id'], location_message_id
-                    )
+            keyboard.row(InlineKeyboardButton(
+                _('Edit'), '{} {} {} 1'.format(
+                    'invert' if invert else 'revert',
+                    order['_id'], location_message_id
                 )
-            )
-            keyboard.row(
-                InlineKeyboardButton(
-                    text=_('Delete'), callback_data='delete {}'.format(order['_id'])
-                )
-            )
-        keyboard.row(
-            InlineKeyboardButton(
-                text=_('Hide'), callback_data='hide {}'.format(location_message_id)
-            )
-        )
+            ))
+            keyboard.row(InlineKeyboardButton(
+                _('Delete'), 'delete {}'.format(order['_id'])
+            ))
+        keyboard.row(InlineKeyboardButton(
+            _('Hide'), 'hide {}'.format(location_message_id)
+        ))
 
     answer = '\n'.join(lines)
 
@@ -558,13 +531,17 @@ async def edit_field(message, state):
 
             if invert:
                 update_dict['price_buy'] = Decimal128(price)
-                update_dict['price_sell'] = Decimal128(normalize_money(decimal.Decimal(1) / price))
+                update_dict['price_sell'] = Decimal128(normalize_money(
+                    decimal.Decimal(1) / price
+                ))
                 if 'sum_sell' in order:
                     update_dict['sum_buy'] = Decimal128(normalize_money(
                         order['sum_sell'].to_decimal() * price
                     ))
             else:
-                update_dict['price_buy'] = Decimal128(normalize_money(decimal.Decimal(1) / price))
+                update_dict['price_buy'] = Decimal128(normalize_money(
+                    decimal.Decimal(1) / price
+                ))
                 update_dict['price_sell'] = Decimal128(price)
                 if 'sum_buy' in order:
                     update_dict['sum_sell'] = Decimal128(normalize_money(
@@ -614,7 +591,8 @@ async def edit_field(message, state):
             order = await database.orders.find_one({'_id': edit['order_id']})
             await show_order(
                 order, message.chat.id, message.from_user.id,
-                message_id=edit['order_message_id'], location_message_id=edit['location_message_id'],
+                message_id=edit['order_message_id'],
+                location_message_id=edit['location_message_id'],
                 show_id=edit['show_id'], invert=edit['invert'], edit=True
             )
         await database.users.update_one(
@@ -821,7 +799,9 @@ async def choose_sell(message, state):
     )
 
     buttons = inline_control_buttons()
-    buttons.insert(0, [InlineKeyboardButton(text=_('Invert'), callback_data='price buy')])
+    buttons.insert(0, [InlineKeyboardButton(
+        _('Invert'), 'price buy'
+    )])
 
     await OrderCreation.price.set()
     await tg.send_message(
@@ -845,7 +825,7 @@ async def price_ask(call, order, price_currency):
 
     buttons = inline_control_buttons()
     buttons.insert(0, [InlineKeyboardButton(
-        text=_('Invert'), callback_data='price {}'.format(callback_command)
+        _('Invert'), 'price {}'.format(callback_command)
     )])
     await tg.edit_message_text(
         answer, call.message.chat.id, call.message.message_id,
@@ -907,14 +887,8 @@ async def choose_price(message, state):
 
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
-        InlineKeyboardButton(
-            text=order['buy'],
-            callback_data='sum buy'
-        ),
-        InlineKeyboardButton(
-            text=order['sell'],
-            callback_data='sum sell'
-        )
+        InlineKeyboardButton(order['buy'], 'sum buy'),
+        InlineKeyboardButton(order['sell'], 'sum sell')
     )
     for row in inline_control_buttons():
         keyboard.row(*row)
@@ -990,14 +964,8 @@ async def sum_handler(call):
 
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
-        InlineKeyboardButton(
-            text=order['buy'],
-            callback_data='sum buy'
-        ),
-        InlineKeyboardButton(
-            text=order['sell'],
-            callback_data='sum sell'
-        )
+        InlineKeyboardButton(order['buy'], 'sum buy'),
+        InlineKeyboardButton(order['sell'], 'sum sell')
     )
     for row in inline_control_buttons():
         keyboard.row(*row)
@@ -1091,12 +1059,9 @@ async def text_location(message, state):
     buttons = []
     for i, result in enumerate(results):
         answer += '{}. {}\n'.format(i + 1, result['display_name'])
-        buttons.append(
-            InlineKeyboardButton(
-                text=f'{i + 1}',
-                callback_data='location {} {}'.format(result['lat'], result['lon'])
-            )
-        )
+        buttons.append(InlineKeyboardButton(
+            f'{i + 1}', 'location {} {}'.format(result['lat'], result['lon'])
+        ))
     keyboard.add(*buttons)
 
     await tg.send_message(message.chat.id, answer, reply_markup=keyboard)
