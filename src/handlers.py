@@ -170,7 +170,7 @@ async def locale_button(call):
     )
 
     i18n.ctx_locale.set(locale)
-    await tg.answer_callback_query(callback_query_id=call.id)
+    await call.answer()
     await tg.send_message(
         call.message.chat.id,
         _("Hello, I'm TellerBot.") + ' ' + help_message(),
@@ -251,23 +251,17 @@ async def show_orders(call, query, start, buttons_data):
     quantity = await database.orders.count_documents(query)
 
     if start >= quantity > 0:
-        await tg.answer_callback_query(
-            callback_query_id=call.id,
-            text=_("There are no more orders.")
-        )
+        await call.answer(_("There are no more orders."))
         return
 
     try:
-        await tg.answer_callback_query(callback_query_id=call.id)
+        await call.answer()
         await orders_list(
             query, call.message.chat.id, start, quantity, buttons_data,
             message_id=call.message.message_id
         )
     except MessageNotModified:
-        await tg.answer_callback_query(
-            callback_query_id=call.id,
-            text=_("There are no previous orders.")
-        )
+        await call.answer(_("There are no previous orders."))
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('orders'), state=any_state)
@@ -431,10 +425,7 @@ def order_handler(handler):
         order = await database.orders.find_one({'_id': ObjectId(order_id)})
 
         if not order:
-            await tg.answer_callback_query(
-                callback_query_id=call.id,
-                text=_('Order is not found.')
-            )
+            await call.answer(_('Order is not found.'))
             return
 
         return await handler(call, order)
@@ -444,7 +435,7 @@ def order_handler(handler):
 @dp.callback_query_handler(lambda call: call.data.startswith('get_order'), state=any_state)
 @order_handler
 async def get_order_button(call, order):
-    await tg.answer_callback_query(callback_query_id=call.id)
+    await call.answer()
     await show_order(order, call.message.chat.id, call.from_user.id, show_id=True)
 
 
@@ -474,7 +465,7 @@ async def invert_button(call, order):
     edit = bool(int(args[3]))
     show_id = call.message.text.startswith('ID')
 
-    await tg.answer_callback_query(callback_query_id=call.id)
+    await call.answer()
     await show_order(
         order, call.message.chat.id, call.from_user.id,
         message_id=call.message.message_id,
@@ -504,7 +495,7 @@ async def edit_button(call, order):
     else:
         answer = None
 
-    await tg.answer_callback_query(callback_query_id=call.id)
+    await call.answer()
     if answer:
         result = await tg.send_message(call.message.chat.id, answer)
         await database.users.update_one(
@@ -643,9 +634,8 @@ async def delete_button(call, order):
     delete_result = await database.orders.delete_one({
         '_id': order['_id'], 'user_id': call.from_user.id
     })
-    await tg.answer_callback_query(
-        callback_query_id=call.id,
-        text=_('Order was deleted.') if delete_result.deleted_count > 0 else
+    await call.answer(
+        _('Order was deleted.') if delete_result.deleted_count > 0 else
         _("Couldn't delete order.")
     )
 
@@ -669,10 +659,7 @@ async def previous_state(call, state):
             if not error:
                 return
         await state.set_state(state_name)
-    return await tg.answer_callback_query(
-        callback_query_id=call.id,
-        text=_("Couldn't go back.")
-    )
+    return await call.answer(_("Couldn't go back."))
 
 
 @dp.callback_query_handler(lambda call: call.data == 'next', state=any_state)
@@ -686,10 +673,7 @@ async def next_state(call, state):
             if not error:
                 return
         await state.set_state(state_name)
-    return await tg.answer_callback_query(
-        callback_query_id=call.id,
-        text=_("Couldn't go next.")
-    )
+    return await call.answer(_("Couldn't go next."))
 
 
 @bot.private_handler(commands=['create'])
@@ -725,10 +709,7 @@ async def create_order_handler(call, order=None):
     order = await database.creation.find_one({'user_id': call.from_user.id})
 
     if not order:
-        await tg.answer_callback_query(
-            callback_query_id=call.id,
-            text=_('You are not creating order.')
-        )
+        await call.answer(_('You are not creating order.'))
         return True
 
     await tg.edit_message_text(
@@ -769,7 +750,7 @@ async def handle_book(message):
 @dp.callback_query_handler(lambda call: call.data == 'cancel', state=any_state)
 async def cancel_order_creation(call, state):
     await state.finish()
-    await tg.answer_callback_query(callback_query_id=call.id)
+    await call.answer()
 
     order = await database.creation.delete_one({'user_id': call.from_user.id})
     if not order.deleted_count:
@@ -823,7 +804,7 @@ async def choose_buy_handler(call):
 
 @bot.private_handler(state=OrderCreation.sell)
 async def choose_sell(message, state):
-    if not all(ch in ascii_letters for ch in message.text):
+    if not all(ch in ascii_letters + '.' for ch in message.text):
         await tg.send_message(
             message.chat.id,
             _('Currency may only contain latin characters.')
@@ -1004,10 +985,7 @@ async def sum_handler(call):
     )
 
     if not order:
-        await tg.answer_callback_query(
-            callback_query_id=call.id,
-            text=_('You are not creating order.')
-        )
+        await call.answer(_('You are not creating order.'))
         return True
 
     keyboard = InlineKeyboardMarkup()
@@ -1038,7 +1016,7 @@ async def choose_sum_currency(call):
         {'user_id': call.from_user.id},
         {'$set': {'sum_currency': sum_currency}}
     )
-    await tg.answer_callback_query(callback_query_id=call.id)
+    await call.answer()
     await tg.send_message(
         call.message.chat.id,
         _('Send order sum in {}.').format(order[sum_currency])
@@ -1249,7 +1227,7 @@ async def choose_comments_handler(call):
     order = await database.creation.find_one_and_delete(
         {'user_id': call.from_user.id}
     )
-    await tg.answer_callback_query(callback_query_id=call.id)
+    await call.answer()
     if order:
         await set_order(order, call.message.chat.id)
     await dp.get_current().current_state().finish()
