@@ -31,4 +31,5 @@ class OrderCreation(StatesGroup):
     set_order = State()
 
 
+asking_support = State('asking_support')
 field_editing = State('field_editing')

@@ -65,6 +65,7 @@ async def validate_money(data, chat_id):
 
 def help_message():
     return _(
+        "Hello, I'm TellerBot. "
         'I can help you meet with people that you can swap money with.\n\n'
         'Choose one of the options on your keyboard.'
     )
@@ -93,17 +94,10 @@ def start_keyboard():
         KeyboardButton(emojize(':heavy_plus_sign: ') + _('Create order')),
         KeyboardButton(emojize(':bust_in_silhouette: ') + _('My orders')),
         KeyboardButton(emojize(':closed_book: ') + _('Order book')),
-        KeyboardButton(emojize(':abcd: ') + _('Language'))
+        KeyboardButton(emojize(':abcd: ') + _('Language')),
+        KeyboardButton(emojize(':question: ') + _('Support'))
     )
     return keyboard
-
-
-@bot.private_handler(commands=['help'])
-async def handle_help_command(message):
-    await tg.send_message(
-        message.chat.id, help_message(),
-        reply_markup=start_keyboard()
-    )
 
 
 @bot.private_handler(commands=['start'], state=any_state)
@@ -129,8 +123,7 @@ async def handle_start_command(message, state):
 
     await state.finish()
     await tg.send_message(
-        message.chat.id,
-        _("Hello, I'm TellerBot.") + ' ' + help_message(),
+        message.chat.id, help_message(),
         reply_markup=start_keyboard()
     )
 
@@ -162,8 +155,40 @@ async def locale_button(call):
     i18n.ctx_locale.set(locale)
     await call.answer()
     await tg.send_message(
-        call.message.chat.id,
-        _("Hello, I'm TellerBot.") + ' ' + help_message(),
+        call.message.chat.id, help_message(),
+        reply_markup=start_keyboard()
+    )
+
+
+@bot.private_handler(commands=['help'])
+@bot.private_handler(lambda msg: msg.text.startswith(emojize(':question:')))
+async def help_command(message):
+    await states.asking_support.set()
+    await tg.send_message(
+        message.chat.id,
+        _('Send your questions and feedback in the next message, '
+          'and I will forward it to the support.'),
+        reply_markup=start_keyboard()
+    )
+
+
+@bot.private_handler(state=states.asking_support)
+async def contact_support(message, state):
+    forward = await tg.forward_message(
+        chat_id=config.SUPPORT_CHAT_ID,
+        from_chat_id=message.chat.id,
+        message_id=message.message_id
+    )
+    await database.tickets.insert_one({
+        'chat': message.chat.id,
+        'forward_id': message.message_id,
+        'reply_id': forward.message_id
+    })
+    await state.finish()
+    await tg.send_message(
+        message.chat.id,
+        _('Your message was forwarded to the support. '
+          "When you get a reply, I'll send it to you."),
         reply_markup=start_keyboard()
     )
 
@@ -688,9 +713,7 @@ async def next_state(call, state):
 
 
 @bot.private_handler(commands=['create'])
-@bot.private_handler(
-    lambda msg: msg.text.startswith(emojize(':heavy_plus_sign:'))
-)
+@bot.private_handler(lambda msg: msg.text.startswith(emojize(':heavy_plus_sign:')))
 async def handle_create(message):
     if message.from_user.username:
         username = '@' + message.from_user.username
@@ -733,9 +756,7 @@ async def create_order_handler(call, order=None):
 
 
 @bot.private_handler(commands=['book'])
-@bot.private_handler(
-    lambda msg: msg.text.startswith(emojize(':closed_book:'))
-)
+@bot.private_handler(lambda msg: msg.text.startswith(emojize(':closed_book:')))
 async def handle_book(message):
     query = {
         '$or': [
@@ -748,9 +769,7 @@ async def handle_book(message):
 
 
 @bot.private_handler(commands=['my'])
-@bot.private_handler(
-    lambda msg: msg.text.startswith(emojize(':bust_in_silhouette:'))
-)
+@bot.private_handler(lambda msg: msg.text.startswith(emojize(':bust_in_silhouette:')))
 async def handle_my_orders(message):
     query = {'user_id': message.from_user.id}
     quantity = await database.orders.count_documents(query)
@@ -1253,3 +1272,20 @@ async def choose_comments(message, state):
 @bot.private_handler()
 async def handle_default(message):
     await tg.send_message(message.chat.id, _('Unknown command.'))
+
+
+@dp.message_handler(
+    lambda msg:
+    msg.chat.id == config.SUPPORT_CHAT_ID and
+    msg.reply_to_message is not None and
+    msg.reply_to_message.forward_from is not None
+)
+async def answer_support_ticket(message):
+    ticket = await database.tickets.find_one_and_delete(
+        {'reply_id': message.reply_to_message.message_id}
+    )
+    if ticket:
+        await tg.send_message(
+            ticket['chat'], message.text, reply_to_message_id=ticket['forward_id']
+        )
+        await tg.send_message(message.chat.id, _('Reply is sent.'))

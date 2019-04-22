@@ -8,3 +8,4 @@ SERVER_PORT = 5000
 LOCALES_DIR = Path(__file__).parent / 'locale'
 LOGGER_LEVEL = logging.DEBUG
 ORDERS_COUNT = 10
+SUPPORT_CHAT_ID = -643473860
