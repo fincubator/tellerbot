@@ -144,7 +144,7 @@ async def choose_locale(message):
     )
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('locale'), state=any_state)
+@dp.callback_query_handler(lambda call: call.data.startswith('locale '), state=any_state)
 async def locale_button(call):
     locale = call.data.split()[1]
     await database.users.update_one(
@@ -168,7 +168,9 @@ async def help_command(message):
         message.chat.id,
         _('Send your questions and feedback in the next message, '
           'and I will forward it to the support.'),
-        reply_markup=start_keyboard()
+        keyboard=InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(_('Cancel'), callback_data='unhelp')
+        ]])
     )
 
 
@@ -189,6 +191,16 @@ async def contact_support(message, state):
         message.chat.id,
         _('Your message was forwarded to the support. '
           "When you get a reply, I'll send it to you."),
+        reply_markup=start_keyboard()
+    )
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('unhelp '), state=states.asking_support)
+async def unhelp_button(call, state):
+    await state.finish()
+    await tg.send_message(
+        call.message.chat.id,
+        _('Your request is cancelled.'),
         reply_markup=start_keyboard()
     )
 
@@ -302,7 +314,7 @@ async def show_orders(call, query, start, buttons_data, invert, user_id=None):
         await call.answer(_("There are no previous orders."))
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('orders'), state=any_state)
+@dp.callback_query_handler(lambda call: call.data.startswith('orders '), state=any_state)
 async def orders_button(call):
     query = {
         '$or': [
@@ -316,7 +328,7 @@ async def orders_button(call):
     await show_orders(call, query, start, 'orders', invert, user_id=call.from_user.id)
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('my_orders'), state=any_state)
+@dp.callback_query_handler(lambda call: call.data.startswith('my_orders '), state=any_state)
 async def my_orders_button(call):
     query = {'user_id': call.from_user.id}
     args = call.data.split()
@@ -465,7 +477,7 @@ def order_handler(handler):
     return decorator
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('get_order'), state=any_state)
+@dp.callback_query_handler(lambda call: call.data.startswith('get_order '), state=any_state)
 @order_handler
 async def get_order_button(call, order):
     await call.answer()
@@ -488,7 +500,7 @@ async def get_order_command(message):
     await show_order(order, message.chat.id, message.from_user.id)
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith(('invert', 'revert')), state=any_state)
+@dp.callback_query_handler(lambda call: call.data.startswith(('invert ', 'revert ')), state=any_state)
 @order_handler
 async def invert_button(call, order):
     args = call.data.split()
@@ -507,7 +519,7 @@ async def invert_button(call, order):
     )
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('edit'), state=any_state)
+@dp.callback_query_handler(lambda call: call.data.startswith('edit '), state=any_state)
 @order_handler
 async def edit_button(call, order):
     args = call.data.split()
@@ -666,7 +678,7 @@ async def edit_field(message, state):
         await tg.edit_message_text(error, message.chat.id, edit['message_id'])
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('delete'), state=any_state)
+@dp.callback_query_handler(lambda call: call.data.startswith('delete '), state=any_state)
 async def delete_button(call):
     order_id = call.data.split()[1]
     order = await database.orders.find_one_and_delete({
@@ -693,13 +705,13 @@ async def delete_button(call):
     order['date'] = datetime.utcnow()
     await database.trash.insert_one(order)
     await tg.edit_message_text(
-        _('Order was deleted. You can restore it in 30 minutes.'),
+        _('Order is deleted. You can restore it in 30 minutes.'),
         call.message.chat.id, call.message.message_id,
         reply_markup=keyboard
     )
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('restore'), state=any_state)
+@dp.callback_query_handler(lambda call: call.data.startswith('restore '), state=any_state)
 async def restore_button(call):
     order_id = call.data.split()[1]
     order = await database.trash.find_one_and_delete({
@@ -721,7 +733,7 @@ async def restore_button(call):
     )
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('hide'), state=any_state)
+@dp.callback_query_handler(lambda call: call.data.startswith('hide '), state=any_state)
 async def hide_button(call):
     await tg.delete_message(call.message.chat.id, call.message.message_id)
     location_message_id = call.data.split()[1]
@@ -942,7 +954,7 @@ async def price_handler(call):
     await price_ask(call, order, price_currency)
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('price'), state=OrderCreation.price)
+@dp.callback_query_handler(lambda call: call.data.startswith('price '), state=OrderCreation.price)
 async def invert_price(call):
     price_currency = call.data.split()[1]
     order = await database.creation.find_one_and_update(
@@ -1073,7 +1085,7 @@ async def sum_handler(call):
     )
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('sum'), state=OrderCreation.sum)
+@dp.callback_query_handler(lambda call: call.data.startswith('sum '), state=OrderCreation.sum)
 async def choose_sum_currency(call):
     sum_currency = call.data.split()[1]
     order = await database.creation.find_one_and_update(
@@ -1163,7 +1175,7 @@ async def text_location(message, state):
     await tg.send_message(message.chat.id, answer, reply_markup=keyboard)
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('location'), state=OrderCreation.location)
+@dp.callback_query_handler(lambda call: call.data.startswith('location '), state=OrderCreation.location)
 async def geocoded_location(call):
     latitude, longitude = call.data.split()[1:]
     await database.creation.update_one(
