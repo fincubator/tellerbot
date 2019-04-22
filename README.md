@@ -1,5 +1,5 @@
 # TellerBot
-This repository contains source code of Telegram bot [@tellerbot](https://t.me/tellerbot).
+This repository contains source code of Telegram bot [@TellerBot](https://t.me/TellerBot).
 
 
 # License
