@@ -430,7 +430,9 @@ async def show_order(
                 )
             ))
             keyboard.row(InlineKeyboardButton(
-                _('Delete'), callback_data='delete {}'.format(order['_id'])
+                _('Delete'), callback_data='delete {} {}'.format(
+                    order['_id'], location_message_id
+                )
             ))
         keyboard.row(InlineKeyboardButton(
             _('Hide'), callback_data='hide {}'.format(location_message_id)
@@ -665,14 +667,57 @@ async def edit_field(message, state):
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('delete'), state=any_state)
-@order_handler
-async def delete_button(call, order):
-    delete_result = await database.orders.delete_one({
-        '_id': order['_id'], 'user_id': call.from_user.id
+async def delete_button(call):
+    order_id = call.data.split()[1]
+    order = await database.orders.find_one_and_delete({
+        '_id': ObjectId(order_id), 'user_id': call.from_user.id,
     })
-    await call.answer(
-        _('Order was deleted.') if delete_result.deleted_count > 0 else
-        _("Couldn't delete order.")
+    if not order:
+        await call.answer(_("Couldn't delete order."))
+        return
+
+    args = call.data.split()
+    location_message_id = int(args[2])
+    show_id = call.message.text.startswith('ID')
+
+    keyboard = InlineKeyboardMarkup(row_width=6)
+    keyboard.row(InlineKeyboardButton(
+        _('Hide'), callback_data='hide {}'.format(location_message_id)
+    ))
+    keyboard.row(InlineKeyboardButton(
+        _('Restore'), callback_data='restore {} {} {}'.format(
+            order['_id'], location_message_id, int(show_id)
+        )
+    ))
+
+    order['date'] = datetime.utcnow()
+    await database.trash.insert_one(order)
+    await tg.edit_message_text(
+        _('Order was deleted. You can restore it in 30 minutes.'),
+        call.message.chat.id, call.message.message_id,
+        reply_markup=keyboard
+    )
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('restore'), state=any_state)
+async def restore_button(call):
+    order_id = call.data.split()[1]
+    order = await database.trash.find_one_and_delete({
+        '_id': ObjectId(order_id), 'user_id': call.from_user.id,
+    })
+    if not order:
+        await call.answer(_('Order is not found.'))
+        return
+
+    args = call.data.split()
+    location_message_id = int(args[2])
+    show_id = bool(int(args[3]))
+
+    await database.orders.insert_one(order)
+    await show_order(
+        order, call.message.chat.id, call.from_user.id,
+        message_id=call.message.message_id,
+        location_message_id=location_message_id, show_id=show_id
     )
 
 
