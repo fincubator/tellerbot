@@ -168,7 +168,7 @@ async def help_command(message):
         message.chat.id,
         _('Send your questions and feedback in the next message, '
           'and I will forward it to the support.'),
-        keyboard=InlineKeyboardMarkup(inline_keyboard=[[
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
             InlineKeyboardButton(_('Cancel'), callback_data='unhelp')
         ]])
     )
@@ -769,9 +769,9 @@ async def next_state(call, state):
     return await call.answer(_("Couldn't go next."))
 
 
-@bot.private_handler(commands=['create'])
-@bot.private_handler(lambda msg: msg.text.startswith(emojize(':heavy_plus_sign:')))
-async def handle_create(message):
+@bot.private_handler(commands=['create'], state=any_state)
+@bot.private_handler(lambda msg: msg.text.startswith(emojize(':heavy_plus_sign:')), state=any_state)
+async def handle_create(message, state):
     if message.from_user.username:
         username = '@' + message.from_user.username
     else:
@@ -812,9 +812,9 @@ async def create_order_handler(call, order=None):
     )
 
 
-@bot.private_handler(commands=['book'])
-@bot.private_handler(lambda msg: msg.text.startswith(emojize(':closed_book:')))
-async def handle_book(message):
+@bot.private_handler(commands=['book'], state=any_state)
+@bot.private_handler(lambda msg: msg.text.startswith(emojize(':closed_book:')), state=any_state)
+async def handle_book(message, state):
     query = {
         '$or': [
             {'expiration_time': {'$exists': False}},
@@ -822,14 +822,16 @@ async def handle_book(message):
         ]
     }
     quantity = await database.orders.count_documents(query)
+    await state.finish()
     await orders_list(query, message.chat.id, 0, quantity, 'orders', user_id=message.from_user.id)
 
 
-@bot.private_handler(commands=['my'])
-@bot.private_handler(lambda msg: msg.text.startswith(emojize(':bust_in_silhouette:')))
-async def handle_my_orders(message):
+@bot.private_handler(commands=['my'], state=any_state)
+@bot.private_handler(lambda msg: msg.text.startswith(emojize(':bust_in_silhouette:')), state=any_state)
+async def handle_my_orders(message, state):
     query = {'user_id': message.from_user.id}
     quantity = await database.orders.count_documents(query)
+    await state.finish()
     await orders_list(query, message.chat.id, 0, quantity, 'my_orders')
 
 
