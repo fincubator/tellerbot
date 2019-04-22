@@ -75,14 +75,14 @@ def inline_control_buttons(no_back=False, no_next=False, no_cancel=False):
 
     row = []
     if not no_back:
-        row.append(InlineKeyboardButton(_('Back'), 'back'))
+        row.append(InlineKeyboardButton(_('Back'), callback_data='back'))
     if not no_next:
-        row.append(InlineKeyboardButton(_('Skip'), 'next'))
+        row.append(InlineKeyboardButton(_('Skip'), callback_data='next'))
     if row:
         buttons.append(row)
 
     if not no_cancel:
-        buttons.append([InlineKeyboardButton(_('Cancel'), 'cancel')])
+        buttons.append([InlineKeyboardButton(_('Cancel'), callback_data='cancel')])
 
     return buttons
 
@@ -117,7 +117,8 @@ async def handle_start_command(message, state):
         keyboard = InlineKeyboardMarkup()
         for language in i18n.available_locales:
             keyboard.row(InlineKeyboardButton(
-                Locale(language).display_name, 'locale {}'.format(language)
+                Locale(language).display_name,
+                callback_data='locale {}'.format(language)
             ))
         await tg.send_message(
             message.chat.id,
@@ -140,7 +141,8 @@ async def choose_locale(message):
     keyboard = InlineKeyboardMarkup()
     for language in i18n.available_locales:
         keyboard.row(InlineKeyboardButton(
-            Locale(language).display_name, 'locale {}'.format(language)
+            Locale(language).display_name,
+            callback_data='locale {}'.format(language)
         ))
     await tg.send_message(
         message.chat.id,
@@ -166,17 +168,22 @@ async def locale_button(call):
     )
 
 
-async def orders_list(query, chat_id, start, quantity, buttons_data, user_id=None, message_id=None):
+async def orders_list(
+    query, chat_id, start, quantity, buttons_data,
+    user_id=None, message_id=None, invert=False
+):
     keyboard = InlineKeyboardMarkup(row_width=5)
 
     inline_orders_buttons = (
         InlineKeyboardButton(
-            emojize(':arrow_left:'),
-            '{} {}'.format(buttons_data, start - config.ORDERS_COUNT)
+            emojize(':arrow_left:'), callback_data='{} {} {}'.format(
+                buttons_data, start - config.ORDERS_COUNT, int(invert)
+            )
         ),
         InlineKeyboardButton(
-            emojize(':arrow_right:'),
-            '{} {}'.format(buttons_data, start + config.ORDERS_COUNT)
+            emojize(':arrow_right:'), callback_data='{} {} {}'.format(
+                buttons_data, start + config.ORDERS_COUNT, int(invert)
+            )
         )
     )
 
@@ -204,7 +211,7 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, user_id=Non
             else:
                 line += emojize(':white_small_square: ')
         else:
-            if order['expiration_time'] < current_time:
+            if order['expiration_time'] > current_time:
                 line += emojize(':arrow_forward: ')
             else:
                 line += emojize(':pause_button: ')
@@ -218,13 +225,21 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, user_id=Non
         line += order['buy']
 
         if 'price_sell' in order:
-            line += ' ({} {}/{})'.format(order['price_sell'], order['sell'], order['buy'])
+            if invert:
+                line += ' ({} {}/{})'.format(order['price_buy'], order['buy'], order['sell'])
+            else:
+                line += ' ({} {}/{})'.format(order['price_sell'], order['sell'], order['buy'])
 
         lines.append(line)
         buttons.append(InlineKeyboardButton(
-            '{}'.format(i + 1), 'get_order {}'.format(order['_id'])
+            '{}'.format(i + 1), callback_data='get_order {}'.format(order['_id'])
         ))
 
+    keyboard.row(InlineKeyboardButton(
+        _('Invert'), callback_data='{} {} {}'.format(
+            buttons_data, start - config.ORDERS_COUNT, int(not invert)
+        )
+    ))
     keyboard.add(*buttons)
     keyboard.row(*inline_orders_buttons)
 
@@ -245,7 +260,7 @@ async def orders_list(query, chat_id, start, quantity, buttons_data, user_id=Non
         )
 
 
-async def show_orders(call, query, start, buttons_data, user_id=None):
+async def show_orders(call, query, start, buttons_data, invert, user_id=None):
     quantity = await database.orders.count_documents(query)
 
     if start >= quantity > 0:
@@ -256,7 +271,7 @@ async def show_orders(call, query, start, buttons_data, user_id=None):
         await call.answer()
         await orders_list(
             query, call.message.chat.id, start, quantity, buttons_data,
-            user_id=user_id, message_id=call.message.message_id
+            user_id=user_id, message_id=call.message.message_id, invert=invert
         )
     except MessageNotModified:
         await call.answer(_("There are no previous orders."))
@@ -270,15 +285,19 @@ async def orders_button(call):
             {'expiration_time': {'$gt': time()}}
         ]
     }
-    start = max(0, int(call.data.split()[1]))
-    await show_orders(call, query, start, 'orders')
+    args = call.data.split()
+    start = max(0, int(args[1]))
+    invert = bool(int(args[2]))
+    await show_orders(call, query, start, 'orders', invert, user_id=call.from_user.id)
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('my_orders'), state=any_state)
 async def my_orders_button(call):
     query = {'user_id': call.from_user.id}
-    start = max(0, int(call.data.split()[1]))
-    await show_orders(call, query, start, 'my_orders', user_id=call.from_user.id)
+    args = call.data.split()
+    start = max(0, int(args[1]))
+    invert = bool(int(args[2]))
+    await show_orders(call, query, start, 'my_orders', invert)
 
 
 def get_order_field_names():
@@ -346,7 +365,7 @@ async def show_order(
     keyboard = InlineKeyboardMarkup(row_width=6)
 
     keyboard.row(InlineKeyboardButton(
-        _('Invert'), '{} {} {} {}'.format(
+        _('Invert'), callback_data='{} {} {} {}'.format(
             'revert' if invert else 'invert',
             order['_id'], location_message_id, int(edit)
         )
@@ -360,14 +379,14 @@ async def show_order(
             elif edit:
                 lines.append(f'{i + 1}. {field_names[field]} -')
             buttons.append(InlineKeyboardButton(
-                f'{i + 1}', 'edit {} {} {} {}'.format(
+                f'{i + 1}', callback_data='edit {} {} {} {}'.format(
                     order['_id'], field, location_message_id, int(invert)
                 )
             ))
 
         keyboard.add(*buttons)
         keyboard.row(InlineKeyboardButton(
-            _('Finish'), '{} {} {} 0'.format(
+            _('Finish'), callback_data='{} {} {} 0'.format(
                 'invert' if invert else 'revert',
                 order['_id'], location_message_id
             )
@@ -380,16 +399,16 @@ async def show_order(
 
         if order['user_id'] == user_id:
             keyboard.row(InlineKeyboardButton(
-                _('Edit'), '{} {} {} 1'.format(
+                _('Edit'), callback_data='{} {} {} 1'.format(
                     'invert' if invert else 'revert',
                     order['_id'], location_message_id
                 )
             ))
             keyboard.row(InlineKeyboardButton(
-                _('Delete'), 'delete {}'.format(order['_id'])
+                _('Delete'), callback_data='delete {}'.format(order['_id'])
             ))
         keyboard.row(InlineKeyboardButton(
-            _('Hide'), 'hide {}'.format(location_message_id)
+            _('Hide'), callback_data='hide {}'.format(location_message_id)
         ))
 
     answer = '\n'.join(lines)
@@ -725,7 +744,7 @@ async def handle_book(message):
         ]
     }
     quantity = await database.orders.count_documents(query)
-    await orders_list(query, message.chat.id, 0, quantity, 'orders')
+    await orders_list(query, message.chat.id, 0, quantity, 'orders', user_id=message.from_user.id)
 
 
 @bot.private_handler(commands=['my'])
@@ -735,7 +754,7 @@ async def handle_book(message):
 async def handle_my_orders(message):
     query = {'user_id': message.from_user.id}
     quantity = await database.orders.count_documents(query)
-    await orders_list(query, message.chat.id, 0, quantity, 'my_orders', user_id=message.from_user.id)
+    await orders_list(query, message.chat.id, 0, quantity, 'my_orders')
 
 
 @dp.callback_query_handler(lambda call: call.data == 'cancel', state=any_state)
@@ -813,7 +832,7 @@ async def choose_sell(message, state):
 
     buttons = inline_control_buttons()
     buttons.insert(0, [InlineKeyboardButton(
-        _('Invert'), 'price buy'
+        _('Invert'), callback_data='price buy'
     )])
 
     await OrderCreation.price.set()
@@ -838,7 +857,7 @@ async def price_ask(call, order, price_currency):
 
     buttons = inline_control_buttons()
     buttons.insert(0, [InlineKeyboardButton(
-        _('Invert'), 'price {}'.format(callback_command)
+        _('Invert'), callback_data='price {}'.format(callback_command)
     )])
     await tg.edit_message_text(
         answer, call.message.chat.id, call.message.message_id,
@@ -900,8 +919,8 @@ async def choose_price(message, state):
 
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
-        InlineKeyboardButton(order['buy'], 'sum buy'),
-        InlineKeyboardButton(order['sell'], 'sum sell')
+        InlineKeyboardButton(order['buy'], callback_data='sum buy'),
+        InlineKeyboardButton(order['sell'], callback_data='sum sell')
     )
     for row in inline_control_buttons():
         keyboard.row(*row)
@@ -977,8 +996,8 @@ async def sum_handler(call):
 
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
-        InlineKeyboardButton(order['buy'], 'sum buy'),
-        InlineKeyboardButton(order['sell'], 'sum sell')
+        InlineKeyboardButton(order['buy'], callback_data='sum buy'),
+        InlineKeyboardButton(order['sell'], callback_data='sum sell')
     )
     for row in inline_control_buttons():
         keyboard.row(*row)
@@ -1073,7 +1092,7 @@ async def text_location(message, state):
     for i, result in enumerate(results):
         answer += '{}. {}\n'.format(i + 1, result['display_name'])
         buttons.append(InlineKeyboardButton(
-            f'{i + 1}', 'location {} {}'.format(result['lat'], result['lon'])
+            f'{i + 1}', callback_data='location {} {}'.format(result['lat'], result['lon'])
         ))
     keyboard.add(*buttons)
 
