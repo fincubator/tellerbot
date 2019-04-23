@@ -21,6 +21,8 @@ import decimal
 import math
 from time import time
 
+from pymongo import ASCENDING
+
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.types import ParseMode
@@ -114,7 +116,8 @@ async def orders_list(
             await tg.edit_message_text(text, chat_id, message_id, reply_markup=keyboard)
         return
 
-    all_orders = await database.orders.find(query).to_list(length=start + config.ORDERS_COUNT)
+    sorted_orders = database.orders.find(query).sort('start_time', ASCENDING)
+    all_orders = await sorted_orders.to_list(length=start + config.ORDERS_COUNT)
     orders = all_orders[start:]
 
     lines = []
