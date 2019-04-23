@@ -16,10 +16,13 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
+from pathlib import Path
+from typing import Any, Tuple, Optional
+
+from babel import Locale
+
 from aiogram.contrib.middlewares.i18n import I18nMiddleware
 from aiogram.types import User
-from babel import Locale
-from typing import Any, Tuple, Optional
 
 import config
 from .database import database
@@ -40,5 +43,5 @@ class I18nMiddlewareManual(I18nMiddleware):
             return language
 
 
-i18n = I18nMiddlewareManual('bot', config.LOCALES_DIR)
+i18n = I18nMiddlewareManual('bot', Path(__file__).parents[1] / 'locale')
 _ = i18n.gettext

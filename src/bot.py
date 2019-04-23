@@ -32,7 +32,7 @@ tg = Bot(token=config.TOKEN, loop=asyncio.get_event_loop())
 dp = Dispatcher(tg, storage=storage)
 dp.middleware.setup(i18n)
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=config.LOGGER_LEVEL)
 dp.middleware.setup(LoggingMiddleware())
 
 
