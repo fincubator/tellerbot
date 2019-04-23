@@ -128,8 +128,8 @@ async def handle_start_command(message, state):
     )
 
 
-@bot.private_handler(commands=['locale'])
-@bot.private_handler(lambda msg: msg.text.startswith(emojize(':abcd:')))
+@bot.private_handler(commands=['locale'], state=any_state)
+@bot.private_handler(lambda msg: msg.text.startswith(emojize(':abcd:')), state=any_state)
 async def choose_locale(message):
     keyboard = InlineKeyboardMarkup()
     for language in i18n.available_locales:
@@ -160,8 +160,8 @@ async def locale_button(call):
     )
 
 
-@bot.private_handler(commands=['help'])
-@bot.private_handler(lambda msg: msg.text.startswith(emojize(':question:')))
+@bot.private_handler(commands=['help'], state=any_state)
+@bot.private_handler(lambda msg: msg.text.startswith(emojize(':question:')), state=any_state)
 async def help_command(message):
     await states.asking_support.set()
     await tg.send_message(
@@ -195,7 +195,7 @@ async def contact_support(message, state):
     )
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('unhelp '), state=states.asking_support)
+@dp.callback_query_handler(lambda call: call.data.startswith('unhelp'), state=states.asking_support)
 async def unhelp_button(call, state):
     await state.finish()
     await tg.send_message(
@@ -240,14 +240,9 @@ async def orders_list(
     buttons = []
     current_time = time()
     for i, order in enumerate(orders):
-        line = f'{i + 1}. '
+        line = ''
 
-        if user_id is not None:
-            if order['user_id'] != user_id:
-                line += emojize(':black_small_square: ')
-            else:
-                line += emojize(':white_small_square: ')
-        else:
+        if user_id is None:
             if order['expiration_time'] > current_time:
                 line += emojize(':arrow_forward: ')
             else:
@@ -267,7 +262,10 @@ async def orders_list(
             else:
                 line += ' ({} {}/{})'.format(order['price_sell'], order['sell'], order['buy'])
 
-        lines.append(line)
+        if user_id is not None and order['user_id'] == user_id:
+            line = f'*{line}*'
+
+        lines.append(f'{i + 1}. {line}')
         buttons.append(InlineKeyboardButton(
             '{}'.format(i + 1), callback_data='get_order {}'.format(order['_id'])
         ))
@@ -694,12 +692,12 @@ async def delete_button(call):
 
     keyboard = InlineKeyboardMarkup(row_width=6)
     keyboard.row(InlineKeyboardButton(
-        _('Hide'), callback_data='hide {}'.format(location_message_id)
-    ))
-    keyboard.row(InlineKeyboardButton(
         _('Restore'), callback_data='restore {} {} {}'.format(
             order['_id'], location_message_id, int(show_id)
         )
+    ))
+    keyboard.row(InlineKeyboardButton(
+        _('Hide'), callback_data='hide {}'.format(location_message_id)
     ))
 
     order['date'] = datetime.utcnow()
