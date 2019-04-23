@@ -163,6 +163,7 @@ async def locale_button(call):
 @dp.callback_query_handler(lambda call: call.data.startswith('unhelp'), state=states.asking_support)
 async def unhelp_button(call, state):
     await state.finish()
+    await call.answer()
     await tg.send_message(
         call.message.chat.id,
         _('Your request is cancelled.'),
@@ -780,25 +781,23 @@ async def help_command(message):
     )
 
 
-@bot.private_handler(state=states.asking_support)
-async def contact_support(message, state):
-    forward = await tg.forward_message(
-        chat_id=config.SUPPORT_CHAT_ID,
-        from_chat_id=message.chat.id,
-        message_id=message.message_id
+async def send_message_to_support(message):
+    await tg.send_message(
+        config.SUPPORT_CHAT_ID,
+        emojize(f':envelope: #chat_{message.chat.id} {message.message_id}\n') + message.text
     )
-    await database.tickets.insert_one({
-        'chat': message.chat.id,
-        'forward_id': message.message_id,
-        'reply_id': forward.message_id
-    })
-    await state.finish()
     await tg.send_message(
         message.chat.id,
         _('Your message was forwarded to the support. '
           "When you get a reply, I'll send it to you."),
         reply_markup=start_keyboard()
     )
+
+
+@bot.private_handler(state=states.asking_support)
+async def contact_support(message, state):
+    await send_message_to_support(message)
+    await state.finish()
 
 
 @bot.state_handler(OrderCreation.buy)
@@ -1341,6 +1340,17 @@ async def choose_comments(message, state):
     await state.finish()
 
 
+@bot.private_handler(
+    lambda msg:
+    msg.reply_to_message is not None and
+    msg.reply_to_message.text.startswith(emojize(':speech_balloon:'))
+)
+async def handle_reply(message):
+    me = await tg.me
+    if message.reply_to_message.from_user.id == me.id:
+        await send_message_to_support(message)
+
+
 @bot.private_handler()
 async def handle_default(message):
     await tg.send_message(message.chat.id, _('Unknown command.'))
@@ -1350,14 +1360,17 @@ async def handle_default(message):
     lambda msg:
     msg.chat.id == config.SUPPORT_CHAT_ID and
     msg.reply_to_message is not None and
-    msg.reply_to_message.forward_from is not None
+    msg.reply_to_message.text.startswith(emojize(':envelope: '))
 )
 async def answer_support_ticket(message):
-    ticket = await database.tickets.find_one_and_delete(
-        {'reply_id': message.reply_to_message.message_id}
-    )
-    if ticket:
+    me = await tg.me
+    if message.reply_to_message.from_user.id == me.id:
+        args = message.reply_to_message.text.splitlines()[0].split()
+        chat_id = int(args[1].split('_')[1])
+        reply_to_message_id = int(args[2])
+
         await tg.send_message(
-            ticket['chat'], message.text, reply_to_message_id=ticket['forward_id']
+            chat_id, emojize(':speech_balloon:') + message.text,
+            reply_to_message_id=reply_to_message_id
         )
         await tg.send_message(message.chat.id, _('Reply is sent.'))
