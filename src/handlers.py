@@ -529,18 +529,22 @@ async def edit_field(message, state):
     field = edit['field']
     invert = edit['invert']
     update_dict = {}
+    set_dict = {}
     error = None
 
-    if field == 'sum_buy':
+    if message.text == '-':
+        update_dict['$unset'] = {field: True}
+
+    elif field == 'sum_buy':
         try:
             transaction_sum = await validate_money(message.text, message.chat.id)
         except MoneyValidationError as exception:
             error = str(exception)
         else:
             order = await database.orders.find_one({'_id': edit['order_id']})
-            update_dict['sum_buy'] = Decimal128(transaction_sum)
+            set_dict['sum_buy'] = Decimal128(transaction_sum)
             if order['price_sell']:
-                update_dict['sum_sell'] = Decimal128(normalize_money(
+                set_dict['sum_sell'] = Decimal128(normalize_money(
                     transaction_sum * order['price_sell'].to_decimal()
                 ))
 
@@ -551,9 +555,9 @@ async def edit_field(message, state):
             error = str(exception)
         else:
             order = await database.orders.find_one({'_id': edit['order_id']})
-            update_dict['sum_sell'] = Decimal128(transaction_sum)
+            set_dict['sum_sell'] = Decimal128(transaction_sum)
             if order['price_buy']:
-                update_dict['sum_buy'] = Decimal128(normalize_money(
+                set_dict['sum_buy'] = Decimal128(normalize_money(
                     transaction_sum * order['price_buy'].to_decimal()
                 ))
 
@@ -567,28 +571,28 @@ async def edit_field(message, state):
 
             if invert:
                 price_sell = normalize_money(decimal.Decimal(1) / price)
-                update_dict['price_buy'] = Decimal128(price)
-                update_dict['price_sell'] = Decimal128(price_sell)
+                set_dict['price_buy'] = Decimal128(price)
+                set_dict['price_sell'] = Decimal128(price_sell)
 
                 if order['sum_currency'] == 'buy':
-                    update_dict['sum_sell'] = Decimal128(normalize_money(
+                    set_dict['sum_sell'] = Decimal128(normalize_money(
                         order['sum_buy'].to_decimal() * price_sell
                     ))
                 elif 'sum_sell' in order:
-                    update_dict['sum_buy'] = Decimal128(normalize_money(
+                    set_dict['sum_buy'] = Decimal128(normalize_money(
                         order['sum_sell'].to_decimal() * price
                     ))
             else:
                 price_buy = normalize_money(decimal.Decimal(1) / price)
-                update_dict['price_buy'] = Decimal128(price_buy)
-                update_dict['price_sell'] = Decimal128(price)
+                set_dict['price_buy'] = Decimal128(price_buy)
+                set_dict['price_sell'] = Decimal128(price)
 
                 if order['sum_currency'] == 'sell':
-                    update_dict['sum_buy'] = Decimal128(normalize_money(
+                    set_dict['sum_buy'] = Decimal128(normalize_money(
                         order['sum_sell'].to_decimal() * price_buy
                     ))
                 elif 'sum_buy' in order:
-                    update_dict['sum_sell'] = Decimal128(normalize_money(
+                    set_dict['sum_sell'] = Decimal128(normalize_money(
                         order['sum_buy'].to_decimal() * price
                     ))
 
@@ -601,7 +605,7 @@ async def edit_field(message, state):
                   '(you sent {} characters).').format(len(payment_system))
             )
             return
-        update_dict['payment_system'] = payment_system
+        set_dict['payment_system'] = payment_system
 
     elif field == 'duration':
         try:
@@ -612,8 +616,8 @@ async def edit_field(message, state):
             error = _('Send natural number.')
         else:
             order = await database.orders.find_one({'_id': edit['order_id']})
-            update_dict['duration'] = duration
-            update_dict['expiration_time'] = order['start_time'] + duration * 24 * 60 * 60
+            set_dict['duration'] = duration
+            set_dict['expiration_time'] = order['start_time'] + duration * 24 * 60 * 60
 
     elif field == 'comments':
         comments = message.text
@@ -624,12 +628,15 @@ async def edit_field(message, state):
                   '(you sent {} characters).').format(len(comments))
             )
             return
-        update_dict['comments'] = comments
+        set_dict['comments'] = comments
+
+    if set_dict:
+        update_dict['$set'] = set_dict
 
     if update_dict:
         result = await database.orders.update_one(
             {'_id': edit['order_id']},
-            {'$set': update_dict}
+            update_dict
         )
         if result.modified_count:
             order = await database.orders.find_one({'_id': edit['order_id']})
