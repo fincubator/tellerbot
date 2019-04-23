@@ -160,41 +160,6 @@ async def locale_button(call):
     )
 
 
-@bot.private_handler(commands=['help'], state=any_state)
-@bot.private_handler(lambda msg: msg.text.startswith(emojize(':question:')), state=any_state)
-async def help_command(message):
-    await states.asking_support.set()
-    await tg.send_message(
-        message.chat.id,
-        _('Send your questions and feedback in the next message, '
-          'and I will forward it to the support.'),
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(_('Cancel'), callback_data='unhelp')
-        ]])
-    )
-
-
-@bot.private_handler(state=states.asking_support)
-async def contact_support(message, state):
-    forward = await tg.forward_message(
-        chat_id=config.SUPPORT_CHAT_ID,
-        from_chat_id=message.chat.id,
-        message_id=message.message_id
-    )
-    await database.tickets.insert_one({
-        'chat': message.chat.id,
-        'forward_id': message.message_id,
-        'reply_id': forward.message_id
-    })
-    await state.finish()
-    await tg.send_message(
-        message.chat.id,
-        _('Your message was forwarded to the support. '
-          "When you get a reply, I'll send it to you."),
-        reply_markup=start_keyboard()
-    )
-
-
 @dp.callback_query_handler(lambda call: call.data.startswith('unhelp'), state=states.asking_support)
 async def unhelp_button(call, state):
     await state.finish()
@@ -600,20 +565,28 @@ async def edit_field(message, state):
             order = await database.orders.find_one({'_id': edit['order_id']})
 
             if invert:
+                price_sell = normalize_money(decimal.Decimal(1) / price)
                 update_dict['price_buy'] = Decimal128(price)
-                update_dict['price_sell'] = Decimal128(normalize_money(
-                    decimal.Decimal(1) / price
-                ))
-                if 'sum_sell' in order:
+                update_dict['price_sell'] = Decimal128(price_sell)
+
+                if order['sum_currency'] == 'buy':
+                    update_dict['sum_sell'] = Decimal128(normalize_money(
+                        order['sum_buy'].to_decimal() * price_sell
+                    ))
+                elif 'sum_sell' in order:
                     update_dict['sum_buy'] = Decimal128(normalize_money(
                         order['sum_sell'].to_decimal() * price
                     ))
             else:
-                update_dict['price_buy'] = Decimal128(normalize_money(
-                    decimal.Decimal(1) / price
-                ))
+                price_buy = normalize_money(decimal.Decimal(1) / price)
+                update_dict['price_buy'] = Decimal128(price_buy)
                 update_dict['price_sell'] = Decimal128(price)
-                if 'sum_buy' in order:
+
+                if order['sum_currency'] == 'sell':
+                    update_dict['sum_buy'] = Decimal128(normalize_money(
+                        order['sum_sell'].to_decimal() * price_buy
+                    ))
+                elif 'sum_buy' in order:
                     update_dict['sum_sell'] = Decimal128(normalize_money(
                         order['sum_buy'].to_decimal() * price
                     ))
@@ -793,14 +766,43 @@ async def handle_create(message, state):
     )
 
 
+@bot.private_handler(commands=['help'], state=any_state)
+@bot.private_handler(lambda msg: msg.text.startswith(emojize(':question:')), state=any_state)
+async def help_command(message):
+    await states.asking_support.set()
+    await tg.send_message(
+        message.chat.id,
+        _('Send your questions and feedback in the next message, '
+          'and I will forward it to the support.'),
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(_('Cancel'), callback_data='unhelp')
+        ]])
+    )
+
+
+@bot.private_handler(state=states.asking_support)
+async def contact_support(message, state):
+    forward = await tg.forward_message(
+        chat_id=config.SUPPORT_CHAT_ID,
+        from_chat_id=message.chat.id,
+        message_id=message.message_id
+    )
+    await database.tickets.insert_one({
+        'chat': message.chat.id,
+        'forward_id': message.message_id,
+        'reply_id': forward.message_id
+    })
+    await state.finish()
+    await tg.send_message(
+        message.chat.id,
+        _('Your message was forwarded to the support. '
+          "When you get a reply, I'll send it to you."),
+        reply_markup=start_keyboard()
+    )
+
+
 @bot.state_handler(OrderCreation.buy)
-async def create_order_handler(call, order=None):
-    order = await database.creation.find_one({'user_id': call.from_user.id})
-
-    if not order:
-        await call.answer(_('You are not creating order.'))
-        return True
-
+async def create_order_handler(call):
     await tg.edit_message_text(
         _('What currency do you want to buy?'),
         call.message.chat.id, call.message.message_id,
@@ -944,6 +946,10 @@ async def price_ask(call, order, price_currency):
 @bot.state_handler(OrderCreation.price)
 async def price_handler(call):
     order = await database.creation.find_one({'user_id': call.from_user.id})
+    if not order:
+        await call.answer(_('You are not creating order.'))
+        return True
+
     price_currency = order.get('price_currency')
     if not price_currency:
         price_currency = 'sell'
@@ -1036,7 +1042,7 @@ async def choose_sum(message, state):
         ))
         await database.creation.update_one(
             {'_id': order['_id']},
-            {'$set': update_dict, '$unset': {'sum_currency': True}}
+            {'$set': update_dict}
         )
         await OrderCreation.payment_system.set()
         await tg.send_message(
@@ -1101,6 +1107,15 @@ async def choose_sum_currency(call):
 
 @bot.state_handler(OrderCreation.payment_system)
 async def payment_system_handler(call):
+    await database.creation.update_one(
+        {
+            'user_id': call.from_user.id,
+            'sum_currency': {'$exists': True},
+            'sum_price': {'$exists': False},
+            'sum_sell': {'$exists': False}
+        },
+        {'$unset': {'sum_currency': True}}
+    )
     await tg.edit_message_text(
         _('Send cashless payment system.'),
         call.message.chat.id, call.message.message_id,
