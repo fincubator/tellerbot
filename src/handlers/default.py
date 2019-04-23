@@ -16,23 +16,10 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
-import config
-from .registered_handlers import tg, dp
-
-from aiogram.utils.executor import start_webhook
+from . import tg, private_handler
+from ..i18n import _
 
 
-async def on_startup(dp):
-    await tg.delete_webhook()
-    url = 'https://{}'.format(config.SERVER_HOST)
-    await tg.set_webhook(url + config.WEBHOOK_PATH)
-
-
-def main():
-    start_webhook(
-        dispatcher=dp,
-        webhook_path=config.WEBHOOK_PATH,
-        on_startup=on_startup,
-        host='127.0.0.1',
-        port=config.SERVER_PORT
-    )
+@private_handler()
+async def default(message):
+    await tg.send_message(message.chat.id, _('Unknown command.'))

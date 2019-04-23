@@ -25,10 +25,12 @@ from aiogram.dispatcher import Dispatcher
 
 import config
 from .database import storage
+from .i18n import i18n
 
 
 tg = Bot(token=config.TOKEN, loop=asyncio.get_event_loop())
 dp = Dispatcher(tg, storage=storage)
+dp.middleware.setup(i18n)
 
 logging.basicConfig(level=logging.INFO)
 dp.middleware.setup(LoggingMiddleware())

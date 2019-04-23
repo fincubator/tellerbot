@@ -41,3 +41,4 @@ class I18nMiddlewareManual(I18nMiddleware):
 
 
 i18n = I18nMiddlewareManual('bot', config.LOCALES_DIR)
+_ = i18n.gettext

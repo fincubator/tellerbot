@@ -16,23 +16,24 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
-import config
-from .registered_handlers import tg, dp
+from aiogram.dispatcher.filters.state import any_state
 
-from aiogram.utils.executor import start_webhook
-
-
-async def on_startup(dp):
-    await tg.delete_webhook()
-    url = 'https://{}'.format(config.SERVER_HOST)
-    await tg.set_webhook(url + config.WEBHOOK_PATH)
+from . import tg, dp, help_message, start_keyboard
+from ..database import database
+from ..i18n import i18n
 
 
-def main():
-    start_webhook(
-        dispatcher=dp,
-        webhook_path=config.WEBHOOK_PATH,
-        on_startup=on_startup,
-        host='127.0.0.1',
-        port=config.SERVER_PORT
+@dp.callback_query_handler(lambda call: call.data.startswith('locale '), state=any_state)
+async def locale_button(call):
+    locale = call.data.split()[1]
+    await database.users.update_one(
+        {'id': call.from_user.id},
+        {'$set': {'locale': locale}}
+    )
+
+    i18n.ctx_locale.set(locale)
+    await call.answer()
+    await tg.send_message(
+        call.message.chat.id, help_message(),
+        reply_markup=start_keyboard()
     )
