@@ -314,23 +314,14 @@ async def choose_sum(message, state):
     update_dict = {'sum_' + order['sum_currency']: Decimal128(transaction_sum)}
 
     new_sum_currency = 'sell' if order['sum_currency'] == 'buy' else 'buy'
+    sum_field = 'sum_' + new_sum_currency
     price_field = 'price_' + new_sum_currency
 
     if price_field in order:
-        update_dict['sum_' + new_sum_currency] = Decimal128(normalize_money(
+        update_dict[sum_field] = Decimal128(normalize_money(
             transaction_sum * order[price_field].to_decimal()
         ))
-        await database.creation.update_one(
-            {'_id': order['_id']},
-            {'$set': update_dict}
-        )
-        await OrderCreation.payment_system.set()
-        await tg.send_message(
-            message.chat.id,
-            _('Send cashless payment system.'),
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
-        )
-    else:
+    elif sum_field not in order:
         update_dict['sum_currency'] = new_sum_currency
         await database.creation.update_one(
             {'_id': order['_id']},
@@ -343,6 +334,18 @@ async def choose_sum(message, state):
                 inline_keyboard=inline_control_buttons(no_back=True, no_cancel=True)
             )
         )
+        return
+
+    await database.creation.update_one(
+        {'_id': order['_id']},
+        {'$set': update_dict}
+    )
+    await OrderCreation.payment_system.set()
+    await tg.send_message(
+        message.chat.id,
+        _('Send cashless payment system.'),
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
+    )
 
 
 @state_handler(OrderCreation.payment_system)
