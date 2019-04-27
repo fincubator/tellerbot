@@ -16,10 +16,12 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
+from aiogram.types import Message
+
 from . import tg, private_handler
 from ..i18n import _
 
 
 @private_handler()
-async def default(message):
+async def default(message: Message):
     await tg.send_message(message.chat.id, _('Unknown command.'))

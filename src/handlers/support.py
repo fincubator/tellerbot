@@ -16,6 +16,8 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
+from aiogram import types
+from aiogram.dispatcher import FSMContext
 from aiogram.utils.emoji import emojize
 
 import config
@@ -25,7 +27,7 @@ from ..states import asking_support
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('unhelp'), state=asking_support)
-async def unhelp_button(call, state):
+async def unhelp_button(call: types.CallbackQuery, state: FSMContext):
     await state.finish()
     await call.answer()
     await tg.send_message(
@@ -35,7 +37,7 @@ async def unhelp_button(call, state):
     )
 
 
-async def send_message_to_support(message):
+async def send_message_to_support(message: types.Message):
     await tg.send_message(
         config.SUPPORT_CHAT_ID,
         emojize(f':envelope: #chat_{message.chat.id} {message.message_id}\n') + message.text
@@ -49,7 +51,7 @@ async def send_message_to_support(message):
 
 
 @private_handler(state=asking_support)
-async def contact_support(message, state):
+async def contact_support(message: types.Message, state: FSMContext):
     await send_message_to_support(message)
     await state.finish()
 
@@ -59,7 +61,7 @@ async def contact_support(message, state):
     msg.reply_to_message is not None and
     msg.reply_to_message.text.startswith(emojize(':speech_balloon:'))
 )
-async def handle_reply(message):
+async def handle_reply(message: types.Message):
     me = await tg.me
     if message.reply_to_message.from_user.id == me.id:
         await send_message_to_support(message)
@@ -71,7 +73,7 @@ async def handle_reply(message):
     msg.reply_to_message is not None and
     msg.reply_to_message.text.startswith(emojize(':envelope: '))
 )
-async def answer_support_ticket(message):
+async def answer_support_ticket(message: types.Message):
     me = await tg.me
     if message.reply_to_message.from_user.id == me.id:
         args = message.reply_to_message.text.splitlines()[0].split()

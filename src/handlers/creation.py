@@ -20,12 +20,15 @@ from decimal import Decimal
 from datetime import datetime
 from string import ascii_letters
 from time import time
+from typing import Any, Mapping
 
 from bson.decimal128 import Decimal128
 from pymongo import ReturnDocument
 import requests
 
+from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ContentType
+from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import any_state
 
 from . import tg, dp, private_handler, state_handler, state_handlers, \
@@ -37,7 +40,7 @@ from ..utils import normalize_money, MoneyValidationError
 
 
 @dp.callback_query_handler(lambda call: call.data == 'back', state=any_state)
-async def previous_state(call, state):
+async def previous_state(call: types.CallbackQuery, state: FSMContext):
     state_name = await state.get_state()
     if state_name in OrderCreation:
         new_state = await OrderCreation.previous()
@@ -51,7 +54,7 @@ async def previous_state(call, state):
 
 
 @dp.callback_query_handler(lambda call: call.data == 'next', state=any_state)
-async def next_state(call, state):
+async def next_state(call: types.CallbackQuery, state: FSMContext):
     state_name = await state.get_state()
     if state_name in OrderCreation:
         new_state = await OrderCreation.next()
@@ -65,7 +68,7 @@ async def next_state(call, state):
 
 
 @dp.callback_query_handler(lambda call: call.data == 'cancel', state=any_state)
-async def cancel_order_creation(call, state):
+async def cancel_order_creation(call: types.CallbackQuery, state: FSMContext):
     await state.finish()
     await call.answer()
 
@@ -86,7 +89,7 @@ async def cancel_order_creation(call, state):
 
 
 @state_handler(OrderCreation.buy)
-async def create_order_handler(call):
+async def create_order_handler(call: types.CallbackQuery):
     await tg.edit_message_text(
         _('What currency do you want to buy?'),
         call.message.chat.id, call.message.message_id,
@@ -97,7 +100,7 @@ async def create_order_handler(call):
 
 
 @private_handler(state=OrderCreation.buy)
-async def choose_buy(message, state):
+async def choose_buy(message: types.Message, state: FSMContext):
     if not all(ch in ascii_letters + '.' for ch in message.text):
         await tg.send_message(
             message.chat.id,
@@ -120,7 +123,7 @@ async def choose_buy(message, state):
 
 
 @state_handler(OrderCreation.sell)
-async def choose_buy_handler(call):
+async def choose_buy_handler(call: types.CallbackQuery):
     await tg.edit_message_text(
         _('What currency do you want to sell?'),
         call.message.chat.id, call.message.message_id,
@@ -131,7 +134,7 @@ async def choose_buy_handler(call):
 
 
 @private_handler(state=OrderCreation.sell)
-async def choose_sell(message, state):
+async def choose_sell(message: types.Message, state: FSMContext):
     if not all(ch in ascii_letters + '.' for ch in message.text):
         await tg.send_message(
             message.chat.id,
@@ -161,7 +164,7 @@ async def choose_sell(message, state):
     )
 
 
-async def price_ask(call, order, price_currency):
+async def price_ask(call: types.CallbackQuery, order: Mapping[str, Any], price_currency: str):
     if price_currency == 'sell':
         answer = _('At what price (in {}/{}) do you want to buy?').format(
             order['sell'], order['buy']
@@ -184,7 +187,7 @@ async def price_ask(call, order, price_currency):
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('price '), state=OrderCreation.price)
-async def invert_price(call):
+async def invert_price(call: types.CallbackQuery):
     price_currency = call.data.split()[1]
     order = await database.creation.find_one_and_update(
         {'user_id': call.from_user.id},
@@ -194,7 +197,7 @@ async def invert_price(call):
 
 
 @state_handler(OrderCreation.price)
-async def price_handler(call):
+async def price_handler(call: types.CallbackQuery):
     order = await database.creation.find_one({'user_id': call.from_user.id})
     if not order:
         await call.answer(_('You are not creating order.'))
@@ -211,7 +214,7 @@ async def price_handler(call):
 
 
 @private_handler(state=OrderCreation.price)
-async def choose_price(message, state):
+async def choose_price(message: types.Message, state: FSMContext):
     try:
         price = await validate_money(message.text, message.chat.id)
     except MoneyValidationError as exception:
@@ -256,7 +259,7 @@ async def choose_price(message, state):
 
 
 @state_handler(OrderCreation.sum)
-async def sum_handler(call):
+async def sum_handler(call: types.CallbackQuery):
     order = await database.creation.find_one_and_update(
         {'user_id': call.from_user.id},
         {'$unset': {'price_currency': True}}
@@ -282,7 +285,7 @@ async def sum_handler(call):
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('sum '), state=OrderCreation.sum)
-async def choose_sum_currency(call):
+async def choose_sum_currency(call: types.CallbackQuery):
     sum_currency = call.data.split()[1]
     order = await database.creation.find_one_and_update(
         {'user_id': call.from_user.id},
@@ -296,7 +299,7 @@ async def choose_sum_currency(call):
 
 
 @private_handler(state=OrderCreation.sum)
-async def choose_sum(message, state):
+async def choose_sum(message: types.Message, state: FSMContext):
     try:
         transaction_sum = await validate_money(message.text, message.chat.id)
     except MoneyValidationError as exception:
@@ -349,7 +352,7 @@ async def choose_sum(message, state):
 
 
 @state_handler(OrderCreation.payment_system)
-async def payment_system_handler(call):
+async def payment_system_handler(call: types.CallbackQuery):
     await database.creation.update_one(
         {
             'user_id': call.from_user.id,
@@ -367,7 +370,7 @@ async def payment_system_handler(call):
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('location '), state=OrderCreation.location)
-async def geocoded_location(call):
+async def geocoded_location(call: types.CallbackQuery):
     latitude, longitude = call.data.split()[1:]
     await database.creation.update_one(
         {'user_id': call.from_user.id},
@@ -382,7 +385,7 @@ async def geocoded_location(call):
 
 
 @private_handler(state=OrderCreation.location, content_types=ContentType.TEXT)
-async def text_location(message, state):
+async def text_location(message: types.Message, state: FSMContext):
     query = message.text
 
     language = await i18n.get_user_locale()
@@ -449,7 +452,7 @@ async def text_location(message, state):
 
 
 @private_handler(state=OrderCreation.location, content_types=ContentType.LOCATION)
-async def choose_location(message, state):
+async def choose_location(message: types.Message, state: FSMContext):
     location = message.location
     await database.creation.update_one(
         {'user_id': message.from_user.id},
@@ -464,7 +467,7 @@ async def choose_location(message, state):
 
 
 @state_handler(OrderCreation.location)
-async def location_handler(call):
+async def location_handler(call: types.CallbackQuery):
     await tg.edit_message_text(
         _('Send location of a preferred meeting point for cash payment.'),
         call.message.chat.id, call.message.message_id,
@@ -473,7 +476,7 @@ async def location_handler(call):
 
 
 @private_handler(state=OrderCreation.payment_system)
-async def choose_payment_system(message, state):
+async def choose_payment_system(message: types.Message, state: FSMContext):
     payment_system = message.text.replace('\n', ' ')
     if len(payment_system) > 150:
         await tg.send_message(
@@ -496,7 +499,7 @@ async def choose_payment_system(message, state):
 
 
 @state_handler(OrderCreation.duration)
-async def duration_handler(call):
+async def duration_handler(call: types.CallbackQuery):
     await tg.edit_message_text(
         _('Send duration of order in days.'),
         call.message.chat.id, call.message.message_id,
@@ -505,7 +508,7 @@ async def duration_handler(call):
 
 
 @private_handler(state=OrderCreation.duration)
-async def choose_duration(message, state):
+async def choose_duration(message: types.Message, state: FSMContext):
     try:
         duration = int(message.text)
         if duration <= 0:
@@ -527,7 +530,7 @@ async def choose_duration(message, state):
     )
 
 
-async def set_order(order, chat_id):
+async def set_order(order: Mapping[str, Any], chat_id: int):
     order['start_time'] = time()
     if 'duration' in order:
         order['expiration_time'] = time() + order['duration'] * 24 * 60 * 60
@@ -545,7 +548,7 @@ async def set_order(order, chat_id):
 
 
 @state_handler(OrderCreation.comments)
-async def comment_handler(call):
+async def comment_handler(call: types.CallbackQuery):
     await tg.edit_message_text(
         _('Add any additional comments.'),
         call.message.chat.id, call.message.message_id,
@@ -554,7 +557,7 @@ async def comment_handler(call):
 
 
 @private_handler(state=OrderCreation.comments)
-async def choose_comments(message, state):
+async def choose_comments(message: types.Message, state: FSMContext):
     comments = message.text
     if len(comments) > 150:
         await tg.send_message(
@@ -574,7 +577,7 @@ async def choose_comments(message, state):
 
 
 @state_handler(OrderCreation.set_order)
-async def choose_comments_handler(call):
+async def choose_comments_handler(call: types.CallbackQuery):
     order = await database.creation.find_one_and_delete(
         {'user_id': call.from_user.id}
     )

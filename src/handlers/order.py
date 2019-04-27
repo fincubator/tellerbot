@@ -19,11 +19,14 @@
 from datetime import datetime
 from decimal import Decimal
 from time import time
+from typing import Any, Mapping
 
 from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
 
+from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import any_state
 
 from . import tg, dp, private_handler, show_order, show_orders, validate_money
@@ -34,7 +37,7 @@ from ..utils import normalize_money, MoneyValidationError
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('orders '), state=any_state)
-async def orders_button(call):
+async def orders_button(call: types.CallbackQuery):
     query = {
         '$or': [
             {'expiration_time': {'$exists': False}},
@@ -48,7 +51,7 @@ async def orders_button(call):
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('my_orders '), state=any_state)
-async def my_orders_button(call):
+async def my_orders_button(call: types.CallbackQuery):
     query = {'user_id': call.from_user.id}
     args = call.data.split()
     start = max(0, int(args[1]))
@@ -57,7 +60,7 @@ async def my_orders_button(call):
 
 
 def order_handler(handler):
-    async def decorator(call):
+    async def decorator(call: types.CallbackQuery):
         order_id = call.data.split()[1]
         order = await database.orders.find_one({'_id': ObjectId(order_id)})
 
@@ -71,14 +74,14 @@ def order_handler(handler):
 
 @dp.callback_query_handler(lambda call: call.data.startswith('get_order '), state=any_state)
 @order_handler
-async def get_order_button(call, order):
+async def get_order_button(call: types.CallbackQuery, order: Mapping[str, Any]):
     await call.answer()
     await show_order(order, call.message.chat.id, call.from_user.id, show_id=True)
 
 
 @private_handler(commands=['id'])
 @private_handler(regexp='ID: [a-f0-9]{24}')
-async def get_order_command(message):
+async def get_order_command(message: types.Message):
     try:
         order_id = message.text.split()[1]
     except IndexError:
@@ -94,7 +97,7 @@ async def get_order_command(message):
 
 @dp.callback_query_handler(lambda call: call.data.startswith(('invert ', 'revert ')), state=any_state)
 @order_handler
-async def invert_button(call, order):
+async def invert_button(call: types.CallbackQuery, order: Mapping[str, Any]):
     args = call.data.split()
 
     invert = args[0] == 'invert'
@@ -113,7 +116,7 @@ async def invert_button(call, order):
 
 @dp.callback_query_handler(lambda call: call.data.startswith('edit '), state=any_state)
 @order_handler
-async def edit_button(call, order):
+async def edit_button(call: types.CallbackQuery, order: Mapping[str, Any]):
     args = call.data.split()
     field = args[2]
 
@@ -151,7 +154,7 @@ async def edit_button(call, order):
 
 
 @private_handler(state=field_editing)
-async def edit_field(message, state):
+async def edit_field(message: types.Message, state: FSMContext):
     user = await database.users.find_one({'id': message.from_user.id})
     edit = user['edit']
     field = edit['field']
@@ -286,7 +289,7 @@ async def edit_field(message, state):
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('delete '), state=any_state)
-async def delete_button(call):
+async def delete_button(call: types.CallbackQuery):
     order_id = call.data.split()[1]
     order = await database.orders.find_one_and_delete({
         '_id': ObjectId(order_id), 'user_id': call.from_user.id,
@@ -319,7 +322,7 @@ async def delete_button(call):
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('restore '), state=any_state)
-async def restore_button(call):
+async def restore_button(call: types.CallbackQuery):
     order_id = call.data.split()[1]
     order = await database.trash.find_one_and_delete({
         '_id': ObjectId(order_id), 'user_id': call.from_user.id,
@@ -341,7 +344,7 @@ async def restore_button(call):
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('hide '), state=any_state)
-async def hide_button(call):
+async def hide_button(call: types.CallbackQuery):
     await tg.delete_message(call.message.chat.id, call.message.message_id)
     location_message_id = call.data.split()[1]
     if location_message_id != '-1':

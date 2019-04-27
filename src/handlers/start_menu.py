@@ -20,7 +20,9 @@ from time import time
 
 from babel import Locale
 
+from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import any_state
 from aiogram.utils.emoji import emojize
 
@@ -31,7 +33,7 @@ from .. import states
 
 
 @private_handler(commands=['start'], state=any_state)
-async def handle_start_command(message, state):
+async def handle_start_command(message: types.Message, state: FSMContext):
     user = {'id': message.from_user.id}
     result = await database.users.update_one(
         user, {'$setOnInsert': user}, upsert=True
@@ -60,7 +62,7 @@ async def handle_start_command(message, state):
 
 @private_handler(commands=['create'], state=any_state)
 @private_handler(lambda msg: msg.text.startswith(emojize(':heavy_plus_sign:')), state=any_state)
-async def handle_create(message, state):
+async def handle_create(message: types.Message, state: FSMContext):
     if message.from_user.username:
         username = '@' + message.from_user.username
     else:
@@ -86,7 +88,7 @@ async def handle_create(message, state):
 
 @private_handler(commands=['book'], state=any_state)
 @private_handler(lambda msg: msg.text.startswith(emojize(':closed_book:')), state=any_state)
-async def handle_book(message, state):
+async def handle_book(message: types.Message, state: FSMContext):
     query = {
         '$or': [
             {'expiration_time': {'$exists': False}},
@@ -100,7 +102,7 @@ async def handle_book(message, state):
 
 @private_handler(commands=['my'], state=any_state)
 @private_handler(lambda msg: msg.text.startswith(emojize(':bust_in_silhouette:')), state=any_state)
-async def handle_my_orders(message, state):
+async def handle_my_orders(message: types.Message, state: FSMContext):
     query = {'user_id': message.from_user.id}
     quantity = await database.orders.count_documents(query)
     await state.finish()
@@ -109,7 +111,7 @@ async def handle_my_orders(message, state):
 
 @private_handler(commands=['locale'], state=any_state)
 @private_handler(lambda msg: msg.text.startswith(emojize(':abcd:')), state=any_state)
-async def choose_locale(message):
+async def choose_locale(message: types.Message):
     keyboard = InlineKeyboardMarkup()
     for language in i18n.available_locales:
         keyboard.row(InlineKeyboardButton(
@@ -125,7 +127,7 @@ async def choose_locale(message):
 
 @private_handler(commands=['help'], state=any_state)
 @private_handler(lambda msg: msg.text.startswith(emojize(':question:')), state=any_state)
-async def help_command(message):
+async def help_command(message: types.Message):
     await states.asking_support.set()
     await tg.send_message(
         message.chat.id,
