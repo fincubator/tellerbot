@@ -127,7 +127,7 @@ async def orders_list(
         line = ''
 
         if user_id is None:
-            if order['expiration_time'] > current_time:
+            if 'expiration_time' not in order or order['expiration_time'] > current_time:
                 line += emojize(':arrow_forward: ')
             else:
                 line += emojize(':pause_button: ')
