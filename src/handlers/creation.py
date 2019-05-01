@@ -534,6 +534,7 @@ async def set_order(order: Mapping[str, Any], chat_id: int):
     order['start_time'] = time()
     if 'duration' in order:
         order['expiration_time'] = time() + order['duration'] * 24 * 60 * 60
+        order['notify'] = True
     if 'price_sell' not in order and 'sum_buy' in order and 'sum_sell' in order:
         order['price_sell'] = Decimal128(normalize_money(
             order['sum_sell'].to_decimal() / order['sum_buy'].to_decimal()

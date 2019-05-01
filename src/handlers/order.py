@@ -165,6 +165,9 @@ async def edit_field(message: types.Message, state: FSMContext):
 
     if message.text == '-':
         update_dict['$unset'] = {field: True}
+        if field == 'duration':
+            update_dict['$unset']['expiration_time'] = True
+            update_dict['$unset']['notify'] = True
 
     elif field == 'sum_buy':
         try:
@@ -248,7 +251,9 @@ async def edit_field(message: types.Message, state: FSMContext):
         else:
             order = await database.orders.find_one({'_id': edit['order_id']})
             set_dict['duration'] = duration
-            set_dict['expiration_time'] = order['start_time'] + duration * 24 * 60 * 60
+            expiration_time = order['start_time'] + duration * 24 * 60 * 60
+            set_dict['expiration_time'] = expiration_time
+            set_dict['notify'] = expiration_time > time()
 
     elif field == 'comments':
         comments = message.text

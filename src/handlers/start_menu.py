@@ -24,6 +24,7 @@ from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import any_state
+from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 
 from . import tg, private_handler, start_keyboard, inline_control_buttons, help_message, orders_list
@@ -34,7 +35,7 @@ from .. import states
 
 @private_handler(commands=['start'], state=any_state)
 async def handle_start_command(message: types.Message, state: FSMContext):
-    user = {'id': message.from_user.id}
+    user = {'id': message.from_user.id, 'chat': message.chat.id}
     result = await database.users.update_one(
         user, {'$setOnInsert': user}, upsert=True
     )
@@ -66,14 +67,11 @@ async def handle_create(message: types.Message, state: FSMContext):
     if message.from_user.username:
         username = '@' + message.from_user.username
     else:
-        username = '[' + message.from_user.first_name
-        if message.from_user.last_name:
-            username += ' ' + message.from_user.last_name
-        username += f'](tg://user?id={message.from_user.id})'
+        username = markdown.link(message.from_user.full_name, message.from_user.url)
 
     await database.creation.insert_one({
         'user_id': message.from_user.id,
-        'username': username,
+        'username': username
     })
     await states.OrderCreation.first()
 
