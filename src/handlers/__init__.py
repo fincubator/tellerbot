@@ -21,8 +21,6 @@ import decimal
 import math
 from time import time
 
-from pymongo import DESCENDING
-
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.types import ParseMode
@@ -31,7 +29,6 @@ from aiogram.utils.exceptions import MessageNotModified
 
 import config
 from ..bot import tg, dp, private_handler, state_handler, state_handlers
-from ..database import database
 from ..i18n import _
 from ..utils import normalize_money, exp, MoneyValidationError
 
@@ -300,17 +297,19 @@ async def show_order(
         )
 
         if order['user_id'] == user_id:
-            keyboard.row(InlineKeyboardButton(
-                _('Edit'), callback_data='{} {} {} 1'.format(
-                    'invert' if invert else 'revert',
-                    order['_id'], location_message_id
+            keyboard.row(
+                InlineKeyboardButton(
+                    _('Edit'), callback_data='{} {} {} 1'.format(
+                        'invert' if invert else 'revert',
+                        order['_id'], location_message_id
+                    )
+                ),
+                InlineKeyboardButton(
+                    _('Delete'), callback_data='delete {} {}'.format(
+                        order['_id'], location_message_id
+                    )
                 )
-            ))
-            keyboard.row(InlineKeyboardButton(
-                _('Delete'), callback_data='delete {} {}'.format(
-                    order['_id'], location_message_id
-                )
-            ))
+            )
         keyboard.row(InlineKeyboardButton(
             _('Hide'), callback_data='hide {}'.format(location_message_id)
         ))
