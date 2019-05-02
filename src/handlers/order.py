@@ -23,40 +23,18 @@ from typing import Any, Mapping
 
 from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
+from pymongo import ASCENDING, DESCENDING
 
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import any_state
 
-from . import tg, dp, private_handler, show_order, show_orders, validate_money
+from . import tg, dp, private_handler, show_order, show_orders, validate_money, orders_list
 from ..database import database, STATE_KEY
 from ..i18n import _
 from ..states import field_editing
 from ..utils import normalize_money, MoneyValidationError
-
-
-@dp.callback_query_handler(lambda call: call.data.startswith('orders '), state=any_state)
-async def orders_button(call: types.CallbackQuery):
-    query = {
-        '$or': [
-            {'expiration_time': {'$exists': False}},
-            {'expiration_time': {'$gt': time()}}
-        ]
-    }
-    args = call.data.split()
-    start = max(0, int(args[1]))
-    invert = bool(int(args[2]))
-    await show_orders(call, query, start, 'orders', invert, user_id=call.from_user.id)
-
-
-@dp.callback_query_handler(lambda call: call.data.startswith('my_orders '), state=any_state)
-async def my_orders_button(call: types.CallbackQuery):
-    query = {'user_id': call.from_user.id}
-    args = call.data.split()
-    start = max(0, int(args[1]))
-    invert = bool(int(args[2]))
-    await show_orders(call, query, start, 'my_orders', invert)
 
 
 def order_handler(handler):
@@ -111,6 +89,90 @@ async def invert_button(call: types.CallbackQuery, order: Mapping[str, Any]):
         message_id=call.message.message_id,
         location_message_id=location_message_id, show_id=show_id,
         invert=invert, edit=edit
+    )
+
+
+async def aggregate_orders(call, buy, sell, start=0, invert=False):
+    query = {
+        'buy': buy, 'sell': sell,
+        '$or': [
+            {'expiration_time': {'$exists': False}},
+            {'expiration_time': {'$gt': time()}}
+        ]
+    }
+    cursor = database.orders.aggregate([
+        {'$match': query},
+        {'$addFields': {'price_buy': {'$ifNull': ['$price_buy', '']}}},
+        {'$sort': {'price_buy': ASCENDING, 'start_time': DESCENDING}}
+    ])
+    quantity = await database.orders.count_documents(query)
+    return cursor, quantity
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('orders '), state=any_state)
+async def orders_button(call: types.CallbackQuery):
+    query = {
+        '$or': [
+            {'expiration_time': {'$exists': False}},
+            {'expiration_time': {'$gt': time()}}
+        ]
+    }
+    cursor = database.orders.find(query).sort('start_time', DESCENDING)
+    quantity = await database.orders.count_documents(query)
+
+    args = call.data.split()
+    start = max(0, int(args[1]))
+    invert = bool(int(args[2]))
+    await show_orders(call, cursor, start, quantity, 'orders', invert, user_id=call.from_user.id)
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('my_orders '), state=any_state)
+async def my_orders_button(call: types.CallbackQuery):
+    query = {'user_id': call.from_user.id}
+    cursor = database.orders.find(query).sort('start_time', DESCENDING)
+    quantity = await database.orders.count_documents(query)
+
+    args = call.data.split()
+    start = max(0, int(args[1]))
+    invert = bool(int(args[2]))
+    await show_orders(call, cursor, start, quantity, 'my_orders', invert)
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('matched_orders '), state=any_state)
+async def matched_orders_button(call: types.CallbackQuery):
+    args = call.data.split()
+    start = max(0, int(args[3]))
+    invert = bool(int(args[4]))
+    cursor, quantity = await aggregate_orders(call, args[1], args[2], start, invert)
+    await call.answer()
+    await show_orders(
+        call, cursor, start, quantity,
+        'matched_orders {} {}'.format(args[1], args[2]),
+        invert, user_id=call.from_user.id
+    )
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('similar '), state=any_state)
+@order_handler
+async def similar_button(call: types.CallbackQuery, order: Mapping[str, Any]):
+    cursor, quantity = await aggregate_orders(call, order['buy'], order['sell'])
+    await call.answer()
+    await orders_list(
+        cursor, call.message.chat.id, 0, quantity,
+        'matched_orders {} {}'.format(order['buy'], order['sell']),
+        user_id=call.from_user.id
+    )
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('match '), state=any_state)
+@order_handler
+async def match_button(call: types.CallbackQuery, order: Mapping[str, Any]):
+    cursor, quantity = await aggregate_orders(call, order['sell'], order['buy'])
+    await call.answer()
+    await orders_list(
+        cursor, call.message.chat.id, 0, quantity,
+        'matched_orders {} {}'.format(order['sell'], order['buy']),
+        user_id=call.from_user.id
     )
 
 

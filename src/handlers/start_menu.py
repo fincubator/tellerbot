@@ -19,6 +19,7 @@
 from time import time
 
 from babel import Locale
+from pymongo import DESCENDING
 
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -93,18 +94,20 @@ async def handle_book(message: types.Message, state: FSMContext):
             {'expiration_time': {'$gt': time()}}
         ]
     }
+    cursor = database.orders.find(query).sort('start_time', DESCENDING)
     quantity = await database.orders.count_documents(query)
     await state.finish()
-    await orders_list(query, message.chat.id, 0, quantity, 'orders', user_id=message.from_user.id)
+    await orders_list(cursor, message.chat.id, 0, quantity, 'orders', user_id=message.from_user.id)
 
 
 @private_handler(commands=['my'], state=any_state)
 @private_handler(lambda msg: msg.text.startswith(emojize(':bust_in_silhouette:')), state=any_state)
 async def handle_my_orders(message: types.Message, state: FSMContext):
     query = {'user_id': message.from_user.id}
+    cursor = database.orders.find(query).sort('start_time', DESCENDING)
     quantity = await database.orders.count_documents(query)
     await state.finish()
-    await orders_list(query, message.chat.id, 0, quantity, 'my_orders')
+    await orders_list(cursor, message.chat.id, 0, quantity, 'my_orders')
 
 
 @private_handler(commands=['locale'], state=any_state)

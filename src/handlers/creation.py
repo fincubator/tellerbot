@@ -377,11 +377,8 @@ async def geocoded_location(call: types.CallbackQuery):
         {'$set': {'lat': float(latitude), 'lon': float(longitude)}}
     )
     await OrderCreation.duration.set()
-    await tg.send_message(
-        call.message.chat.id,
-        _('Send duration of order in days.'),
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons())
-    )
+    await call.answer()
+    await duration_handler(call)
 
 
 @private_handler(state=OrderCreation.location, content_types=ContentType.TEXT)

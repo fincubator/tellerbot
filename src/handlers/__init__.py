@@ -21,7 +21,7 @@ import decimal
 import math
 from time import time
 
-from pymongo import ASCENDING
+from pymongo import DESCENDING
 
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -89,10 +89,10 @@ async def validate_money(data, chat_id):
 
 
 async def orders_list(
-    query, chat_id, start, quantity, buttons_data,
+    cursor, chat_id, start, quantity, buttons_data,
     user_id=None, message_id=None, invert=False
 ):
-    keyboard = InlineKeyboardMarkup(row_width=5)
+    keyboard = InlineKeyboardMarkup(row_width=min(config.ORDERS_COUNT // 2, 8))
 
     inline_orders_buttons = (
         InlineKeyboardButton(
@@ -116,8 +116,7 @@ async def orders_list(
             await tg.edit_message_text(text, chat_id, message_id, reply_markup=keyboard)
         return
 
-    sorted_orders = database.orders.find(query).sort('start_time', ASCENDING)
-    all_orders = await sorted_orders.to_list(length=start + config.ORDERS_COUNT)
+    all_orders = await cursor.to_list(length=start + config.ORDERS_COUNT)
     orders = all_orders[start:]
 
     lines = []
@@ -179,9 +178,7 @@ async def orders_list(
         )
 
 
-async def show_orders(call, query, start, buttons_data, invert, user_id=None):
-    quantity = await database.orders.count_documents(query)
-
+async def show_orders(call, cursor, start, quantity, buttons_data, invert, user_id=None):
     if start >= quantity > 0:
         await call.answer(_('There are no more orders.'))
         return
@@ -189,7 +186,7 @@ async def show_orders(call, query, start, buttons_data, invert, user_id=None):
     try:
         await call.answer()
         await orders_list(
-            query, call.message.chat.id, start, quantity, buttons_data,
+            cursor, call.message.chat.id, start, quantity, buttons_data,
             user_id=user_id, message_id=call.message.message_id, invert=invert
         )
     except MessageNotModified:
@@ -292,6 +289,15 @@ async def show_order(
         for field, value in lines_format.items():
             if value is not None:
                 lines.append(field_names[field] + ' ' + value)
+
+        keyboard.row(
+            InlineKeyboardButton(
+                _('Similar'), callback_data='similar {}'.format(order['_id'])
+            ),
+            InlineKeyboardButton(
+                _('Match'), callback_data='match {}'.format(order['_id'])
+            )
+        )
 
         if order['user_id'] == user_id:
             keyboard.row(InlineKeyboardButton(
