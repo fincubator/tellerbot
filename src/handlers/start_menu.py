@@ -28,6 +28,7 @@ from aiogram.dispatcher.filters.state import any_state
 from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 
+from config import ORDERS_LIMIT_HOURS, ORDERS_LIMIT_COUNT
 from . import tg, private_handler, start_keyboard, inline_control_buttons, help_message, orders_list
 from ..database import database
 from ..i18n import i18n, _
@@ -65,15 +66,30 @@ async def handle_start_command(message: types.Message, state: FSMContext):
 @private_handler(commands=['create'], state=any_state)
 @private_handler(lambda msg: msg.text.startswith(emojize(':heavy_plus_sign:')), state=any_state)
 async def handle_create(message: types.Message, state: FSMContext):
+    current_time = time()
+    user_orders = await database.orders.count_documents({
+        'user_id': message.from_user.id,
+        'start_time': {'$gt': current_time - ORDERS_LIMIT_HOURS * 3600}
+    })
+    if user_orders >= ORDERS_LIMIT_COUNT:
+        await tg.send_message(
+            message.chat.id,
+            _("You can't create more than {} orders in {} hours.").format(
+                ORDERS_LIMIT_COUNT, ORDERS_LIMIT_HOURS
+            )
+        )
+        return
+
     if message.from_user.username:
         username = '@' + message.from_user.username
     else:
         username = markdown.link(message.from_user.full_name, message.from_user.url)
 
-    await database.creation.insert_one({
-        'user_id': message.from_user.id,
-        'username': username
-    })
+    await database.creation.update_one(
+        {'user_id': message.from_user.id},
+        {'$set': {'username': username}},
+        upsert=True
+    )
     await states.OrderCreation.first()
 
     await tg.send_message(

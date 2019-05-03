@@ -43,7 +43,7 @@ async def expired_order():
                 pass
             else:
                 await show_order(order, user['chat'], user['id'])
-                await asyncio.sleep(2)
+                await asyncio.sleep(1)
             finally:
                 await database.orders.update_one(
                     {'_id': order['_id']},
