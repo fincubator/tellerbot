@@ -16,7 +16,6 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from datetime import datetime
 from decimal import Decimal
 from time import time
 from typing import Any, Mapping
@@ -239,7 +238,7 @@ async def edit_field(message: types.Message, state: FSMContext):
         else:
             order = await database.orders.find_one({'_id': edit['order_id']})
             set_dict['sum_buy'] = Decimal128(transaction_sum)
-            if order['price_sell']:
+            if 'price_sell' in order:
                 set_dict['sum_sell'] = Decimal128(normalize_money(
                     transaction_sum * order['price_sell'].to_decimal()
                 ))
@@ -252,7 +251,7 @@ async def edit_field(message: types.Message, state: FSMContext):
         else:
             order = await database.orders.find_one({'_id': edit['order_id']})
             set_dict['sum_sell'] = Decimal128(transaction_sum)
-            if order['price_buy']:
+            if 'price_buy' in order:
                 set_dict['sum_buy'] = Decimal128(normalize_money(
                     transaction_sum * order['price_buy'].to_decimal()
                 ))
