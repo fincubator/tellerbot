@@ -55,18 +55,15 @@ def start_keyboard():
 
 def inline_control_buttons(no_back=False, no_next=False, no_cancel=False):
     buttons = []
-
     row = []
     if not no_back:
-        row.append(InlineKeyboardButton(_('Back'), callback_data='back'))
+        row.append(InlineKeyboardButton(_('Back'), callback_data='state back'))
     if not no_next:
-        row.append(InlineKeyboardButton(_('Skip'), callback_data='next'))
+        row.append(InlineKeyboardButton(_('Skip'), callback_data='state next'))
     if row:
         buttons.append(row)
-
     if not no_cancel:
         buttons.append([InlineKeyboardButton(_('Cancel'), callback_data='cancel')])
-
     return buttons
 
 
@@ -81,7 +78,6 @@ async def validate_money(data, chat_id):
     normalized = normalize_money(money)
     if normalized.is_zero():
         raise MoneyValidationError(_('Send number greater than') + f' {exp:.8f}')
-
     return normalized
 
 
@@ -310,6 +306,7 @@ async def show_order(
                     )
                 )
             )
+
         keyboard.row(InlineKeyboardButton(
             _('Hide'), callback_data='hide {}'.format(location_message_id)
         ))

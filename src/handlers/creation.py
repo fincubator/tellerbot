@@ -39,32 +39,27 @@ from ..states import OrderCreation
 from ..utils import normalize_money, MoneyValidationError
 
 
-@dp.callback_query_handler(lambda call: call.data == 'back', state=any_state)
+@dp.callback_query_handler(lambda call: call.data.startswith('state '), state=any_state)
 async def previous_state(call: types.CallbackQuery, state: FSMContext):
+    direction = call.data.split()[1]
     state_name = await state.get_state()
     if state_name in OrderCreation:
-        new_state = await OrderCreation.previous()
+        if direction == 'back':
+            new_state = await OrderCreation.previous()
+        elif direction == 'next':
+            new_state = await OrderCreation.next()
         handler = state_handlers.get(new_state)
         if handler:
             error = await handler(call)
             if not error:
-                return
+                return await call.answer()
         await state.set_state(state_name)
-    return await call.answer(_("Couldn't go back."))
 
-
-@dp.callback_query_handler(lambda call: call.data == 'next', state=any_state)
-async def next_state(call: types.CallbackQuery, state: FSMContext):
-    state_name = await state.get_state()
-    if state_name in OrderCreation:
-        new_state = await OrderCreation.next()
-        handler = state_handlers.get(new_state)
-        if handler:
-            error = await handler(call)
-            if not error:
-                return
-        await state.set_state(state_name)
-    return await call.answer(_("Couldn't go next."))
+    if direction == 'back':
+        answer = _("Couldn't go back.")
+    elif direction == 'next':
+        answer = _("Couldn't go next.")
+    return await call.answer(answer)
 
 
 @dp.callback_query_handler(lambda call: call.data == 'cancel', state=any_state)
