@@ -53,7 +53,7 @@ def start_keyboard():
     return keyboard
 
 
-def inline_control_buttons(no_back=False, no_next=False, no_cancel=False):
+def inline_control_buttons(no_back=False, no_next=False):
     buttons = []
     row = []
     if not no_back:
@@ -62,8 +62,6 @@ def inline_control_buttons(no_back=False, no_next=False, no_cancel=False):
         row.append(InlineKeyboardButton(_('Skip'), callback_data='state next'))
     if row:
         buttons.append(row)
-    if not no_cancel:
-        buttons.append([InlineKeyboardButton(_('Cancel'), callback_data='cancel')])
     return buttons
 
 

@@ -329,7 +329,7 @@ async def choose_sum(message: types.Message, state: FSMContext):
             message.chat.id,
             _('Send order sum in {}.').format(order[update_dict['sum_currency']]),
             reply_markup=InlineKeyboardMarkup(
-                inline_keyboard=inline_control_buttons(no_back=True, no_cancel=True)
+                inline_keyboard=inline_control_buttons(no_back=True)
             )
         )
         return
