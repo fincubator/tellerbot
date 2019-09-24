@@ -18,6 +18,7 @@
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
+from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 
 import config
@@ -38,9 +39,14 @@ async def unhelp_button(call: types.CallbackQuery, state: FSMContext):
 
 
 async def send_message_to_support(message: types.Message):
+    if message.from_user.username:
+        username = '@' + message.from_user.username
+    else:
+        username = markdown.link(message.from_user.full_name, message.from_user.url)
+
     await tg.send_message(
         config.SUPPORT_CHAT_ID,
-        emojize(f':envelope: #chat_{message.chat.id} {message.message_id}\n') + message.text
+        emojize(f':envelope: #chat_{message.chat.id} {message.message_id}\n{username}:\n') + message.text
     )
     await tg.send_message(
         message.chat.id,
