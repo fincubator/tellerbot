@@ -80,14 +80,11 @@ async def handle_create(message: types.Message, state: FSMContext):
         )
         return
 
-    if message.from_user.username:
-        username = '@' + message.from_user.username
-    else:
-        username = markdown.link(message.from_user.full_name, message.from_user.url)
+    username = '@' + message.from_user.username if message.from_user.username else message.from_user.full_name
 
     await database.creation.update_one(
         {'user_id': message.from_user.id},
-        {'$set': {'username': username}},
+        {'$set': {'username': markdown.link(username, message.from_user.url)}},
         upsert=True
     )
     await states.OrderCreation.first()
