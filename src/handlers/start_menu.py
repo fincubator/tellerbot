@@ -145,8 +145,7 @@ async def help_command(message: types.Message):
     await states.asking_support.set()
     await tg.send_message(
         message.chat.id,
-        _('Send your questions and feedback in the next message, '
-          'and I will forward it to the support.'),
+        _("What's your question?"),
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
             InlineKeyboardButton(_('Cancel'), callback_data='unhelp')
         ]])

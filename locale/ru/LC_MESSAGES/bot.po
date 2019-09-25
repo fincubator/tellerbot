@@ -1,15 +1,14 @@
-# Russian translations for PROJECT.
-# Copyright (C) 2019 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+# Russian translations for TellerBot.
+# Copyright (C) 2019 alfred richardsn
+# This file is distributed under the same license as the TellerBot project.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-05-03 03:21+0300\n"
+"POT-Creation-Date: 2019-09-26 00:20+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
 "Language-Team: ru <LL@li.org>\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
@@ -19,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.6.0\n"
 
-#: src/handlers/__init__.py:37
+#: src/handlers/__init__.py
 msgid ""
 "Hello, I'm TellerBot. I can help you meet with people that you can swap "
 "money with.\n"
@@ -31,199 +30,195 @@ msgstr ""
 "\n"
 "Выберите один из вариантов на вашей клавиатуре."
 
-#: src/handlers/__init__.py:47
+#: src/handlers/__init__.py
 msgid "Create order"
 msgstr "Создать заказ"
 
-#: src/handlers/__init__.py:48
+#: src/handlers/__init__.py
 msgid "My orders"
 msgstr "Мои заказы"
 
-#: src/handlers/__init__.py:49
+#: src/handlers/__init__.py
 msgid "Order book"
 msgstr "Список заказов"
 
-#: src/handlers/__init__.py:50
+#: src/handlers/__init__.py
 msgid "Language"
 msgstr "Язык"
 
-#: src/handlers/__init__.py:51
+#: src/handlers/__init__.py
 msgid "Support"
 msgstr "Поддержка"
 
-#: src/handlers/__init__.py:61
+#: src/handlers/__init__.py
 msgid "Back"
 msgstr "Назад"
 
-#: src/handlers/__init__.py:63
+#: src/handlers/__init__.py
 msgid "Skip"
 msgstr "Пропустить"
 
-#: src/handlers/__init__.py:68 src/handlers/start_menu.py:154
-msgid "Cancel"
-msgstr "Отменить"
-
-#: src/handlers/__init__.py:77
+#: src/handlers/__init__.py
 msgid "Send decimal number."
 msgstr "Отправьте десятичное число."
 
-#: src/handlers/__init__.py:79
+#: src/handlers/__init__.py
 msgid "Send positive number."
 msgstr "Отправьте положительное число."
 
-#: src/handlers/__init__.py:83
+#: src/handlers/__init__.py
 msgid "Send number greater than"
 msgstr "Отправьте число большее, чем"
 
-#: src/handlers/__init__.py:109
+#: src/handlers/__init__.py
 msgid "There are no orders."
 msgstr "Нет заказов."
 
-#: src/handlers/__init__.py:154 src/handlers/__init__.py:258
-#: src/handlers/creation.py:156 src/handlers/creation.py:181
+#: src/handlers/__init__.py src/handlers/creation.py
 msgid "Invert"
 msgstr "Инвертировать"
 
-#: src/handlers/__init__.py:161
+#: src/handlers/__init__.py
 msgid "Page {} of {}"
 msgstr "Страница {} из {}"
 
-#: src/handlers/__init__.py:180
+#: src/handlers/__init__.py
 msgid "There are no more orders."
 msgstr "Больше нет заказов."
 
-#: src/handlers/__init__.py:190
+#: src/handlers/__init__.py
 msgid "There are no previous orders."
 msgstr "Нет предыдущих заказов."
 
-#: src/handlers/__init__.py:195
+#: src/handlers/__init__.py
 msgid "Amount of buying:"
 msgstr "Сумма покупки:"
 
-#: src/handlers/__init__.py:196
+#: src/handlers/__init__.py
 msgid "Amount of selling:"
 msgstr "Сумма продажи:"
 
-#: src/handlers/__init__.py:197
+#: src/handlers/__init__.py
 msgid "Price:"
 msgstr "Цена:"
 
-#: src/handlers/__init__.py:198
+#: src/handlers/__init__.py
 msgid "Payment system:"
 msgstr "Система оплаты:"
 
-#: src/handlers/__init__.py:199
+#: src/handlers/__init__.py
 msgid "Duration:"
 msgstr "Продолжительность:"
 
-#: src/handlers/__init__.py:200
+#: src/handlers/__init__.py
 msgid "Comments:"
 msgstr "Комментарии:"
 
-#: src/handlers/__init__.py:223
+#: src/handlers/__init__.py
 msgid "sells {} for {}"
 msgstr "продаёт {} за {}"
 
-#: src/handlers/__init__.py:225
+#: src/handlers/__init__.py
 msgid "buys {} for {}"
 msgstr "покупает {} за {}"
 
-#: src/handlers/__init__.py:279
+#: src/handlers/__init__.py
 msgid "Finish"
 msgstr "Завершить"
 
-#: src/handlers/__init__.py:292
+#: src/handlers/__init__.py
 msgid "Similar"
 msgstr "Похожие"
 
-#: src/handlers/__init__.py:295
+#: src/handlers/__init__.py
 msgid "Match"
 msgstr "Подобрать"
 
-#: src/handlers/__init__.py:302
+#: src/handlers/__init__.py
 msgid "Edit"
 msgstr "Редактировать"
 
-#: src/handlers/__init__.py:308
+#: src/handlers/__init__.py
 msgid "Delete"
 msgstr "Удалить"
 
-#: src/handlers/__init__.py:314 src/handlers/order.py:397
+#: src/handlers/__init__.py
+msgid "Escrow"
+msgstr ""
+
+#: src/handlers/__init__.py src/handlers/order.py
 msgid "Hide"
 msgstr "Скрыть"
 
-#: src/handlers/creation.py:53
+#: src/handlers/creation.py
 msgid "Couldn't go back."
 msgstr "Не удалось пойти назад."
 
-#: src/handlers/creation.py:67
+#: src/handlers/creation.py
 msgid "Couldn't go next."
 msgstr "Не удалось пойти вперёд."
 
-#: src/handlers/creation.py:79 src/handlers/creation.py:203
-#: src/handlers/creation.py:269
+#: src/handlers/creation.py
 msgid "You are not creating order."
 msgstr "Вы не создаёте заказ."
 
-#: src/handlers/creation.py:86
+#: src/handlers/creation.py
 msgid "Order is cancelled."
 msgstr "Заказ отменён."
 
-#: src/handlers/creation.py:94 src/handlers/start_menu.py:97
+#: src/handlers/creation.py src/handlers/start_menu.py
 msgid "What currency do you want to buy?"
 msgstr "Какую валюту вы хотите купить?"
 
-#: src/handlers/creation.py:107 src/handlers/creation.py:141
+#: src/handlers/creation.py
 msgid "Currency may only contain latin characters."
 msgstr "Валюта может содержать только латинские символы."
 
-#: src/handlers/creation.py:118 src/handlers/creation.py:128
+#: src/handlers/creation.py
 msgid "What currency do you want to sell?"
 msgstr "Какую валюту вы хотите продать?"
 
-#: src/handlers/creation.py:162 src/handlers/creation.py:169
+#: src/handlers/creation.py
 msgid "At what price (in {}/{}) do you want to buy?"
 msgstr "По какой цене (в {}/{}) вы хотите купить?"
 
-#: src/handlers/creation.py:174
+#: src/handlers/creation.py
 msgid "At what price (in {}/{}) do you want to sell?"
 msgstr "По какой цене (в {}/{}) вы хотите продать?"
 
-#: src/handlers/creation.py:256 src/handlers/creation.py:281
+#: src/handlers/creation.py
 msgid "Choose currency of order sum."
 msgstr "Выберите валюту суммы заказа."
 
-#: src/handlers/creation.py:297 src/handlers/creation.py:335
+#: src/handlers/creation.py
 msgid "Send order sum in {}."
 msgstr "Отправьте сумму заказа в {}."
 
-#: src/handlers/creation.py:314
+#: src/handlers/creation.py
 msgid "Choose currency of sum with buttons."
 msgstr "Выберите валюту суммы кнопками."
 
-#: src/handlers/creation.py:349 src/handlers/creation.py:366
+#: src/handlers/creation.py
 msgid "Send cashless payment system."
 msgstr "Отправьте систему безналичной оплаты."
 
-#: src/handlers/creation.py:418
+#: src/handlers/creation.py
 msgid "Location is not found."
 msgstr "Локация не найдена."
 
-#: src/handlers/creation.py:432 src/handlers/creation.py:461
-#: src/handlers/creation.py:501
+#: src/handlers/creation.py
 msgid "Send duration of order in days."
 msgstr "Отправьте продолжительность заказа в днях."
 
-#: src/handlers/creation.py:439
+#: src/handlers/creation.py
 msgid "Choose one of these locations:"
 msgstr "Выберите одну из этих локаций:"
 
-#: src/handlers/creation.py:469 src/handlers/creation.py:493
+#: src/handlers/creation.py
 msgid "Send location of a preferred meeting point for cash payment."
 msgstr "Отправьте локацию предпочитаемого места встречи для наличной оплаты."
 
-#: src/handlers/creation.py:481 src/handlers/creation.py:563
-#: src/handlers/order.py:300 src/handlers/order.py:325
+#: src/handlers/creation.py src/handlers/order.py
 msgid ""
 "This value should contain less than 150 characters (you sent {} "
 "characters)."
@@ -231,111 +226,114 @@ msgstr ""
 "Это значение должно содержать меньше 150 символов (вы отправили {} "
 "символов)."
 
-#: src/handlers/creation.py:514 src/handlers/order.py:312
+#: src/handlers/creation.py src/handlers/order.py
 msgid "Send natural number."
 msgstr "Отправьте натуральное число."
 
-#: src/handlers/creation.py:525 src/handlers/creation.py:551
+#: src/handlers/creation.py
 msgid "Add any additional comments."
 msgstr "Добавьте какие-либо дополнительные комментарии."
 
-#: src/handlers/creation.py:544
+#: src/handlers/creation.py
 msgid "Order is set."
 msgstr "Заказ установлен."
 
-#: src/handlers/default.py:27
+#: src/handlers/default.py
 msgid "Unknown command."
 msgstr "Неизвестная команда."
 
-#: src/handlers/order.py:46 src/handlers/order.py:71
+#: src/handlers/order.py
 msgid "Order is not found."
 msgstr "Заказ не найден."
 
-#: src/handlers/order.py:66
+#: src/handlers/order.py
 msgid "Send order's ID as an argument."
 msgstr "Отправьте ID заказа как аргумент."
 
-#: src/handlers/order.py:186
+#: src/handlers/order.py
+msgid "Change to {}"
+msgstr ""
+
+#: src/handlers/order.py
+msgid "Send exchange sum in {}."
+msgstr ""
+
+#: src/handlers/order.py
 msgid "Send new amount of buying."
 msgstr "Отправьте новую сумму покупки."
 
-#: src/handlers/order.py:188
+#: src/handlers/order.py
 msgid "Send new amount of selling."
 msgstr "Отправьте новую сумму продажи."
 
-#: src/handlers/order.py:190
+#: src/handlers/order.py
 msgid "Send new price."
 msgstr "Отправьте новую цену."
 
-#: src/handlers/order.py:192
+#: src/handlers/order.py
 msgid "Send new payment system."
 msgstr "Отправьте новую систему оплаты."
 
-#: src/handlers/order.py:194
+#: src/handlers/order.py
 msgid "Send new duration."
 msgstr "Отправьте новую продолжительность."
 
-#: src/handlers/order.py:196
+#: src/handlers/order.py
 msgid "Send new comments."
 msgstr "Отправьте новые комментарии."
 
-#: src/handlers/order.py:367
+#: src/handlers/order.py
 msgid "Yes, I'm totally sure"
 msgstr "Да, я полностью уверен(а)"
 
-#: src/handlers/order.py:372
+#: src/handlers/order.py
 msgid "No"
 msgstr "Нет"
 
-#: src/handlers/order.py:378
+#: src/handlers/order.py
 msgid "Are you sure you want to delete the order?"
 msgstr "Вы уверены, что хотите удалить этот заказ?"
 
-#: src/handlers/order.py:391
+#: src/handlers/order.py
 msgid "Couldn't delete order."
 msgstr "Не удалось удалить заказ."
 
-#: src/handlers/order.py:401
+#: src/handlers/order.py
 msgid "Order is deleted."
 msgstr "Заказ удалён."
 
-#: src/handlers/start_menu.py:54
+#: src/handlers/start_menu.py
 msgid "Please, choose your language."
 msgstr "Пожалуйста, выберите свой язык."
 
-#: src/handlers/start_menu.py:77
+#: src/handlers/start_menu.py
 msgid "You can't create more than {} orders in {} hours."
 msgstr "Вы не можете создать больше чем {} заказов за {} часа."
 
-#: src/handlers/start_menu.py:140
+#: src/handlers/start_menu.py
 msgid "Choose your language."
 msgstr "Выберите свой язык."
 
-#: src/handlers/start_menu.py:151
-msgid ""
-"Send your questions and feedback in the next message, and I will forward "
-"it to the support."
-msgstr ""
-"Отправьте ваши вопросы и обратную связь в следующем сообщении и я перешлю"
-" его поддержке."
+#: src/handlers/start_menu.py
+msgid "What's your question?"
+msgstr "Какой у вас вопрос?"
 
-#: src/handlers/support.py:35
+#: src/handlers/start_menu.py
+msgid "Cancel"
+msgstr "Отменить"
+
+#: src/handlers/support.py
 msgid "Your request is cancelled."
 msgstr "Ваш запрос отменён."
 
-#: src/handlers/support.py:47
-msgid ""
-"Your message was forwarded to the support. When you get a reply, I'll "
-"send it to you."
-msgstr ""
-"Ваше сообщение отправлено поддержке. Когда вы получите ответ, я отправлю "
-"его вам."
+#: src/handlers/support.py
+msgid "Your message was forwarded. We'll respond to you within 24 hours."
+msgstr "Ваше сообщение переслано. Мы ответим вам в течение 24 часов."
 
-#: src/handlers/support.py:87
+#: src/handlers/support.py
 msgid "Reply is sent."
 msgstr "Ответ отправлен."
 
-#: src/notifications.py:38
+#: src/notifications.py
 msgid "Your order has expired."
 msgstr "Срок действия вашего заказа истёк."
-

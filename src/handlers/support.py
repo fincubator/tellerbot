@@ -50,8 +50,7 @@ async def send_message_to_support(message: types.Message):
     )
     await tg.send_message(
         message.chat.id,
-        _('Your message was forwarded to the support. '
-          "When you get a reply, I'll send it to you."),
+        _("Your message was forwarded. We'll respond to you within 24 hours."),
         reply_markup=start_keyboard()
     )
 
