@@ -18,7 +18,8 @@
 
 from decimal import Decimal, ROUND_HALF_UP
 
-exp = Decimal('1e-8')
+HIGH_EXP = Decimal('1e15')
+LOW_EXP = Decimal('1e-8')
 
 
 class MoneyValidationError(Exception):
@@ -29,4 +30,4 @@ def normalize_money(money):
     if money == money.to_integral_value():
         return money.quantize(Decimal(1))
     else:
-        return money.quantize(exp, rounding=ROUND_HALF_UP).normalize()
+        return money.quantize(LOW_EXP, rounding=ROUND_HALF_UP).normalize()

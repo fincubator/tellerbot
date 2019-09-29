@@ -296,8 +296,8 @@ async def edit_field(message: types.Message, state: FSMContext):
         if len(payment_system) > 150:
             await tg.send_message(
                 message.chat.id,
-                _('This value should contain less than 150 characters '
-                  '(you sent {} characters).').format(len(payment_system))
+                _('This value should contain less than {} characters '
+                  '(you sent {} characters).').format(150, len(payment_system))
             )
             return
         set_dict['payment_system'] = payment_system
@@ -310,19 +310,20 @@ async def edit_field(message: types.Message, state: FSMContext):
         except ValueError:
             error = _('Send natural number.')
         else:
-            order = await database.orders.find_one({'_id': edit['order_id']})
-            set_dict['duration'] = duration
-            expiration_time = order['start_time'] + duration * 24 * 60 * 60
-            set_dict['expiration_time'] = expiration_time
-            set_dict['notify'] = expiration_time > time()
+            if duration <= 100000:
+                order = await database.orders.find_one({'_id': edit['order_id']})
+                set_dict['duration'] = duration
+                expiration_time = order['start_time'] + duration * 24 * 60 * 60
+                set_dict['expiration_time'] = expiration_time
+                set_dict['notify'] = expiration_time > time()
 
     elif field == 'comments':
         comments = message.text
         if len(comments) > 150:
             await tg.send_message(
                 message.chat.id,
-                _('This value should contain less than 150 characters '
-                  '(you sent {} characters).').format(len(comments))
+                _('This value should contain less than {} characters '
+                  '(you sent {} characters).').format(150, len(comments))
             )
             return
         set_dict['comments'] = comments

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-09-26 00:20+0300\n"
+"POT-Creation-Date: 2019-09-29 19:45+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -65,6 +65,10 @@ msgstr "Отправьте десятичное число."
 #: src/handlers/__init__.py
 msgid "Send positive number."
 msgstr "Отправьте положительное число."
+
+#: src/handlers/__init__.py
+msgid "Send number less than"
+msgstr "Отправьте число меньшее, чем"
 
 #: src/handlers/__init__.py
 msgid "Send number greater than"
@@ -142,10 +146,6 @@ msgstr "Редактировать"
 msgid "Delete"
 msgstr "Удалить"
 
-#: src/handlers/__init__.py
-msgid "Escrow"
-msgstr ""
-
 #: src/handlers/__init__.py src/handlers/order.py
 msgid "Hide"
 msgstr "Скрыть"
@@ -173,6 +173,13 @@ msgstr "Какую валюту вы хотите купить?"
 #: src/handlers/creation.py
 msgid "Currency may only contain latin characters."
 msgstr "Валюта может содержать только латинские символы."
+
+#: src/handlers/creation.py src/handlers/order.py
+msgid ""
+"This value should contain less than {} characters (you sent {} "
+"characters)."
+msgstr ""
+"Это значение должно содержать меньше {} символов (вы отправили {})."
 
 #: src/handlers/creation.py
 msgid "What currency do you want to sell?"
@@ -219,14 +226,6 @@ msgid "Send location of a preferred meeting point for cash payment."
 msgstr "Отправьте локацию предпочитаемого места встречи для наличной оплаты."
 
 #: src/handlers/creation.py src/handlers/order.py
-msgid ""
-"This value should contain less than 150 characters (you sent {} "
-"characters)."
-msgstr ""
-"Это значение должно содержать меньше 150 символов (вы отправили {} "
-"символов)."
-
-#: src/handlers/creation.py src/handlers/order.py
 msgid "Send natural number."
 msgstr "Отправьте натуральное число."
 
@@ -249,14 +248,6 @@ msgstr "Заказ не найден."
 #: src/handlers/order.py
 msgid "Send order's ID as an argument."
 msgstr "Отправьте ID заказа как аргумент."
-
-#: src/handlers/order.py
-msgid "Change to {}"
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Send exchange sum in {}."
-msgstr ""
 
 #: src/handlers/order.py
 msgid "Send new amount of buying."

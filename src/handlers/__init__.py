@@ -30,7 +30,7 @@ from aiogram.utils.exceptions import MessageNotModified
 import config
 from ..bot import tg, dp, private_handler, state_handler, state_handlers
 from ..i18n import _
-from ..utils import normalize_money, exp, MoneyValidationError
+from ..utils import normalize_money, LOW_EXP, HIGH_EXP, MoneyValidationError
 
 
 def help_message():
@@ -72,10 +72,12 @@ async def validate_money(data, chat_id):
         raise MoneyValidationError(_('Send decimal number.'))
     if money <= 0:
         raise MoneyValidationError(_('Send positive number.'))
+    if money >= HIGH_EXP:
+        raise MoneyValidationError(_('Send number less than') + f' {HIGH_EXP:,f}')
 
     normalized = normalize_money(money)
     if normalized.is_zero():
-        raise MoneyValidationError(_('Send number greater than') + f' {exp:.8f}')
+        raise MoneyValidationError(_('Send number greater than') + f' {LOW_EXP:.8f}')
     return normalized
 
 

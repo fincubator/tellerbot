@@ -102,6 +102,13 @@ async def choose_buy(message: types.Message, state: FSMContext):
             _('Currency may only contain latin characters.')
         )
         return
+    if len(message.text) > 20:
+        await tg.send_message(
+            message.chat.id,
+            _('This value should contain less than {} characters '
+              '(you sent {} characters).').format(20, len(message.text))
+        )
+        return
 
     await database.creation.update_one(
         {'user_id': message.from_user.id},
@@ -134,6 +141,13 @@ async def choose_sell(message: types.Message, state: FSMContext):
         await tg.send_message(
             message.chat.id,
             _('Currency may only contain latin characters.')
+        )
+        return
+    if len(message.text) > 20:
+        await tg.send_message(
+            message.chat.id,
+            _('This value should contain less than {} characters '
+              '(you sent {} characters).').format(20, len(message.text))
         )
         return
 
@@ -473,8 +487,8 @@ async def choose_payment_system(message: types.Message, state: FSMContext):
     if len(payment_system) > 150:
         await tg.send_message(
             message.chat.id,
-            _('This value should contain less than 150 characters '
-              '(you sent {} characters).').format(len(payment_system))
+            _('This value should contain less than {} characters '
+              '(you sent {} characters).').format(150, len(payment_system))
         )
         return
 
@@ -509,10 +523,11 @@ async def choose_duration(message: types.Message, state: FSMContext):
         await tg.send_message(message.chat.id, _('Send natural number.'))
         return
 
-    await database.creation.update_one(
-        {'user_id': message.from_user.id},
-        {'$set': {'duration': duration}}
-    )
+    if duration <= 100000:
+        await database.creation.update_one(
+            {'user_id': message.from_user.id},
+            {'$set': {'duration': duration}}
+        )
 
     await OrderCreation.comments.set()
     await tg.send_message(
@@ -555,8 +570,8 @@ async def choose_comments(message: types.Message, state: FSMContext):
     if len(comments) > 150:
         await tg.send_message(
             message.chat.id,
-            _('This value should contain less than 150 characters '
-              '(you sent {} characters).').format(len(comments))
+            _('This value should contain less than {} characters '
+              '(you sent {} characters).').format(150, len(comments))
         )
         return
 
