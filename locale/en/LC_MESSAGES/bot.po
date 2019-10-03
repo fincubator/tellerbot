@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-03 14:00+0300\n"
+"POT-Creation-Date: 2019-10-03 14:34+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -60,6 +60,10 @@ msgstr ""
 
 #: src/handlers/__init__.py
 msgid "Send positive number."
+msgstr ""
+
+#: src/handlers/__init__.py
+msgid "Send number less than"
 msgstr ""
 
 #: src/handlers/__init__.py
@@ -170,6 +174,12 @@ msgstr ""
 msgid "Currency may only contain latin characters."
 msgstr ""
 
+#: src/handlers/creation.py src/handlers/escrow.py src/handlers/order.py
+msgid ""
+"This value should contain less than {} characters (you sent {} "
+"characters)."
+msgstr ""
+
 #: src/handlers/creation.py
 msgid "What currency do you want to sell?"
 msgstr ""
@@ -215,12 +225,6 @@ msgid "Send location of a preferred meeting point for cash payment."
 msgstr ""
 
 #: src/handlers/creation.py src/handlers/order.py
-msgid ""
-"This value should contain less than 150 characters (you sent {} "
-"characters)."
-msgstr ""
-
-#: src/handlers/creation.py src/handlers/order.py
 msgid "Send natural number."
 msgstr ""
 
@@ -245,7 +249,7 @@ msgid "Send number not exceeding order's sum."
 msgstr ""
 
 #: src/handlers/escrow.py
-msgid "Decline"
+msgid "Send your {} address."
 msgstr ""
 
 #: src/handlers/escrow.py
@@ -253,11 +257,27 @@ msgid "Accept"
 msgstr ""
 
 #: src/handlers/escrow.py
-msgid "You got an Escrow offer to sell {} {} for {} {}."
+msgid "Decline"
 msgstr ""
 
 #: src/handlers/escrow.py
-msgid "Send your {} address."
+msgid "You got an escrow offer to sell {} {} for {} {}."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "Offer sent."
+msgstr ""
+
+#: src/handlers/escrow.py src/handlers/start_menu.py
+msgid "Cancel"
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "Your escrow offer was accepted."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "I'll notify you when transaction is complete."
 msgstr ""
 
 #: src/handlers/escrow.py
@@ -269,15 +289,23 @@ msgid "Offer was declined."
 msgstr ""
 
 #: src/handlers/escrow.py
-msgid "Send {} {} to this address:"
+msgid "Address is invalid."
 msgstr ""
 
 #: src/handlers/escrow.py
 msgid "Sent"
 msgstr ""
 
-#: src/handlers/escrow.py src/handlers/start_menu.py
-msgid "Cancel"
+#: src/handlers/escrow.py
+msgid "Send {} {} to address {} with memo {}"
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "Transfer information sent."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "Escrow was cancelled."
 msgstr ""
 
 #: src/handlers/order.py
@@ -286,10 +314,6 @@ msgstr ""
 
 #: src/handlers/order.py
 msgid "Send order's ID as an argument."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "You already have an unfinished offer."
 msgstr ""
 
 #: src/handlers/order.py
@@ -375,4 +399,7 @@ msgstr ""
 #: src/notifications.py
 msgid "Your order has expired."
 msgstr ""
+
+#~ msgid "You got an Escrow offer to sell {} {} for {} {}."
+#~ msgstr ""
 

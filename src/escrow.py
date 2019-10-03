@@ -16,27 +16,4 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from aiogram.dispatcher.filters.state import State, StatesGroup
-
-
-class OrderCreation(StatesGroup):
-    buy = State()
-    sell = State()
-    price = State()
-    sum = State()
-    payment_system = State()
-    location = State()
-    duration = State()
-    comments = State()
-    set_order = State()
-
-
-class Escrow(StatesGroup):
-    sum = State()
-    init_address = State()
-    counter_address = State()
-    transfer = State()
-
-
-asking_support = State('asking_support')
-field_editing = State('field_editing')
+ESCROW_CRYPTO_ADDRESS = {'GOLOS': 'tellerbot'}

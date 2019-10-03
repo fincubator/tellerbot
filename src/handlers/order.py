@@ -32,7 +32,7 @@ from aiogram.dispatcher.filters.state import any_state
 from . import tg, dp, private_handler, show_order, show_orders, validate_money, orders_list
 from ..database import database, STATE_KEY
 from ..i18n import _
-from ..states import field_editing
+from .. import states
 from ..utils import normalize_money, MoneyValidationError
 
 
@@ -175,6 +175,51 @@ async def match_button(call: types.CallbackQuery, order: Mapping[str, Any]):
     )
 
 
+@dp.callback_query_handler(lambda call: call.data.startswith('escrow '), state=any_state)
+@order_handler
+async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
+    args = call.data.split()
+    currency_arg = args[2]
+    edit = bool(int(args[3]))
+
+    if currency_arg == 'buy':
+        sum_currency = order['buy']
+        new_currency_arg = 'sell'
+    elif currency_arg == 'sell':
+        sum_currency = order['sell']
+        new_currency_arg = 'buy'
+    else:
+        return
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.row(InlineKeyboardButton(
+        _('Change to {}').format(order[new_currency_arg]),
+        callback_data='escrow {} {} {}'.format(order['_id'], new_currency_arg, int(not edit))
+    ))
+    answer = _('Send exchange sum in {}.').format(sum_currency)
+    await database.escrow.insert_one({
+        'order': order['_id'],
+        'buy': order['buy'],
+        'sell': order['sell'],
+        'time': time(),
+        'sum_currency': currency_arg,
+        'init_id': call.from_user.id,
+        'counter_id': order['user_id'],
+    })
+    await call.answer()
+    if edit:
+        await tg.edit_message_text(
+            answer, call.message.chat.id, call.message.id,
+            reply_markup=keyboard
+        )
+    else:
+        await tg.send_message(
+            call.message.chat.id, answer,
+            reply_markup=keyboard
+        )
+    await states.Escrow.sum.set()
+
+
 @dp.callback_query_handler(lambda call: call.data.startswith('edit '), state=any_state)
 @order_handler
 async def edit_button(call: types.CallbackQuery, order: Mapping[str, Any]):
@@ -211,10 +256,10 @@ async def edit_button(call: types.CallbackQuery, order: Mapping[str, Any]):
                 'edit.show_id': call.message.text.startswith('ID')
             }}
         )
-        await field_editing.set()
+        await states.field_editing.set()
 
 
-@private_handler(state=field_editing)
+@private_handler(state=states.field_editing)
 async def edit_field(message: types.Message, state: FSMContext):
     user = await database.users.find_one({'id': message.from_user.id})
     edit = user['edit']

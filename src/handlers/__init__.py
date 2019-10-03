@@ -310,6 +310,10 @@ async def show_order(
                     )
                 )
             )
+        elif order.get('escrow'):
+            keyboard.row(InlineKeyboardButton(
+                _('Escrow'), callback_data='escrow {} buy 0'.format(order['_id'])
+            ))
 
         keyboard.row(InlineKeyboardButton(
             _('Hide'), callback_data='hide {}'.format(location_message_id)

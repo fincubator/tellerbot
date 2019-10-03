@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-09-29 19:45+0300\n"
+"POT-Creation-Date: 2019-10-03 14:34+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -146,6 +146,10 @@ msgstr "Редактировать"
 msgid "Delete"
 msgstr "Удалить"
 
+#: src/handlers/__init__.py
+msgid "Escrow"
+msgstr "Эскроу"
+
 #: src/handlers/__init__.py src/handlers/order.py
 msgid "Hide"
 msgstr "Скрыть"
@@ -174,12 +178,11 @@ msgstr "Какую валюту вы хотите купить?"
 msgid "Currency may only contain latin characters."
 msgstr "Валюта может содержать только латинские символы."
 
-#: src/handlers/creation.py src/handlers/order.py
+#: src/handlers/creation.py src/handlers/escrow.py src/handlers/order.py
 msgid ""
 "This value should contain less than {} characters (you sent {} "
 "characters)."
-msgstr ""
-"Это значение должно содержать меньше {} символов (вы отправили {})."
+msgstr "Это значение должно содержать меньше {} символов (вы отправили {})."
 
 #: src/handlers/creation.py
 msgid "What currency do you want to sell?"
@@ -241,6 +244,74 @@ msgstr "Заказ установлен."
 msgid "Unknown command."
 msgstr "Неизвестная команда."
 
+#: src/handlers/escrow.py
+msgid "Offer is not found."
+msgstr "Предложение не найдено."
+
+#: src/handlers/escrow.py
+msgid "Send number not exceeding order's sum."
+msgstr "Отправьте число, не превышающее сумму заявки."
+
+#: src/handlers/escrow.py
+msgid "Send your {} address."
+msgstr "Отправьте ваш адрес {}."
+
+#: src/handlers/escrow.py
+msgid "Accept"
+msgstr "Принять"
+
+#: src/handlers/escrow.py
+msgid "Decline"
+msgstr "Отклонить"
+
+#: src/handlers/escrow.py
+msgid "You got an escrow offer to sell {} {} for {} {}."
+msgstr "Вы получили предложение эскроу на продажу {} {} за {} {}."
+
+#: src/handlers/escrow.py
+msgid "Offer sent."
+msgstr "Предложение отправлено."
+
+#: src/handlers/escrow.py src/handlers/start_menu.py
+msgid "Cancel"
+msgstr "Отменить"
+
+#: src/handlers/escrow.py
+msgid "Your escrow offer was accepted."
+msgstr "Ваше предложение эскроу принято."
+
+#: src/handlers/escrow.py
+msgid "I'll notify you when transaction is complete."
+msgstr "Я оповещу вас когда транзакция будет совершена."
+
+#: src/handlers/escrow.py
+msgid "Your escrow offer was declined."
+msgstr "Ваше предложение эскроу отклонено."
+
+#: src/handlers/escrow.py
+msgid "Offer was declined."
+msgstr "Предложение отклонено."
+
+#: src/handlers/escrow.py
+msgid "Address is invalid."
+msgstr "Адрес неверный."
+
+#: src/handlers/escrow.py
+msgid "Sent"
+msgstr "Отправлено"
+
+#: src/handlers/escrow.py
+msgid "Send {} {} to address {} with memo {}"
+msgstr "Отправьте {} {} на адрес {} с memo {}"
+
+#: src/handlers/escrow.py
+msgid "Transfer information sent."
+msgstr "Информация для перевода отправлена."
+
+#: src/handlers/escrow.py
+msgid "Escrow was cancelled."
+msgstr "Эскроу отменено."
+
 #: src/handlers/order.py
 msgid "Order is not found."
 msgstr "Заказ не найден."
@@ -248,6 +319,14 @@ msgstr "Заказ не найден."
 #: src/handlers/order.py
 msgid "Send order's ID as an argument."
 msgstr "Отправьте ID заказа как аргумент."
+
+#: src/handlers/order.py
+msgid "Change to {}"
+msgstr "Поменять на {}"
+
+#: src/handlers/order.py
+msgid "Send exchange sum in {}."
+msgstr "Отправьте сумму обмена в {}."
 
 #: src/handlers/order.py
 msgid "Send new amount of buying."
@@ -308,10 +387,6 @@ msgstr "Выберите свой язык."
 #: src/handlers/start_menu.py
 msgid "What's your question?"
 msgstr "Какой у вас вопрос?"
-
-#: src/handlers/start_menu.py
-msgid "Cancel"
-msgstr "Отменить"
 
 #: src/handlers/support.py
 msgid "Your request is cancelled."
