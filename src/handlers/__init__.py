@@ -125,18 +125,22 @@ async def orders_list(
                 line += emojize(':pause_button: ')
 
         if 'sum_sell' in order:
-            line += '{} '.format(order['sum_sell'])
+            line += '{:,.5f} '.format(order['sum_sell'].to_decimal())
         line += '{} → '.format(order['sell'])
 
         if 'sum_buy' in order:
-            line += '{} '.format(order['sum_buy'])
+            line += '{:,.5f} '.format(order['sum_buy'].to_decimal())
         line += order['buy']
 
         if 'price_sell' in order:
             if invert:
-                line += ' ({} {}/{})'.format(order['price_buy'], order['buy'], order['sell'])
+                line += ' ({:,.5f} {}/{})'.format(
+                    order['price_buy'].to_decimal(), order['buy'], order['sell']
+                )
             else:
-                line += ' ({} {}/{})'.format(order['price_sell'], order['sell'], order['buy'])
+                line += ' ({:,.5f} {}/{})'.format(
+                    order['price_sell'].to_decimal(), order['sell'], order['buy']
+                )
 
         if user_id is not None and order['user_id'] == user_id:
             line = f'*{line}*'
