@@ -223,12 +223,9 @@ async def set_counter_address(message: types.Message, state: FSMContext, offer: 
             _("I'll notify you when transaction is complete."),
             reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
         )
-    other_state = FSMContext(dp.storage, escrow_id, escrow_id)
-    await states.Escrow.transfer.set()
-    await other_state.set_state(states.Escrow.transfer)
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('escrow_cancel '), state=states.Escrow.transfer)
+@dp.callback_query_handler(lambda call: call.data.startswith('escrow_cancel '))
 @escrow_callback_handler
 async def cancel_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     answer = _('Escrow was cancelled.')
@@ -242,7 +239,7 @@ async def cancel_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await counter_state.finish()
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('sent '), state=states.Escrow.transfer)
+@dp.callback_query_handler(lambda call: call.data.startswith('sent '))
 @escrow_callback_handler
 async def sent_confirmation(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await call.answer('Not implemented yet.')

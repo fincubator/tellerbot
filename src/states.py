@@ -35,7 +35,6 @@ class Escrow(StatesGroup):
     sum = State()
     init_address = State()
     counter_address = State()
-    transfer = State()
 
 
 asking_support = State('asking_support')
