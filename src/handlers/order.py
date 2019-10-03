@@ -194,13 +194,14 @@ async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
     keyboard = InlineKeyboardMarkup()
     keyboard.row(InlineKeyboardButton(
         _('Change to {}').format(order[new_currency_arg]),
-        callback_data='escrow {} {} {}'.format(order['_id'], new_currency_arg, int(not edit))
+        callback_data='escrow {} {} 1'.format(order['_id'], new_currency_arg)
     ))
     answer = _('Send exchange sum in {}.').format(sum_currency)
     await database.escrow.insert_one({
         'order': order['_id'],
         'buy': order['buy'],
         'sell': order['sell'],
+        'escrow_currency': order['escrow'],
         'time': time(),
         'sum_currency': currency_arg,
         'init_id': call.from_user.id,
@@ -209,7 +210,7 @@ async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
     await call.answer()
     if edit:
         await tg.edit_message_text(
-            answer, call.message.chat.id, call.message.id,
+            answer, call.message.chat.id, call.message.message_id,
             reply_markup=keyboard
         )
     else:

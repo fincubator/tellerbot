@@ -52,8 +52,10 @@ def escrow_callback_handler(handler):
 
 def escrow_message_handler(handler):
     async def decorator(message: types.Message, state: FSMContext):
-        offer = await database.escrow.find_one({'init_id': message.from_user.id})
-
+        user_id = message.from_user.id
+        offer = await database.escrow.find_one(
+            {'$or': [{'init_id': user_id}, {'counter_id': user_id}]}
+        )
         if not offer:
             await tg.send_message(message.chat.id, _('Offer is not found.'))
             return
@@ -101,12 +103,8 @@ async def set_escrow_sum(message: types.Message, state: FSMContext, offer: Mappi
 @private_handler(state=states.Escrow.init_address)
 @escrow_message_handler
 async def set_init_address(message: types.Message, state: FSMContext, offer: Mapping[str, Any]):
-    if message.text > 35:
-        await tg.send_message(
-            message.chat.id,
-            _('This value should contain less than {} characters '
-              '(you sent {} characters).').format(35, len(message.text))
-        )
+    if len(message.text) > 35 or not all(ch in string.ascii_letters + string.digits for ch in message.text):
+        await tg.send_message(message.chat.id, _('Address is invalid.'))
         return
 
     await database.escrow.update_one(
@@ -138,7 +136,7 @@ async def set_init_address(message: types.Message, state: FSMContext, offer: Map
         _('Cancel'), callback_data='escrow_cancel {}'.format(offer['_id'])
     ))
     partial_edit = functools.partial(
-        tg.edit_message_text, answer, message.from_user.id, message.id,
+        tg.edit_message_reply_markup, message.chat.id, message.message_id,
         reply_markup=init_keyboard
     )
     asyncio.get_running_loop().call_later(3600, partial_edit)
@@ -160,7 +158,7 @@ async def accept_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     )
     await call.answer()
     await tg.send_message(
-        offer['counter_id'],
+        call.message.chat.id,
         _('Send your {} address.').format(offer['buy'])
     )
     await states.Escrow.counter_address.set()
@@ -169,10 +167,7 @@ async def accept_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
 @dp.callback_query_handler(lambda call: call.data.startswith('decline '))
 @escrow_callback_handler
 async def decline_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
-    init_state = FSMContext(dp.storage, offer['counter_id'], offer['counter_id'])
     await database.escrow.delete_one({'_id': offer['_id']})
-    await init_state.finish()
-    await dp.get_current().current_state().finish()
     await tg.send_message(offer['init_id'], _('Your escrow offer was declined.'))
     await call.answer()
     await tg.send_message(call.message.chat.id, _('Offer was declined.'))
@@ -181,7 +176,7 @@ async def decline_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
 @private_handler(state=states.Escrow.counter_address)
 @escrow_message_handler
 async def set_counter_address(message: types.Message, state: FSMContext, offer: Mapping[str, Any]):
-    if message.text >= 36 or not all(ch in string.ascii_letters + string.digits for ch in message.text):
+    if len(message.text) > 35 or not all(ch in string.ascii_letters + string.digits for ch in message.text):
         await tg.send_message(message.chat.id, _('Address is invalid.'))
         return
 
@@ -189,7 +184,6 @@ async def set_counter_address(message: types.Message, state: FSMContext, offer: 
         {'_id': offer['_id']},
         {'$set': {'counter_address': message.text}}
     )
-    init_state = FSMContext(dp.storage, offer['init_id'], offer['init_id'])
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
         InlineKeyboardButton(
@@ -199,55 +193,56 @@ async def set_counter_address(message: types.Message, state: FSMContext, offer: 
             _('Cancel'), callback_data='escrow_cancel {}'.format(offer['_id'])
         )
     )
-    await states.Escrow.transfer.set()
-    await init_state.set_state(states.Escrow.transfer)
     memo = markdown.code(
-        'escrow for', offer['sum_sell'], offer['sell'], 'to', offer['init_addess']
+        'escrow for', offer['sum_buy'], offer['buy'], 'to', offer['init_address']
     )
-    escrow_currency = offer['escrow']
+    escrow_currency = offer['escrow_currency']
     escrow_address = markdown.bold(ESCROW_CRYPTO_ADDRESS[offer[escrow_currency]])
-    if offer['escrow'] == 'buy':
+    if escrow_currency == 'buy':
         escrow_id = offer['init_id']
         send_reply = True
-    elif offer['escrow'] == 'sell':
+    elif escrow_currency == 'sell':
         escrow_id = offer['counter_id']
         send_reply = False
 
     await tg.send_message(
-        escrow_id, _('Send {} {} to address {} with memo {}').format(
-            offer[f'sum_{escrow_currency}'], offer[escrow_currency],
-            escrow_address, memo
-        ), reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
+        escrow_id,
+        _('Send {} {} to address {} with memo:').format(
+            offer[f'sum_{escrow_currency}'], offer[escrow_currency], escrow_address
+        ) + '\n' + memo,
+        reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
     )
     if send_reply:
+        keyboard = InlineKeyboardMarkup()
+        keyboard.add(InlineKeyboardButton(
+            _('Cancel'), callback_data='escrow_cancel {}'.format(offer['_id'])
+        ))
         await tg.send_message(
             message.chat.id,
             _('Transfer information sent.') + ' ' +
             _("I'll notify you when transaction is complete."),
             reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
         )
+    other_state = FSMContext(dp.storage, escrow_id, escrow_id)
+    await states.Escrow.transfer.set()
+    await other_state.set_state(states.Escrow.transfer)
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('escrow_cancel '))
+@dp.callback_query_handler(lambda call: call.data.startswith('escrow_cancel '), state=states.Escrow.transfer)
 @escrow_callback_handler
 async def cancel_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     answer = _('Escrow was cancelled.')
-    init_state = FSMContext(dp.storage, offer['counter_id'], offer['counter_id'])
     await database.escrow.delete_one({'_id': offer['_id']})
-    await init_state.finish()
-    await dp.get_current().current_state().finish()
-    await tg.send_message(
-        offer['init_id'], answer,
-        reply_markup=start_keyboard()
-    )
     await call.answer()
-    await tg.send_message(
-        call.message.chat.id, answer,
-        reply_markup=start_keyboard()
-    )
+    await tg.send_message(offer['init_id'], answer, reply_markup=start_keyboard())
+    await tg.send_message(offer['counter_id'], answer, reply_markup=start_keyboard())
+    init_state = FSMContext(dp.storage, offer['init_id'], offer['init_id'])
+    counter_state = FSMContext(dp.storage, offer['counter_id'], offer['counter_id'])
+    await init_state.finish()
+    await counter_state.finish()
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('sent '))
+@dp.callback_query_handler(lambda call: call.data.startswith('sent '), state=states.Escrow.transfer)
 @escrow_callback_handler
 async def sent_confirmation(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await call.answer('Not implemented yet.')
