@@ -18,10 +18,13 @@
 
 from aiogram.types import Message
 
-from . import tg, private_handler
+from . import tg, private_handler, start_keyboard
 from ..i18n import _
 
 
 @private_handler()
 async def default(message: Message):
-    await tg.send_message(message.chat.id, _('Unknown command.'))
+    await tg.send_message(
+        message.chat.id, _('Unknown command.'),
+        reply_markup=start_keyboard()
+    )
