@@ -206,6 +206,7 @@ async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
         'sum_currency': currency_arg,
         'init_id': call.from_user.id,
         'counter_id': order['user_id'],
+        'stage': 'pending'
     })
     await call.answer()
     if edit:

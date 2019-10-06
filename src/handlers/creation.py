@@ -33,7 +33,7 @@ from aiogram.dispatcher.filters.state import any_state
 
 from . import tg, dp, private_handler, state_handler, state_handlers, \
     show_order, validate_money, start_keyboard, inline_control_buttons
-from .. import escrow
+from ..escrow import get_escrow_object
 from ..database import database
 from ..i18n import i18n, _
 from ..states import OrderCreation
@@ -551,9 +551,9 @@ async def set_order(order: Mapping[str, Any], chat_id: int):
             order['sum_buy'].to_decimal() / order['sum_sell'].to_decimal()
         ))
     if 'price_sell' in order:
-        if order['buy'] in escrow.ESCROW_CRYPTO_ADDRESSES:
+        if get_escrow_object(order['buy']) is not None:
             order['escrow'] = 'buy'
-        elif order['sell'] in escrow.ESCROW_CRYPTO_ADDRESSES:
+        elif get_escrow_object(order['sell']) is not None:
             order['escrow'] = 'sell'
 
     inserted_order = await database.orders.insert_one(order)

@@ -31,7 +31,7 @@ from aiogram.utils import markdown
 
 from . import tg, dp, private_handler, show_order, validate_money, start_keyboard
 from ..database import database
-from ..escrow import ESCROW_CRYPTO_ADDRESS
+from ..escrow import get_escrow_object
 from ..i18n import _
 from .. import states
 from ..utils import normalize_money, MoneyValidationError
@@ -180,36 +180,41 @@ async def set_counter_address(message: types.Message, state: FSMContext, offer: 
         await tg.send_message(message.chat.id, _('Address is invalid.'))
         return
 
+    escrow_currency = offer['escrow_currency']
+    if escrow_currency == 'buy':
+        escrow_id = offer['init_id']
+        memo_address = offer['counter_address']
+        send_reply = True
+    elif escrow_currency == 'sell':
+        escrow_id = offer['counter_id']
+        memo_address = offer['init_address']
+        send_reply = False
+
+    memo = 'escrow for {} {} to {}'.format(
+        offer['sum_buy'], offer['buy'], memo_address
+    )
     await database.escrow.update_one(
         {'_id': offer['_id']},
-        {'$set': {'counter_address': message.text}}
+        {'$set': {
+            'counter_address': message.text,
+            'memo': memo
+        }}
     )
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
         InlineKeyboardButton(
-            _('Sent'), callback_data='sent {}'.format(offer['_id'])
+            _('Sent'), callback_data='escrow_sent {}'.format(offer['_id'])
         ),
         InlineKeyboardButton(
             _('Cancel'), callback_data='escrow_cancel {}'.format(offer['_id'])
         )
     )
-    memo = markdown.code(
-        'escrow for', offer['sum_buy'], offer['buy'], 'to', offer['init_address']
-    )
-    escrow_currency = offer['escrow_currency']
-    escrow_address = markdown.bold(ESCROW_CRYPTO_ADDRESS[offer[escrow_currency]])
-    if escrow_currency == 'buy':
-        escrow_id = offer['init_id']
-        send_reply = True
-    elif escrow_currency == 'sell':
-        escrow_id = offer['counter_id']
-        send_reply = False
-
+    escrow_address = markdown.bold(get_escrow_object(offer[escrow_currency]).address)
     await tg.send_message(
         escrow_id,
-        _('Send {} {} to address {} with memo:').format(
+        _('Send {} {} to address {}').format(
             offer[f'sum_{escrow_currency}'], offer[escrow_currency], escrow_address
-        ) + '\n' + memo,
+        ) + ' ' + _('with memo') + ':\n' + markdown.code(memo),
         reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
     )
     if send_reply:
@@ -228,6 +233,10 @@ async def set_counter_address(message: types.Message, state: FSMContext, offer: 
 @dp.callback_query_handler(lambda call: call.data.startswith('escrow_cancel '))
 @escrow_callback_handler
 async def cancel_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
+    if offer['stage'] == 'confirmed':
+        await call.answer(_("You can't cancel escrow on this stage."))
+        return
+
     answer = _('Escrow was cancelled.')
     await database.escrow.delete_one({'_id': offer['_id']})
     await call.answer()
@@ -239,7 +248,7 @@ async def cancel_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await counter_state.finish()
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('sent '))
+@dp.callback_query_handler(lambda call: call.data.startswith('escrow_sent '))
 @escrow_callback_handler
-async def sent_confirmation(call: types.CallbackQuery, offer: Mapping[str, Any]):
+async def escrow_sent_confirmation(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await call.answer('Not implemented yet.')

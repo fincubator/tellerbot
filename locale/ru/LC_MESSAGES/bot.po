@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-03 14:34+0300\n"
+"POT-Creation-Date: 2019-10-06 03:08+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -178,7 +178,7 @@ msgstr "Какую валюту вы хотите купить?"
 msgid "Currency may only contain latin characters."
 msgstr "Валюта может содержать только латинские символы."
 
-#: src/handlers/creation.py src/handlers/escrow.py src/handlers/order.py
+#: src/handlers/creation.py src/handlers/order.py
 msgid ""
 "This value should contain less than {} characters (you sent {} "
 "characters)."
@@ -244,6 +244,10 @@ msgstr "Заказ установлен."
 msgid "Unknown command."
 msgstr "Неизвестная команда."
 
+#: src/handlers/default.py
+msgid "Unknown button."
+msgstr "Неизвестная кнопка."
+
 #: src/handlers/escrow.py
 msgid "Offer is not found."
 msgstr "Предложение не найдено."
@@ -255,6 +259,10 @@ msgstr "Отправьте число, не превышающее сумму з
 #: src/handlers/escrow.py
 msgid "Send your {} address."
 msgstr "Отправьте ваш адрес {}."
+
+#: src/handlers/escrow.py
+msgid "Address is invalid."
+msgstr "Адрес неверный."
 
 #: src/handlers/escrow.py
 msgid "Accept"
@@ -293,20 +301,24 @@ msgid "Offer was declined."
 msgstr "Предложение отклонено."
 
 #: src/handlers/escrow.py
-msgid "Address is invalid."
-msgstr "Адрес неверный."
-
-#: src/handlers/escrow.py
 msgid "Sent"
 msgstr "Отправлено"
 
 #: src/handlers/escrow.py
-msgid "Send {} {} to address {} with memo {}"
-msgstr "Отправьте {} {} на адрес {} с memo {}"
+msgid "Send {} {} to address {}"
+msgstr "Отправьте {} {} на адрес {}"
+
+#: src/handlers/escrow.py
+msgid "with memo"
+msgstr "с мемо"
 
 #: src/handlers/escrow.py
 msgid "Transfer information sent."
 msgstr "Информация для перевода отправлена."
+
+#: src/handlers/escrow.py
+msgid "You can't cancel escrow on this stage."
+msgstr "Вы не можете отменить эскроу на этой стадии."
 
 #: src/handlers/escrow.py
 msgid "Escrow was cancelled."

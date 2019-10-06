@@ -16,4 +16,18 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
-ESCROW_CRYPTO_ADDRESS = {'GOLOS': 'tellerbot'}
+from abc import ABC, abstractmethod
+from decimal import Decimal
+
+
+class BaseEscrow(ABC):
+    assets = []
+    address = None
+
+    @abstractmethod
+    async def transfer(self, to: str, amount: Decimal, asset: str, memo: str):
+        pass
+
+    @abstractmethod
+    async def get_transaction(self, from_account: str, memo: str, time_start: float):
+        pass
