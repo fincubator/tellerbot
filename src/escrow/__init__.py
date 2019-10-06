@@ -16,11 +16,11 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from .golos import golos
+from .golos_escrow import golos_instance
 
 
 def get_escrow_object(asset: str):
-    if asset in golos.assets:
-        return golos
+    if asset in golos_instance.assets:
+        return golos_instance
     else:
         return None

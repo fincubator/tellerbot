@@ -23,11 +23,15 @@ from decimal import Decimal
 class BaseEscrow(ABC):
     assets = []
     address = None
+    explorer = ''
+
+    def trx_url(self, trx_id):
+        return self.explorer.format(trx_id)
 
     @abstractmethod
-    async def transfer(self, to: str, amount: Decimal, asset: str, memo: str):
+    async def transfer(self, to: str, amount: Decimal, asset: str):
         pass
 
     @abstractmethod
-    async def get_transaction(self, from_account: str, memo: str, time_start: float):
+    async def get_transaction(self, amount: Decimal, asset: str, memo: str, time_start: float):
         pass

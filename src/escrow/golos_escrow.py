@@ -24,41 +24,41 @@ from time import time
 from golos import Api
 from asyncio import get_event_loop
 
-from .base import BaseBlockchain
+from .base import BaseEscrow
 
 
 NODES = 'wss://api.golos.blckchnd.com/ws'
 EXPLORER = 'https://golos.cf/tx/?={}'
 
 
-class Golos(BaseBlockchain):
+class GolosEscrow(BaseEscrow):
     assets = ['GOLOS', 'GBG']
     address = 'tellerbot'
+    explorer = 'https://golos.cf/tx/?={}'
 
     def __init__(self):
         self.golos = Api(nodes=NODES)
 
-    def trx_url(trx_id):
-        return EXPLORER.format(trx_id)
-
-    async def transfer(self, to: str, amount: Decimal, asset: str, memo: str):
+    async def transfer(self, to: str, amount: Decimal, asset: str):
         with open('wif.json') as f:
             func = functools.partial(
                 self.golos.transfer,
-                to, amount, self.address, json.load(f)['golos'], asset, memo
+                to, amount, self.address, json.load(f)['golos'], asset
             )
         transaction = await get_event_loop().run_in_executor(None, func)
         return self.trx_url(transaction['id'])
 
-    async def get_transaction(self, from_account: str, amount: Decimal, memo: str, time_start: float):
+    async def get_transaction(self, amount: Decimal, asset: str, memo: str, time_start: float):
         func = functools.partial(
             self.golos.get_account_history,
             self.address, op_limit='transfer', age=int(time() - time_start)
         )
         history = await get_event_loop().run_in_executor(None, func)
         for transaction in history:
-            decimal_amount = Decimal(transaction['amount'].split()[0])
+            tr_amount, tr_asset = transaction['amount'].split()
+            decimal_amount = Decimal(tr_amount)
             if (transaction['to'] == self.address and
+               tr_asset == asset and
                decimal_amount == amount and
                transaction['memo'] == memo):
                 return transaction
@@ -66,4 +66,4 @@ class Golos(BaseBlockchain):
         return None
 
 
-golos = Golos()
+golos_instance = GolosEscrow()

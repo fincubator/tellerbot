@@ -197,29 +197,40 @@ async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
         callback_data='escrow {} {} 1'.format(order['_id'], new_currency_arg)
     ))
     answer = _('Send exchange sum in {}.').format(sum_currency)
-    await database.escrow.insert_one({
-        'order': order['_id'],
-        'buy': order['buy'],
-        'sell': order['sell'],
-        'escrow_currency': order['escrow'],
-        'time': time(),
-        'sum_currency': currency_arg,
-        'init_id': call.from_user.id,
-        'counter_id': order['user_id'],
-        'stage': 'pending'
-    })
-    await call.answer()
     if edit:
+        await database.escrow.update_one(
+            {'sell_id': call.from_user.id},
+            {'$set': {'sum_currency': currency_arg}}
+        )
+        await call.answer()
         await tg.edit_message_text(
             answer, call.message.chat.id, call.message.message_id,
             reply_markup=keyboard
         )
     else:
+        offer = ({
+            'order': order['_id'],
+            'buy': order['buy'],
+            'sell': order['sell'],
+            'escrow_currency': order['escrow'],
+            'time': time(),
+            'sum_currency': currency_arg,
+            'sell_id': call.from_user.id,
+            'buy_id': order['user_id'],
+            'stage': 'pending'
+        })
+        users = database.users.find({
+            'id': {'$in': [call.from_user.id, order['user_id']]}
+        })
+        async for user in users:
+            offer['locale_{}'.format(user['id'])] = user.get('locale')
+        await database.escrow.insert_one(offer)
+        await call.answer()
         await tg.send_message(
             call.message.chat.id, answer,
             reply_markup=keyboard
         )
-    await states.Escrow.sum.set()
+        await states.Escrow.sum.set()
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('edit '), state=any_state)

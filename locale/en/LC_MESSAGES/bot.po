@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-06 03:08+0300\n"
+"POT-Creation-Date: 2019-10-07 00:10+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -253,6 +253,26 @@ msgid "Send number not exceeding order's sum."
 msgstr ""
 
 #: src/handlers/escrow.py
+msgid "Do you agree to pay a fee of 5%?"
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "(You'll pay {} {})"
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "(You'll get {} {})"
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "Yes"
+msgstr ""
+
+#: src/handlers/escrow.py src/handlers/order.py
+msgid "No"
+msgstr ""
+
+#: src/handlers/escrow.py
 msgid "Send your {} address."
 msgstr ""
 
@@ -320,6 +340,42 @@ msgstr ""
 msgid "Escrow was cancelled."
 msgstr ""
 
+#: src/handlers/escrow.py
+msgid "Transaction is confirmed."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "I'll notify should you get {}."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "Transaction wasn't found."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "You got your {} {} back."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "Did you get {}?"
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "When your transfer is confirmed, I'll complete escrow."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "Escrow is completed!"
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "I sent you {} {}."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "We'll manually validate your request and decide on the return."
+msgstr ""
+
 #: src/handlers/order.py
 msgid "Order is not found."
 msgstr ""
@@ -362,10 +418,6 @@ msgstr ""
 
 #: src/handlers/order.py
 msgid "Yes, I'm totally sure"
-msgstr ""
-
-#: src/handlers/order.py
-msgid "No"
 msgstr ""
 
 #: src/handlers/order.py
