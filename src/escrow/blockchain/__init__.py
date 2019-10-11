@@ -20,7 +20,7 @@ from abc import ABC, abstractmethod
 from decimal import Decimal
 
 
-class BaseEscrow(ABC):
+class BaseBlockchain(ABC):
     assets = []
     address = None
     explorer = ''

@@ -34,7 +34,7 @@ from aiogram.utils import markdown
 
 from . import tg, dp, private_handler, show_order, validate_money, start_keyboard
 from ..database import database
-from ..escrow import get_escrow_object
+from ..escrow import get_escrow_instance
 from ..i18n import _
 from .. import states
 from ..utils import normalize_money, MoneyValidationError
@@ -321,7 +321,7 @@ async def set_buy_address(message: types.Message, state: FSMContext, offer: Mapp
             _('Cancel', locale=locale), callback_data='escrow_cancel {}'.format(offer['_id'])
         )
     )
-    escrow_address = markdown.bold(get_escrow_object(offer[escrow_currency]).address)
+    escrow_address = markdown.bold(get_escrow_instance(offer[escrow_currency]).address)
     await state.finish()
     await tg.send_message(
         escrow_id,
@@ -380,7 +380,7 @@ async def escrow_sent_confirmation(call: types.CallbackQuery, offer: Mapping[str
         other_id = offer['sell_id']
         new_currency = 'buy'
 
-    escrow_object = get_escrow_object(offer[escrow_currency])
+    escrow_object = get_escrow_instance(offer[escrow_currency])
     trx = await escrow_object.get_transaction(
         offer['sum_fee_up'].to_decimal(), offer[escrow_currency], offer['memo'], offer['react_time']
     )
@@ -436,7 +436,7 @@ async def cancel_confirmed_offer(call: types.CallbackQuery, offer: Mapping[str, 
         return_id = offer['buy_id']
         cancel_id = offer['sell_id']
 
-    escrow_object = get_escrow_object(offer[escrow_currency])
+    escrow_object = get_escrow_instance(offer[escrow_currency])
     trx_url = await escrow_object.transfer(
         offer['return_address'], offer['sum_fee_up'].to_decimal(), offer[escrow_currency]
     )
@@ -511,7 +511,7 @@ async def complete_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
         recipient = 'sell'
         other_id = offer['buy_id']
 
-    escrow_object = get_escrow_object(offer[escrow_currency])
+    escrow_object = get_escrow_instance(offer[escrow_currency])
     trx_url = await escrow_object.transfer(
         offer[f'{recipient}_address'], offer['sum_fee_down'].to_decimal(), offer[escrow_currency]
     )
@@ -534,7 +534,7 @@ async def complete_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
 @escrow_callback_handler
 async def validate_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     escrow_currency = offer['escrow_currency']
-    escrow_object = get_escrow_object(offer[escrow_currency])
+    escrow_object = get_escrow_instance(offer[escrow_currency])
     await tg.send_message(
         SUPPORT_CHAT_ID,
         'Unconfirmed escrow.\nTransaction: {}\nMemo: {}'.format(

@@ -24,14 +24,14 @@ from time import time
 from golos import Api
 from asyncio import get_event_loop
 
-from .base import BaseEscrow
+from .base import BaseBlockchain
 
 
 NODES = 'wss://api.golos.blckchnd.com/ws'
 EXPLORER = 'https://golos.cf/tx/?={}'
 
 
-class GolosEscrow(BaseEscrow):
+class GolosBlockchain(BaseBlockchain):
     assets = ['GOLOS', 'GBG']
     address = 'tellerbot'
     explorer = 'https://golos.cf/tx/?={}'
@@ -66,4 +66,4 @@ class GolosEscrow(BaseEscrow):
         return None
 
 
-golos_instance = GolosEscrow()
+golos_instance = GolosBlockchain()

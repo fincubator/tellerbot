@@ -16,11 +16,9 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from .golos_escrow import golos_instance
+from .blockchain.golos_blockchain import golos_instance
 
 
-def get_escrow_object(asset: str):
+def get_escrow_instance(asset: str):
     if asset in golos_instance.assets:
         return golos_instance
-    else:
-        return None
