@@ -196,7 +196,7 @@ async def set_sell_address(message: types.Message, state: FSMContext, offer: Map
         tg.edit_message_reply_markup, message.chat.id, reply.message_id,
         reply_markup=sell_keyboard
     )
-    asyncio.get_running_loop().call_later(3600, partial_edit)
+    asyncio.get_running_loop().call_later(60 * 60, partial_edit)
     await state.finish()
 
 
@@ -489,7 +489,7 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: Mapping[str
         tg.edit_message_reply_markup, call.message.chat.id, reply.message_id,
         reply_markup=keyboard
     )
-    asyncio.get_running_loop().call_later(600, partial_edit)
+    asyncio.get_running_loop().call_later(60 * 10, partial_edit)
     await call.answer()
     await tg.send_message(
         other_id,
