@@ -27,17 +27,13 @@ from asyncio import get_event_loop
 from .base import BaseBlockchain
 
 
-NODES = 'wss://api.golos.blckchnd.com/ws'
-EXPLORER = 'https://golos.cf/tx/?={}'
-
-
 class GolosBlockchain(BaseBlockchain):
     assets = ['GOLOS', 'GBG']
     address = 'tellerbot'
     explorer = 'https://golos.cf/tx/?={}'
 
     def __init__(self):
-        self.golos = Api(nodes=NODES)
+        self.golos = Api(nodes='wss://api.golos.blckchnd.com/ws')
 
     async def transfer(self, to: str, amount: Decimal, asset: str):
         with open('wif.json') as f:
