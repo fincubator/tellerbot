@@ -17,7 +17,7 @@
 
 
 from datetime import datetime
-import decimal
+from decimal import Decimal, InvalidOperation
 import math
 from time import time
 
@@ -67,8 +67,8 @@ def inline_control_buttons(no_back=False, no_next=False):
 
 async def validate_money(data, chat_id):
     try:
-        money = decimal.Decimal(data)
-    except decimal.InvalidOperation:
+        money = Decimal(data)
+    except InvalidOperation:
         raise MoneyValidationError(_('Send decimal number.'))
     if money <= 0:
         raise MoneyValidationError(_('Send positive number.'))
@@ -124,22 +124,30 @@ async def orders_list(
             else:
                 line += emojize(':pause_button: ')
 
+        exp = Decimal('1e-5')
+
         if 'sum_sell' in order:
-            line += '{:,.5f} '.format(order['sum_sell'].to_decimal())
+            line += '{:,} '.format(
+                normalize_money(order['sum_sell'].to_decimal(), exp)
+            )
         line += '{} → '.format(order['sell'])
 
         if 'sum_buy' in order:
-            line += '{:,.5f} '.format(order['sum_buy'].to_decimal())
+            line += '{:,} '.format(
+                normalize_money(order['sum_buy'].to_decimal(), exp)
+            )
         line += order['buy']
 
         if 'price_sell' in order:
             if invert:
-                line += ' ({:,.5f} {}/{})'.format(
-                    order['price_buy'].to_decimal(), order['buy'], order['sell']
+                line += ' ({:,} {}/{})'.format(
+                    normalize_money(order['price_buy'].to_decimal(), exp),
+                    order['buy'], order['sell']
                 )
             else:
-                line += ' ({:,.5f} {}/{})'.format(
-                    order['price_sell'].to_decimal(), order['sell'], order['buy']
+                line += ' ({:,} {}/{})'.format(
+                    normalize_money(order['price_sell'].to_decimal(), exp),
+                    order['sell'], order['buy']
                 )
 
         if user_id is not None and order['user_id'] == user_id:
