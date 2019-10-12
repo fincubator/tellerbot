@@ -32,43 +32,48 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
 from aiogram.dispatcher import FSMContext
 from aiogram.utils import markdown
 
-from . import tg, dp, private_handler, show_order, validate_money, start_keyboard
-from ..database import database
-from ..escrow import get_escrow_instance
-from ..i18n import _
-from .. import states
-from ..utils import normalize_money, MoneyValidationError
+from src.handlers import tg, dp, private_handler, show_order, validate_money, start_keyboard
+from src.database import database
+from src.escrow import get_escrow_instance
+from src.i18n import _
+from src import states
+from src.utils import normalize_money, MoneyValidationError
 
 
-def escrow_callback_handler(handler):
-    async def decorator(call: types.CallbackQuery):
-        offer_id = call.data.split()[1]
-        offer = await database.escrow.find_one({'_id': ObjectId(offer_id)})
+def escrow_callback_handler(*args, **kwargs):
+    def decorator(handler):
+        @dp.callback_query_handler(*args, **kwargs)
+        async def wrapper(call: types.CallbackQuery):
+            offer_id = call.data.split()[1]
+            offer = await database.escrow.find_one({'_id': ObjectId(offer_id)})
 
-        if not offer:
-            await call.answer(_('Offer is not found.'))
-            return
+            if not offer:
+                await call.answer(_('Offer is not found.'))
+                return
 
-        return await handler(call, offer)
+            return await handler(call, offer)
+        return wrapper
     return decorator
 
 
-def escrow_message_handler(handler):
-    async def decorator(message: types.Message, state: FSMContext):
-        user_id = message.from_user.id
-        offer = await database.escrow.find_one(
-            {'$or': [{'sell_id': user_id}, {'buy_id': user_id}]}
-        )
-        if not offer:
-            await tg.send_message(message.chat.id, _('Offer is not found.'))
-            return
+def escrow_message_handler(*args, **kwargs):
+    def decorator(handler):
+        @private_handler(*args, **kwargs)
+        async def wrapper(message: types.Message, state: FSMContext):
+            user_id = message.from_user.id
+            offer = await database.escrow.find_one(
+                {'$or': [{'sell_id': user_id}, {'buy_id': user_id}]}
+            )
+            if not offer:
+                await tg.send_message(message.chat.id, _('Offer is not found.'))
+                return
 
-        return await handler(message, state, offer)
+            return await handler(message, state, offer)
+        return wrapper
     return decorator
 
 
-@private_handler(state=states.Escrow.sum)
-@escrow_message_handler
+@escrow_message_handler(state=states.Escrow.sum)
 async def set_escrow_sum(message: types.Message, state: FSMContext, offer: Mapping[str, Any]):
     try:
         escrow_sum = await validate_money(message.text, message.chat.id)
@@ -125,8 +130,7 @@ async def set_escrow_sum(message: types.Message, state: FSMContext, offer: Mappi
     await states.Escrow.sell_fee.set()
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('sell_accept_fee '), state=states.Escrow.sell_fee)
-@escrow_callback_handler
+@escrow_callback_handler(lambda call: call.data.startswith('sell_accept_fee '), state=states.Escrow.sell_fee)
 async def sell_pay_fee(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await call.answer()
     await tg.send_message(
@@ -136,8 +140,7 @@ async def sell_pay_fee(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await states.Escrow.sell_address.set()
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('sell_decline_fee '), state=states.Escrow.sell_fee)
-@escrow_callback_handler
+@escrow_callback_handler(lambda call: call.data.startswith('sell_decline_fee '), state=states.Escrow.sell_fee)
 async def sell_decline_fee(call: types.CallbackQuery, offer: Mapping[str, Any]):
     sum_fee_field = call.data.split()[2]
     await database.escrow.update_one(
@@ -152,8 +155,7 @@ async def sell_decline_fee(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await states.Escrow.sell_address.set()
 
 
-@private_handler(state=states.Escrow.sell_address)
-@escrow_message_handler
+@escrow_message_handler(state=states.Escrow.sell_address)
 async def set_sell_address(message: types.Message, state: FSMContext, offer: Mapping[str, Any]):
     if len(message.text) > 35 or not all(ch in string.ascii_letters + string.digits for ch in message.text):
         await tg.send_message(message.chat.id, _('Address is invalid.'))
@@ -200,8 +202,7 @@ async def set_sell_address(message: types.Message, state: FSMContext, offer: Map
     await state.finish()
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('accept '))
-@escrow_callback_handler
+@escrow_callback_handler(lambda call: call.data.startswith('accept '))
 async def accept_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     locale = offer['locale_{}'.format(offer['sell_id'])]
     sell_keyboard = InlineKeyboardMarkup()
@@ -242,8 +243,7 @@ async def accept_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await states.Escrow.buy_fee.set()
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('decline '))
-@escrow_callback_handler
+@escrow_callback_handler(lambda call: call.data.startswith('decline '))
 async def decline_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     offer['react_time'] = time()
     await database.escrow_archive.insert_one(offer)
@@ -257,8 +257,7 @@ async def decline_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await tg.send_message(call.message.chat.id, _('Offer was declined.'))
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('buy_accept_fee '), state=states.Escrow.buy_fee)
-@escrow_callback_handler
+@escrow_callback_handler(lambda call: call.data.startswith('buy_accept_fee '), state=states.Escrow.buy_fee)
 async def buy_pay_fee(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await call.answer()
     await tg.send_message(
@@ -268,8 +267,7 @@ async def buy_pay_fee(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await states.Escrow.buy_address.set()
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('buy_decline_fee '), state=states.Escrow.buy_fee)
-@escrow_callback_handler
+@escrow_callback_handler(lambda call: call.data.startswith('buy_decline_fee '), state=states.Escrow.buy_fee)
 async def buy_decline_fee(call: types.CallbackQuery, offer: Mapping[str, Any]):
     sum_fee_field = call.data.split()[2]
     await database.escrow.update_one(
@@ -284,8 +282,7 @@ async def buy_decline_fee(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await states.Escrow.buy_address.set()
 
 
-@private_handler(state=states.Escrow.buy_address)
-@escrow_message_handler
+@escrow_message_handler(state=states.Escrow.buy_address)
 async def set_buy_address(message: types.Message, state: FSMContext, offer: Mapping[str, Any]):
     if len(message.text) > 35 or not all(ch in string.ascii_letters + string.digits for ch in message.text):
         await tg.send_message(message.chat.id, _('Address is invalid.'))
@@ -343,8 +340,7 @@ async def set_buy_address(message: types.Message, state: FSMContext, offer: Mapp
         )
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('escrow_cancel '))
-@escrow_callback_handler
+@escrow_callback_handler(lambda call: call.data.startswith('escrow_cancel '))
 async def cancel_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     if offer['stage'] == 'confirmed':
         await call.answer(_("You can't cancel escrow on this stage."))
@@ -366,8 +362,7 @@ async def cancel_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await buy_state.finish()
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('escrow_sent '))
-@escrow_callback_handler
+@escrow_callback_handler(lambda call: call.data.startswith('escrow_sent '))
 async def escrow_sent_confirmation(call: types.CallbackQuery, offer: Mapping[str, Any]):
     escrow_currency = offer['escrow_currency']
 
@@ -424,8 +419,7 @@ async def escrow_sent_confirmation(call: types.CallbackQuery, offer: Mapping[str
         await call.answer(_("Transaction wasn't found."))
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('tokens_cancel '))
-@escrow_callback_handler
+@escrow_callback_handler(lambda call: call.data.startswith('tokens_cancel '))
 async def cancel_confirmed_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     escrow_currency = offer['escrow_currency']
 
@@ -454,8 +448,7 @@ async def cancel_confirmed_offer(call: types.CallbackQuery, offer: Mapping[str, 
     await tg.send_message(return_id, return_answer, reply_markup=start_keyboard())
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('tokens_sent '))
-@escrow_callback_handler
+@escrow_callback_handler(lambda call: call.data.startswith('tokens_sent '))
 async def final_offer_confirmation(call: types.CallbackQuery, offer: Mapping[str, Any]):
     escrow_currency = offer['escrow_currency']
 
@@ -499,8 +492,7 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: Mapping[str
     )
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('escrow_complete '))
-@escrow_callback_handler
+@escrow_callback_handler(lambda call: call.data.startswith('escrow_complete '))
 async def complete_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     escrow_currency = offer['escrow_currency']
 
@@ -530,8 +522,7 @@ async def complete_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await call.answer()
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('escrow_validate '))
-@escrow_callback_handler
+@escrow_callback_handler(lambda call: call.data.startswith('escrow_validate '))
 async def validate_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     escrow_currency = offer['escrow_currency']
     escrow_object = get_escrow_instance(offer[escrow_currency])
