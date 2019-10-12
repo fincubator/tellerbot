@@ -19,8 +19,11 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from aiogram.dispatcher.storage import BaseStorage
 
+from config import DATABASE_NAME
+
+
 client = AsyncIOMotorClient()
-database = client.tellerbot
+database = client[DATABASE_NAME]
 
 STATE_KEY = 'state'
 
