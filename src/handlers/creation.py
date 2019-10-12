@@ -31,13 +31,13 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ContentTyp
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import any_state
 
-from . import tg, dp, private_handler, state_handler, state_handlers, \
-    show_order, validate_money, start_keyboard, inline_control_buttons
-from ..escrow import get_escrow_object
-from ..database import database
-from ..i18n import i18n, _
-from ..states import OrderCreation
-from ..utils import normalize_money, MoneyValidationError
+from src.handlers import tg, dp, private_handler, start_keyboard, inline_control_buttons
+from src.handlers import state_handler, state_handlers, show_order, validate_money
+from src.escrow import get_escrow_object
+from src.database import database
+from src.i18n import i18n, _
+from src.states import OrderCreation
+from src.utils import normalize_money, MoneyValidationError
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('state '), state=any_state)

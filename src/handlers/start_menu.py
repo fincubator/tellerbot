@@ -29,10 +29,10 @@ from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 
 from config import ORDERS_LIMIT_HOURS, ORDERS_LIMIT_COUNT
-from . import tg, private_handler, start_keyboard, inline_control_buttons, help_message, orders_list
-from ..database import database
-from ..i18n import i18n, _
-from .. import states
+from src.handlers import tg, private_handler, start_keyboard, inline_control_buttons, help_message, orders_list
+from src.database import database
+from src.i18n import i18n, _
+from src import states
 
 
 @private_handler(commands=['start'], state=any_state)

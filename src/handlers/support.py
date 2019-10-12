@@ -22,9 +22,9 @@ from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 
 import config
-from . import tg, dp, private_handler, start_keyboard
-from ..i18n import _
-from ..states import asking_support
+from src.handlers import tg, dp, private_handler, start_keyboard
+from src.i18n import _
+from src.states import asking_support
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('unhelp'), state=asking_support)

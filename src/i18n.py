@@ -24,7 +24,7 @@ from babel import Locale
 from aiogram.contrib.middlewares.i18n import I18nMiddleware
 from aiogram.types import User
 
-from .database import database
+from src.database import database
 
 
 class I18nMiddlewareManual(I18nMiddleware):

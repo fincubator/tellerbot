@@ -21,8 +21,8 @@ from asyncio import get_event_loop
 from aiogram.utils import executor
 
 import config
-from .notifications import run_loop
-from .registered_handlers import tg, dp
+from src.notifications import run_loop
+from src.registered_handlers import tg, dp
 
 
 async def on_startup(dp):

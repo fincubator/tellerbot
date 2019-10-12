@@ -19,8 +19,8 @@
 from aiogram.types import Message, CallbackQuery
 from aiogram.dispatcher.filters.state import any_state
 
-from . import tg, dp, private_handler, start_keyboard
-from ..i18n import _
+from src.handlers import tg, dp, private_handler, start_keyboard
+from src.i18n import _
 
 
 @private_handler(state=any_state)

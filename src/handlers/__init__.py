@@ -28,9 +28,9 @@ from aiogram.utils.emoji import emojize
 from aiogram.utils.exceptions import MessageNotModified
 
 import config
-from ..bot import tg, dp, private_handler, state_handler, state_handlers
-from ..i18n import _
-from ..utils import normalize_money, LOW_EXP, HIGH_EXP, MoneyValidationError
+from src.bot import tg, dp, private_handler, state_handler, state_handlers
+from src.i18n import _
+from src.utils import normalize_money, LOW_EXP, HIGH_EXP, MoneyValidationError
 
 
 def help_message():

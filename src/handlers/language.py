@@ -19,9 +19,9 @@
 from aiogram.types import CallbackQuery
 from aiogram.dispatcher.filters.state import any_state
 
-from . import tg, dp, help_message, start_keyboard
-from ..database import database
-from ..i18n import i18n
+from src.handlers import tg, dp, help_message, start_keyboard
+from src.database import database
+from src.i18n import i18n
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('locale '), state=any_state)

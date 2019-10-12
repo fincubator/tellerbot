@@ -24,7 +24,7 @@ from time import time
 from golos import Api
 from asyncio import get_event_loop
 
-from .base import BaseBlockchain
+from src.escrow.blockchain import BaseBlockchain
 
 
 class GolosBlockchain(BaseBlockchain):

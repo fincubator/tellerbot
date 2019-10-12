@@ -16,7 +16,7 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from .blockchain.golos_blockchain import golos_instance
+from src.escrow.blockchain.golos_blockchain import golos_instance
 
 
 def get_escrow_instance(asset: str):

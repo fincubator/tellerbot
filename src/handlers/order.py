@@ -29,11 +29,11 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import any_state
 
-from . import tg, dp, private_handler, show_order, show_orders, validate_money, orders_list
-from ..database import database, STATE_KEY
-from ..i18n import _
-from .. import states
-from ..utils import normalize_money, MoneyValidationError
+from src.handlers import tg, dp, private_handler, show_order, show_orders, validate_money, orders_list
+from src.database import database, STATE_KEY
+from src.i18n import _
+from src import states
+from src.utils import normalize_money, MoneyValidationError
 
 
 def order_handler(handler):

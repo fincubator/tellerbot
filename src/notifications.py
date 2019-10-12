@@ -21,10 +21,10 @@ from time import time
 
 from aiogram.utils.exceptions import TelegramAPIError
 
-from .bot import tg
-from .database import database
-from .handlers import show_order
-from .i18n import _
+from src.bot import tg
+from src.database import database
+from src.handlers import show_order
+from src.i18n import _
 
 
 async def expired_order():

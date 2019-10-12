@@ -1,13 +1,8 @@
-#################################
-#       Order of handlers       #
-#################################
-from .handlers import start_menu
-from .handlers import language
-from .handlers import order
-from .handlers import escrow
-from .handlers import creation
-from .handlers import support
-from .handlers import default
-#################################
-
-from .handlers import tg, dp
+from src.handlers import start_menu
+from src.handlers import language
+from src.handlers import order
+from src.handlers import escrow
+from src.handlers import creation
+from src.handlers import support
+from src.handlers import default
+from src.handlers import tg, dp
