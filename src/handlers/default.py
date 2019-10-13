@@ -46,7 +46,7 @@ async def default_callback_query(call: CallbackQuery):
 
 @dp.errors_handler()
 async def errors_handler(update, exception):
-    log.error('Error handling request', exc_info=True)
+    log.error('Error handling request {}'.format(update.update_id), exc_info=True)
 
     chat_id = None
     if update.message:
