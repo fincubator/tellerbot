@@ -208,28 +208,42 @@ async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
             reply_markup=keyboard
         )
     else:
-        offer = ({
+        active_escrow = await database.escrow.find_one({
+            '$or': [{'init.id': call.from_user.id}, {'counter.id': order['user_id']}],
+            'stage': 'active'
+        })
+        if active_escrow:
+            if active_escrow['init']['id'] == call.from_user.id:
+                await call.answer(_("You're already in active escrow."))
+            else:
+                await call.answer(_('Order creator is already in active escrow.'))
+            return
+
+        init_user = await database.users.find_one({'id': call.from_user.id})
+        counter_user = await database.users.find_one({'id': order['user_id']})
+        await database.escrow.delete_many({
+            'init.id': init_user['id'],
+            'stage': 'creation'
+        })
+        await database.escrow.insert_one({
             'order': order['_id'],
             'buy': order['buy'],
             'sell': order['sell'],
-            'escrow_currency': order['escrow'],
+            'type': order['escrow'],
             'time': time(),
             'sum_currency': currency_arg,
-            'sell_id': call.from_user.id,
-            'buy_id': order['user_id'],
-            'stage': 'pending'
+            'init': {
+                'id': init_user['id'],
+                'locale': init_user.get('locale')
+            },
+            'counter': {
+                'id': counter_user['id'],
+                'locale': counter_user.get('locale')
+            },
+            'stage': 'creation',
         })
-        users = database.users.find({
-            'id': {'$in': [call.from_user.id, order['user_id']]}
-        })
-        async for user in users:
-            offer['locale_{}'.format(user['id'])] = user.get('locale')
-        await database.escrow.insert_one(offer)
         await call.answer()
-        await tg.send_message(
-            call.message.chat.id, answer,
-            reply_markup=keyboard
-        )
+        await tg.send_message(call.message.chat.id, answer, reply_markup=keyboard)
         await states.Escrow.sum.set()
 
 

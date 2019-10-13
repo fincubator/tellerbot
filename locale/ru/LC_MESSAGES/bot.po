@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-07 00:10+0300\n"
+"POT-Creation-Date: 2019-10-13 07:05+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -397,6 +397,14 @@ msgid "Send exchange sum in {}."
 msgstr "Отправьте сумму обмена в {}."
 
 #: src/handlers/order.py
+msgid "You're already in active escrow."
+msgstr "Вы уже в активном эскроу."
+
+#: src/handlers/order.py
+msgid "Order creator is already in active escrow."
+msgstr "Создатель заявки уже в активном эскроу."
+
+#: src/handlers/order.py
 msgid "Send new amount of buying."
 msgstr "Отправьте новую сумму покупки."
 
@@ -467,3 +475,4 @@ msgstr "Ответ отправлен."
 #: src/notifications.py
 msgid "Your order has expired."
 msgstr "Срок действия вашего заказа истёк."
+
