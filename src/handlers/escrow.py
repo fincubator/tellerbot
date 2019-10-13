@@ -184,10 +184,7 @@ async def set_init_send_address(message: types.Message, state: FSMContext, offer
         return
 
     await offer.update_document(
-        {'$set': {
-            'init.send_address': message.text,
-            'stage': 'pending'
-        }}
+        {'$set': {'init.send_address': message.text, 'stage': 'pending'}}
     )
     order = await database.orders.find_one({'_id': offer.order})
     await show_order(
@@ -245,10 +242,7 @@ async def accept_offer(call: types.CallbackQuery, offer: EscrowOffer):
         'stage': 'pending'
     })
     await offer.update_document(
-        {'$set': {
-            'stage': 'active',
-            'react_time': time()
-        }}
+        {'$set': {'stage': 'active', 'react_time': time()}}
     )
     answer = _('Do you agree to pay a fee of 5%?') + ' '
     if offer.type == 'buy':
@@ -348,7 +342,8 @@ async def set_counter_send_address(message: types.Message, state: FSMContext, of
     await offer.update_document(
         {'$set': {
             'counter.send_address': message.text,
-            'memo': memo
+            'memo': memo,
+            'transaction_time': time(),
         }}
     )
     keyboard = InlineKeyboardMarkup()
@@ -421,7 +416,7 @@ async def escrow_sent_confirmation(call: types.CallbackQuery, offer: EscrowOffer
         offer.sum_fee_up.to_decimal(),
         offer[offer.type],
         offer.memo,
-        offer.react_time
+        offer.transaction_time
     )
     if trx:
         url = markdown.link(

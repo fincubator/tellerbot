@@ -43,6 +43,8 @@ class EscrowOffer:
     sum_fee_down: Optional[Decimal128] = None
     buy_address: Optional[str] = None
     sell_address: Optional[str] = None
+    react_time: Optional[float] = None
+    transaction_time: Optional[float] = None
     memo: Optional[str] = None
     return_address: Optional[str] = None
     trx_id: Optional[str] = None
