@@ -174,7 +174,7 @@ async def set_sell_address(message: types.Message, state: FSMContext, offer: Esc
         order, offer.counter['id'], offer.counter['id'],
         show_id=True
     )
-    locale = offer['locale_{}'.format(offer.counter['id'])]
+    locale = offer.counter['locale']
     buy_keyboard = InlineKeyboardMarkup()
     buy_keyboard.add(
         InlineKeyboardButton(
@@ -260,8 +260,7 @@ async def decline_offer(call: types.CallbackQuery, offer: EscrowOffer):
     await offer.delete_document()
     await tg.send_message(
         offer.init['id'],
-        _('Your escrow offer was declined.',
-          locale=offer['locale_{}'.format(offer.init['id'])])
+        _('Your escrow offer was declined.', locale=offer.init['locale'])
     )
     await call.answer()
     await tg.send_message(call.message.chat.id, _('Offer was declined.'))
@@ -356,10 +355,8 @@ async def cancel_offer(call: types.CallbackQuery, offer: EscrowOffer):
         await call.answer(_("You can't cancel escrow on this stage."))
         return
 
-    sell_answer = _('Escrow was cancelled.',
-                    locale=offer['locale_{}'.format(offer.init['id'])])
-    buy_answer = _('Escrow was cancelled.',
-                   locale=offer['locale_{}'.format(offer.counter['id'])])
+    sell_answer = _('Escrow was cancelled.', locale=offer.init['locale'])
+    buy_answer = _('Escrow was cancelled.', locale=offer.counter['locale'])
     offer.cancel_time = time()
     await offer.delete_document()
     await call.answer()
@@ -434,28 +431,26 @@ async def cancel_confirmed_offer(call: types.CallbackQuery, offer: EscrowOffer):
     escrow_currency = offer.type
 
     if escrow_currency == 'buy':
-        return_id = offer.init['id']
-        locale = offer.init['locale']
-        cancel_id = offer.counter['id']
+        return_user = offer.init
+        cancel_user = offer.counter
     elif escrow_currency == 'sell':
-        return_id = offer.counter['id']
-        locale = offer.counter['locale']
-        cancel_id = offer.init['id']
+        return_user = offer.counter
+        cancel_user = offer.init
 
     escrow_instance = get_escrow_instance(offer[escrow_currency])
     trx_url = await escrow_instance.transfer(
         offer.return_address, offer.sum_fee_up.to_decimal(), offer[escrow_currency]
     )
-    cancel_answer = _('Escrow was cancelled.', locale=offer['locale_{}'.format(cancel_id)])
-    return_answer = _('Escrow was cancelled.', locale=locale) + ' ' + markdown.link(
-        _('You got your {} {} back.', locale=locale).format(
+    cancel_answer = _('Escrow was cancelled.', locale=cancel_user['locale'])
+    return_answer = _('Escrow was cancelled.', locale=return_user['locale']) + ' ' + markdown.link(
+        _('You got your {} {} back.', locale=return_user['locale']).format(
             offer.sum_fee_up, offer[escrow_currency]
         ), trx_url
     )
     await offer.delete_document()
     await call.answer()
-    await tg.send_message(cancel_id, cancel_answer, reply_markup=start_keyboard())
-    await tg.send_message(return_id, return_answer, reply_markup=start_keyboard())
+    await tg.send_message(cancel_user['id'], cancel_answer, reply_markup=start_keyboard())
+    await tg.send_message(return_user['id'], return_answer, reply_markup=start_keyboard())
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('tokens_sent '))
@@ -463,30 +458,30 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer
     escrow_currency = offer.type
 
     if escrow_currency == 'buy':
-        confirm_id = offer.init['id']
-        locale = offer.init['locale']
-        other_id = offer.counter['id']
+        confirm_user = offer.init
+        other_user = offer.counter
         new_currency = 'sell'
     elif escrow_currency == 'sell':
-        confirm_id = offer.counter['id']
-        locale = offer.counter['locale']
-        other_id = offer.init['id']
+        confirm_user = offer.counter
+        other_user = offer.init
         new_currency = 'buy'
 
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
         InlineKeyboardButton(
-            _('Yes', locale=locale), callback_data='escrow_complete {}'.format(offer._id)
+            _('Yes', locale=confirm_user['locale']),
+            callback_data='escrow_complete {}'.format(offer._id)
         )
     )
     reply = await tg.send_message(
-        confirm_id,
-        _('Did you get {}?', locale=confirm_id).format(offer[new_currency]),
+        confirm_user['id'],
+        _('Did you get {}?', locale=confirm_user['locale']).format(offer[new_currency]),
         reply_markup=keyboard
     )
     keyboard.add(
         InlineKeyboardButton(
-            _('No', locale=locale), callback_data='escrow_validate {}'.format(offer._id)
+            _('No', locale=confirm_user['locale']),
+            callback_data='escrow_validate {}'.format(offer._id)
         )
     )
     partial_edit = functools.partial(
@@ -496,9 +491,9 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer
     asyncio.get_running_loop().call_later(60 * 10, partial_edit)
     await call.answer()
     await tg.send_message(
-        other_id,
+        other_user['id'],
         _("When your transfer is confirmed, I'll complete escrow.",
-          locale=offer['locale_{}'.format(other_id)]),
+          locale=other_user['locale']),
         reply_markup=start_keyboard()
     )
 
@@ -508,27 +503,27 @@ async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
     escrow_currency = offer.type
 
     if escrow_currency == 'buy':
-        recipient = 'buy'
-        other_id = offer.init['id']
+        recipient_user = offer.counter
+        other_user = offer.init
     elif escrow_currency == 'sell':
-        recipient = 'sell'
-        other_id = offer.counter['id']
+        recipient_user = offer.init
+        other_user = offer.counter
 
     escrow_instance = get_escrow_instance(offer[escrow_currency])
     trx_url = await escrow_instance.transfer(
-        offer[f'{recipient}_address'], offer.sum_fee_down.to_decimal(), offer[escrow_currency]
+        offer[f'{escrow_currency}_address'],
+        offer.sum_fee_down.to_decimal(),
+        offer[escrow_currency]
     )
-    recipient_id = offer[f'{recipient}_id']
-    locale = offer['locale_{}'.format(recipient_id)]
-    answer = _('Escrow is completed!', locale=offer['locale_{}'.format(other_id)])
-    recipient_answer = _('Escrow is completed!', locale=locale) + ' ' + markdown.link(
-        _('I sent you {} {}.', locale=locale).format(
+    answer = _('Escrow is completed!', locale=other_user['locale'])
+    recipient_answer = _('Escrow is completed!', locale=recipient_user['locale']) + ' ' + markdown.link(
+        _('I sent you {} {}.', locale=recipient_user['locale']).format(
             offer.sum_fee_down, offer[escrow_currency]
         ), trx_url
     )
     await offer.delete_document()
-    await tg.send_message(recipient_id, recipient_answer, reply_markup=start_keyboard())
-    await tg.send_message(other_id, answer, reply_markup=start_keyboard())
+    await tg.send_message(recipient_user['id'], recipient_answer, reply_markup=start_keyboard())
+    await tg.send_message(other_user['id'], answer, reply_markup=start_keyboard())
     await call.answer()
 
 
