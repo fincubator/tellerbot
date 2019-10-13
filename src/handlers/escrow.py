@@ -34,7 +34,7 @@ from aiogram.utils import markdown
 
 from src.handlers import tg, dp, private_handler, show_order, validate_money, start_keyboard
 from src.database import database
-from src.escrow import get_escrow_instance
+from src.escrow import EscrowOffer, get_escrow_instance
 from src.i18n import _
 from src import states
 from src.utils import normalize_money, MoneyValidationError
@@ -51,7 +51,7 @@ def escrow_callback_handler(*args, **kwargs):
                 await call.answer(_('Offer is not found.'))
                 return
 
-            return await handler(call, offer)
+            return await handler(call, EscrowOffer(**offer))
         return wrapper
     return decorator
 
@@ -72,21 +72,21 @@ def escrow_message_handler(*args, id_filter: Optional[str] = None, stage: Option
                 await tg.send_message(message.chat.id, _('Offer is not found.'))
                 return
 
-            return await handler(message, state, offer)
+            return await handler(message, state, EscrowOffer(**offer))
         return wrapper
     return decorator
 
 
 @escrow_message_handler(id_filter='init.id', stage='creation', state=states.Escrow.sum)
-async def set_escrow_sum(message: types.Message, state: FSMContext, offer: Mapping[str, Any]):
+async def set_escrow_sum(message: types.Message, state: FSMContext, offer: EscrowOffer):
     try:
         escrow_sum = await validate_money(message.text, message.chat.id)
     except MoneyValidationError as exception:
         await tg.send_message(message.chat.id, str(exception))
         return
 
-    order = await database.orders.find_one({'_id': offer['order']})
-    order_sum = order.get(offer['sum_currency'])
+    order = await database.orders.find_one({'_id': offer.order})
+    order_sum = order.get(offer.sum_currency)
     if order_sum and escrow_sum > order_sum.to_decimal():
         await tg.send_message(
             message.chat.id,
@@ -94,12 +94,12 @@ async def set_escrow_sum(message: types.Message, state: FSMContext, offer: Mappi
         )
         return
 
-    update_dict = {offer['sum_currency']: Decimal128(escrow_sum)}
-    new_currency = 'sell' if offer['sum_currency'] == 'sum_buy' else 'buy'
+    update_dict = {offer.sum_currency: Decimal128(escrow_sum)}
+    new_currency = 'sell' if offer.sum_currency == 'sum_buy' else 'buy'
     update_dict[f'sum_{new_currency}'] = Decimal128(normalize_money(
         escrow_sum * order[f'price_{new_currency}'].to_decimal()
     ))
-    escrow_currency = offer['type']
+    escrow_currency = offer.type
     escrow_sum = update_dict[f'sum_{escrow_currency}']
     update_dict['sum_fee_up'] = Decimal128(normalize_money(
         escrow_sum.to_decimal() * Decimal('1.05')
@@ -108,8 +108,7 @@ async def set_escrow_sum(message: types.Message, state: FSMContext, offer: Mappi
         escrow_sum.to_decimal() * Decimal('0.95')
     ))
 
-    await database.escrow.update_one(
-        {'_id': offer['_id']},
+    await offer.update_document(
         {'$set': update_dict, '$unset': {'sum_currency': True}}
     )
     answer = _('Do you agree to pay a fee of 5%?') + ' '
@@ -122,10 +121,10 @@ async def set_escrow_sum(message: types.Message, state: FSMContext, offer: Mappi
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
         InlineKeyboardButton(
-            _('Yes'), callback_data='sell_accept_fee {} {}'.format(offer['_id'], sum_fee_field)
+            _('Yes'), callback_data='sell_accept_fee {} {}'.format(offer._id, sum_fee_field)
         ),
         InlineKeyboardButton(
-            _('No'), callback_data='sell_decline_fee {} {}'.format(offer['_id'], sum_fee_field)
+            _('No'), callback_data='sell_decline_fee {} {}'.format(offer._id, sum_fee_field)
         )
     )
     answer = answer.format(update_dict[sum_fee_field], offer[escrow_currency])
@@ -134,63 +133,62 @@ async def set_escrow_sum(message: types.Message, state: FSMContext, offer: Mappi
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('sell_accept_fee '), state=states.Escrow.sell_fee)
-async def sell_pay_fee(call: types.CallbackQuery, offer: Mapping[str, Any]):
+async def sell_pay_fee(call: types.CallbackQuery, offer: EscrowOffer):
     await call.answer()
     await tg.send_message(
         call.message.chat.id,
-        _('Send your {} address.').format(offer['sell'])
+        _('Send your {} address.').format(offer.sell)
     )
     await states.Escrow.sell_address.set()
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('sell_decline_fee '), state=states.Escrow.sell_fee)
-async def sell_decline_fee(call: types.CallbackQuery, offer: Mapping[str, Any]):
+async def sell_decline_fee(call: types.CallbackQuery, offer: EscrowOffer):
     sum_fee_field = call.data.split()[2]
-    await database.escrow.update_one(
-        {'_id': offer['_id']},
-        {'$set': {sum_fee_field: offer['sum_' + offer['type']]}}
+    await offer.update_document(
+        {'$set': {sum_fee_field: offer['sum_' + offer.type]}}
     )
     await call.answer()
     await tg.send_message(
         call.message.chat.id,
-        _('Send your {} address.').format(offer['sell'])
+        _('Send your {} address.').format(offer.sell)
     )
     await states.Escrow.sell_address.set()
 
 
 @escrow_message_handler(id_filter='init.id', stage='creation', state=states.Escrow.sell_address)
-async def set_sell_address(message: types.Message, state: FSMContext, offer: Mapping[str, Any]):
+async def set_sell_address(message: types.Message, state: FSMContext, offer: EscrowOffer):
     if len(message.text) > 35 or not all(ch in string.ascii_letters + string.digits for ch in message.text):
         await tg.send_message(message.chat.id, _('Address is invalid.'))
         return
 
     await database.escrow.update_one(
-        {'_id': offer['_id']},
+        {'_id': offer._id},
         {'$set': {
             'sell_address': message.text,
             'stage': 'pending'
         }}
     )
-    order = await database.orders.find_one({'_id': offer['order']})
+    order = await database.orders.find_one({'_id': offer.order})
     await show_order(
-        order, offer['counter']['id'], offer['counter']['id'],
+        order, offer.counter['id'], offer.counter['id'],
         show_id=True
     )
-    locale = offer['locale_{}'.format(offer['counter']['id'])]
+    locale = offer['locale_{}'.format(offer.counter['id'])]
     buy_keyboard = InlineKeyboardMarkup()
     buy_keyboard.add(
         InlineKeyboardButton(
-            _('Accept', locale=locale), callback_data='accept {}'.format(offer['_id'])
+            _('Accept', locale=locale), callback_data='accept {}'.format(offer._id)
         ),
         InlineKeyboardButton(
-            _('Decline', locale=locale), callback_data='decline {}'.format(offer['_id'])
+            _('Decline', locale=locale), callback_data='decline {}'.format(offer._id)
         )
     )
     await tg.send_message(
-        offer['counter']['id'],
+        offer.counter['id'],
         _('You got an escrow offer to sell {} {} for {} {}.', locale=locale).format(
-            offer['sum_sell'], offer['sell'],
-            offer['sum_buy'], offer['buy']
+            offer.sum_sell, offer.sell,
+            offer.sum_buy, offer.buy
         ),
         reply_markup=buy_keyboard
     )
@@ -198,7 +196,7 @@ async def set_sell_address(message: types.Message, state: FSMContext, offer: Map
     reply = await tg.send_message(message.from_user.id, answer)
     sell_keyboard = InlineKeyboardMarkup()
     sell_keyboard.add(InlineKeyboardButton(
-        _('Cancel'), callback_data='escrow_cancel {}'.format(offer['_id'])
+        _('Cancel'), callback_data='escrow_cancel {}'.format(offer._id)
     ))
     partial_edit = functools.partial(
         tg.edit_message_reply_markup, message.chat.id, reply.message_id,
@@ -209,14 +207,14 @@ async def set_sell_address(message: types.Message, state: FSMContext, offer: Map
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('accept '))
-async def accept_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
-    locale = offer['init']['locale']
+async def accept_offer(call: types.CallbackQuery, offer: EscrowOffer):
+    locale = offer.init['locale']
     sell_keyboard = InlineKeyboardMarkup()
     sell_keyboard.add(InlineKeyboardButton(
-        _('Cancel', locale=locale), callback_data='escrow_cancel {}'.format(offer['_id'])
+        _('Cancel', locale=locale), callback_data='escrow_cancel {}'.format(offer._id)
     ))
     await tg.send_message(
-        offer['init']['id'],
+        offer.init['id'],
         _('Your escrow offer was accepted.', locale=locale) + ' ' +
         _("I'll notify you when transaction is complete.", locale=locale),
         reply_markup=sell_keyboard
@@ -224,18 +222,18 @@ async def accept_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     await call.answer()
 
     await database.escrow.delete_many({
-        'init.id': offer['init']['id'],
+        'init.id': offer.init['id'],
         'stage': 'pending'
     })
     await database.escrow.update_one(
-        {'_id': offer['_id']},
+        {'_id': offer._id},
         {'$set': {
             'stage': 'active',
             'react_time': time()
         }}
     )
     answer = _('Do you agree to pay a fee of 5%?') + ' '
-    escrow_currency = offer['type']
+    escrow_currency = offer.type
     if escrow_currency == 'buy':
         answer += _("(You'll get {} {})")
         sum_fee_field = 'sum_fee_down'
@@ -246,10 +244,10 @@ async def accept_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
     buy_keyboard = InlineKeyboardMarkup()
     buy_keyboard.add(
         InlineKeyboardButton(
-            _('Yes'), callback_data='buy_accept_fee {} {}'.format(offer['_id'], sum_fee_field)
+            _('Yes'), callback_data='buy_accept_fee {} {}'.format(offer._id, sum_fee_field)
         ),
         InlineKeyboardButton(
-            _('No'), callback_data='buy_decline_fee {} {}'.format(offer['_id'], sum_fee_field)
+            _('No'), callback_data='buy_decline_fee {} {}'.format(offer._id, sum_fee_field)
         )
     )
     await tg.send_message(call.message.chat.id, answer, reply_markup=buy_keyboard)
@@ -257,67 +255,65 @@ async def accept_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('decline '))
-async def decline_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
-    offer['react_time'] = time()
-    await database.escrow_archive.insert_one(offer)
-    await database.escrow.delete_one({'_id': offer['_id']})
+async def decline_offer(call: types.CallbackQuery, offer: EscrowOffer):
+    offer.react_time = time()
+    await offer.delete_document()
     await tg.send_message(
-        offer['init']['id'],
+        offer.init['id'],
         _('Your escrow offer was declined.',
-          locale=offer['locale_{}'.format(offer['init']['id'])])
+          locale=offer['locale_{}'.format(offer.init['id'])])
     )
     await call.answer()
     await tg.send_message(call.message.chat.id, _('Offer was declined.'))
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('buy_accept_fee '), state=states.Escrow.buy_fee)
-async def buy_pay_fee(call: types.CallbackQuery, offer: Mapping[str, Any]):
+async def buy_pay_fee(call: types.CallbackQuery, offer: EscrowOffer):
     await call.answer()
     await tg.send_message(
         call.message.chat.id,
-        _('Send your {} address.').format(offer['buy'])
+        _('Send your {} address.').format(offer.buy)
     )
     await states.Escrow.buy_address.set()
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('buy_decline_fee '), state=states.Escrow.buy_fee)
-async def buy_decline_fee(call: types.CallbackQuery, offer: Mapping[str, Any]):
+async def buy_decline_fee(call: types.CallbackQuery, offer: EscrowOffer):
     sum_fee_field = call.data.split()[2]
-    await database.escrow.update_one(
-        {'_id': offer['_id']},
-        {'$set': {sum_fee_field: offer['sum_' + offer['type']]}}
+    await offer.update_document(
+        {'$set': {sum_fee_field: offer['sum_' + offer.type]}}
     )
     await call.answer()
     await tg.send_message(
         call.message.chat.id,
-        _('Send your {} address.').format(offer['buy'])
+        _('Send your {} address.').format(offer.buy)
     )
     await states.Escrow.buy_address.set()
 
 
 @escrow_message_handler(id_filter='counter.id', stage='active', state=states.Escrow.buy_address)
-async def set_buy_address(message: types.Message, state: FSMContext, offer: Mapping[str, Any]):
+async def set_buy_address(message: types.Message, state: FSMContext, offer: EscrowOffer):
     if len(message.text) > 35 or not all(ch in string.ascii_letters + string.digits for ch in message.text):
         await tg.send_message(message.chat.id, _('Address is invalid.'))
         return
 
-    escrow_currency = offer['type']
+    escrow_currency = offer.type
     if escrow_currency == 'buy':
-        escrow_id = offer['init']['id']
-        locale = offer['init']['locale']
-        memo_address = offer['sell_address']
+        escrow_id = offer.init['id']
+        locale = offer.init['locale']
+        memo_address = offer.sell_address
         send_reply = True
     elif escrow_currency == 'sell':
-        escrow_id = offer['counter']['id']
-        locale = offer['counter']['locale']
+        escrow_id = offer.counter['id']
+        locale = offer.counter['locale']
         memo_address = message.text
         send_reply = False
 
     memo = 'escrow for {} {} to {}'.format(
-        offer['sum_buy'], offer['buy'], memo_address
+        offer.sum_buy, offer.buy, memo_address
     )
     await database.escrow.update_one(
-        {'_id': offer['_id']},
+        {'_id': offer._id},
         {'$set': {
             'buy_address': message.text,
             'memo': memo
@@ -326,10 +322,10 @@ async def set_buy_address(message: types.Message, state: FSMContext, offer: Mapp
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
         InlineKeyboardButton(
-            _('Sent', locale=locale), callback_data='escrow_sent {}'.format(offer['_id'])
+            _('Sent', locale=locale), callback_data='escrow_sent {}'.format(offer._id)
         ),
         InlineKeyboardButton(
-            _('Cancel', locale=locale), callback_data='escrow_cancel {}'.format(offer['_id'])
+            _('Cancel', locale=locale), callback_data='escrow_cancel {}'.format(offer._id)
         )
     )
     escrow_address = markdown.bold(get_escrow_instance(offer[escrow_currency]).address)
@@ -337,14 +333,14 @@ async def set_buy_address(message: types.Message, state: FSMContext, offer: Mapp
     await tg.send_message(
         escrow_id,
         _('Send {} {} to address {}', locale=locale).format(
-            offer['sum_fee_up'], offer[escrow_currency], escrow_address
+            offer.sum_fee_up, offer[escrow_currency], escrow_address
         ) + ' ' + _('with memo', locale=locale) + ':\n' + markdown.code(memo),
         reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
     )
     if send_reply:
         keyboard = InlineKeyboardMarkup()
         keyboard.add(InlineKeyboardButton(
-            _('Cancel'), callback_data='escrow_cancel {}'.format(offer['_id'])
+            _('Cancel'), callback_data='escrow_cancel {}'.format(offer._id)
         ))
         await tg.send_message(
             message.chat.id,
@@ -355,45 +351,44 @@ async def set_buy_address(message: types.Message, state: FSMContext, offer: Mapp
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('escrow_cancel '))
-async def cancel_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
-    if offer['stage'] == 'confirmed':
+async def cancel_offer(call: types.CallbackQuery, offer: EscrowOffer):
+    if offer.stage == 'confirmed':
         await call.answer(_("You can't cancel escrow on this stage."))
         return
 
     sell_answer = _('Escrow was cancelled.',
-                    locale=offer['locale_{}'.format(offer['init']['id'])])
+                    locale=offer['locale_{}'.format(offer.init['id'])])
     buy_answer = _('Escrow was cancelled.',
-                   locale=offer['locale_{}'.format(offer['counter']['id'])])
-    offer['cancel_time'] = time()
-    await database.escrow_archive.insert_one(offer)
-    await database.escrow.delete_one({'_id': offer['_id']})
+                   locale=offer['locale_{}'.format(offer.counter['id'])])
+    offer.cancel_time = time()
+    await offer.delete_document()
     await call.answer()
-    await tg.send_message(offer['init']['id'], sell_answer, reply_markup=start_keyboard())
-    await tg.send_message(offer['counter']['id'], buy_answer, reply_markup=start_keyboard())
-    sell_state = FSMContext(dp.storage, offer['init']['id'], offer['init']['id'])
-    buy_state = FSMContext(dp.storage, offer['counter']['id'], offer['counter']['id'])
+    await tg.send_message(offer.init['id'], sell_answer, reply_markup=start_keyboard())
+    await tg.send_message(offer.counter['id'], buy_answer, reply_markup=start_keyboard())
+    sell_state = FSMContext(dp.storage, offer.init['id'], offer.init['id'])
+    buy_state = FSMContext(dp.storage, offer.counter['id'], offer.counter['id'])
     await sell_state.finish()
     await buy_state.finish()
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('escrow_sent '))
-async def escrow_sent_confirmation(call: types.CallbackQuery, offer: Mapping[str, Any]):
-    escrow_currency = offer['type']
+async def escrow_sent_confirmation(call: types.CallbackQuery, offer: EscrowOffer):
+    escrow_currency = offer.type
 
     if escrow_currency == 'buy':
-        memo_address = offer['sell_address']
-        other_id = offer['counter']['id']
-        locale = offer['counter']['locale']
+        memo_address = offer.sell_address
+        other_id = offer.counter['id']
+        locale = offer.counter['locale']
         new_currency = 'sell'
     elif escrow_currency == 'sell':
-        memo_address = offer['buy_address']
-        other_id = offer['init']['id']
-        locale = offer['init']['locale']
+        memo_address = offer.buy_address
+        other_id = offer.init['id']
+        locale = offer.init['locale']
         new_currency = 'buy'
 
     escrow_instance = get_escrow_instance(offer[escrow_currency])
     trx = await escrow_instance.get_transaction(
-        offer['sum_fee_up'].to_decimal(), offer[escrow_currency], offer['memo'], offer['react_time']
+        offer.sum_fee_up.to_decimal(), offer[escrow_currency], offer.memo, offer.react_time
     )
     if trx:
         url = markdown.link(
@@ -403,14 +398,14 @@ async def escrow_sent_confirmation(call: types.CallbackQuery, offer: Mapping[str
         keyboard = InlineKeyboardMarkup()
         keyboard.add(
             InlineKeyboardButton(
-                _('Sent', locale=locale), callback_data='tokens_sent {}'.format(offer['_id'])
+                _('Sent', locale=locale), callback_data='tokens_sent {}'.format(offer._id)
             ),
             InlineKeyboardButton(
-                _('Cancel', locale=locale), callback_data='tokens_cancel {}'.format(offer['_id'])
+                _('Cancel', locale=locale), callback_data='tokens_cancel {}'.format(offer._id)
             )
         )
         await database.escrow.update_one(
-            {'_id': offer['_id']},
+            {'_id': offer._id},
             {'$set': {
                 'return_address': trx['from'],
                 'trx_id': trx['trx_id'],
@@ -435,54 +430,53 @@ async def escrow_sent_confirmation(call: types.CallbackQuery, offer: Mapping[str
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('tokens_cancel '))
-async def cancel_confirmed_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
-    escrow_currency = offer['type']
+async def cancel_confirmed_offer(call: types.CallbackQuery, offer: EscrowOffer):
+    escrow_currency = offer.type
 
     if escrow_currency == 'buy':
-        return_id = offer['init']['id']
-        locale = offer['init']['locale']
-        cancel_id = offer['counter']['id']
+        return_id = offer.init['id']
+        locale = offer.init['locale']
+        cancel_id = offer.counter['id']
     elif escrow_currency == 'sell':
-        return_id = offer['counter']['id']
-        locale = offer['counter']['locale']
-        cancel_id = offer['init']['id']
+        return_id = offer.counter['id']
+        locale = offer.counter['locale']
+        cancel_id = offer.init['id']
 
     escrow_instance = get_escrow_instance(offer[escrow_currency])
     trx_url = await escrow_instance.transfer(
-        offer['return_address'], offer['sum_fee_up'].to_decimal(), offer[escrow_currency]
+        offer.return_address, offer.sum_fee_up.to_decimal(), offer[escrow_currency]
     )
     cancel_answer = _('Escrow was cancelled.', locale=offer['locale_{}'.format(cancel_id)])
     return_answer = _('Escrow was cancelled.', locale=locale) + ' ' + markdown.link(
         _('You got your {} {} back.', locale=locale).format(
-            offer['sum_fee_up'], offer[escrow_currency]
+            offer.sum_fee_up, offer[escrow_currency]
         ), trx_url
     )
-    await database.escrow_archive.insert_one(offer)
-    await database.escrow.delete_one({'_id': offer['_id']})
+    await offer.delete_document()
     await call.answer()
     await tg.send_message(cancel_id, cancel_answer, reply_markup=start_keyboard())
     await tg.send_message(return_id, return_answer, reply_markup=start_keyboard())
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('tokens_sent '))
-async def final_offer_confirmation(call: types.CallbackQuery, offer: Mapping[str, Any]):
-    escrow_currency = offer['type']
+async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer):
+    escrow_currency = offer.type
 
     if escrow_currency == 'buy':
-        confirm_id = offer['init']['id']
-        locale = offer['init']['locale']
-        other_id = offer['counter']['id']
+        confirm_id = offer.init['id']
+        locale = offer.init['locale']
+        other_id = offer.counter['id']
         new_currency = 'sell'
     elif escrow_currency == 'sell':
-        confirm_id = offer['counter']['id']
-        locale = offer['counter']['locale']
-        other_id = offer['init']['id']
+        confirm_id = offer.counter['id']
+        locale = offer.counter['locale']
+        other_id = offer.init['id']
         new_currency = 'buy'
 
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
         InlineKeyboardButton(
-            _('Yes', locale=locale), callback_data='escrow_complete {}'.format(offer['_id'])
+            _('Yes', locale=locale), callback_data='escrow_complete {}'.format(offer._id)
         )
     )
     reply = await tg.send_message(
@@ -492,7 +486,7 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: Mapping[str
     )
     keyboard.add(
         InlineKeyboardButton(
-            _('No', locale=locale), callback_data='escrow_validate {}'.format(offer['_id'])
+            _('No', locale=locale), callback_data='escrow_validate {}'.format(offer._id)
         )
     )
     partial_edit = functools.partial(
@@ -510,48 +504,46 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: Mapping[str
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('escrow_complete '))
-async def complete_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
-    escrow_currency = offer['type']
+async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
+    escrow_currency = offer.type
 
     if escrow_currency == 'buy':
         recipient = 'buy'
-        other_id = offer['init']['id']
+        other_id = offer.init['id']
     elif escrow_currency == 'sell':
         recipient = 'sell'
-        other_id = offer['counter']['id']
+        other_id = offer.counter['id']
 
     escrow_instance = get_escrow_instance(offer[escrow_currency])
     trx_url = await escrow_instance.transfer(
-        offer[f'{recipient}_address'], offer['sum_fee_down'].to_decimal(), offer[escrow_currency]
+        offer[f'{recipient}_address'], offer.sum_fee_down.to_decimal(), offer[escrow_currency]
     )
     recipient_id = offer[f'{recipient}_id']
     locale = offer['locale_{}'.format(recipient_id)]
     answer = _('Escrow is completed!', locale=offer['locale_{}'.format(other_id)])
     recipient_answer = _('Escrow is completed!', locale=locale) + ' ' + markdown.link(
         _('I sent you {} {}.', locale=locale).format(
-            offer['sum_fee_down'], offer[escrow_currency]
+            offer.sum_fee_down, offer[escrow_currency]
         ), trx_url
     )
-    await database.escrow_archive.insert_one(offer)
-    await database.escrow.delete_one({'_id': offer['_id']})
+    await offer.delete_document()
     await tg.send_message(recipient_id, recipient_answer, reply_markup=start_keyboard())
     await tg.send_message(other_id, answer, reply_markup=start_keyboard())
     await call.answer()
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('escrow_validate '))
-async def validate_offer(call: types.CallbackQuery, offer: Mapping[str, Any]):
-    escrow_currency = offer['type']
+async def validate_offer(call: types.CallbackQuery, offer: EscrowOffer):
+    escrow_currency = offer.type
     escrow_instance = get_escrow_instance(offer[escrow_currency])
     await tg.send_message(
         SUPPORT_CHAT_ID,
         'Unconfirmed escrow.\nTransaction: {}\nMemo: {}'.format(
-            escrow_instance.trx_url(offer['trx_id']),
-            markdown.code(offer['memo']),
+            escrow_instance.trx_url(offer.trx_id),
+            markdown.code(offer.memo),
         )
     )
-    await database.escrow_archive.insert_one(offer)
-    await database.escrow.delete_one({'_id': offer['_id']})
+    await offer.delete_document()
     await call.answer()
     await tg.send_message(
         call.message.chat.id,

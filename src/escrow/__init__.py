@@ -16,6 +16,8 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
+from src.escrow.escrow_offer import EscrowOffer
+
 from src.escrow.blockchain.golos_blockchain import golos_instance
 
 

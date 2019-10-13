@@ -31,6 +31,7 @@ from aiogram.dispatcher.filters.state import any_state
 
 from src.handlers import tg, dp, private_handler, show_order, show_orders, validate_money, orders_list
 from src.database import database, STATE_KEY
+from src.escrow import EscrowOffer
 from src.i18n import _
 from src import states
 from src.utils import normalize_money, MoneyValidationError
@@ -182,24 +183,26 @@ async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
     currency_arg = args[2]
     edit = bool(int(args[3]))
 
-    if currency_arg == 'buy':
+    if currency_arg == 'sum_buy':
         sum_currency = order['buy']
-        new_currency_arg = 'sell'
-    elif currency_arg == 'sell':
+        new_currency = order['sell']
+        new_currency_arg = 'sum_sell'
+    elif currency_arg == 'sum_sell':
         sum_currency = order['sell']
-        new_currency_arg = 'buy'
+        new_currency = order['buy']
+        new_currency_arg = 'sum_buy'
     else:
         return
 
     keyboard = InlineKeyboardMarkup()
     keyboard.row(InlineKeyboardButton(
-        _('Change to {}').format(order[new_currency_arg]),
+        _('Change to {}').format(new_currency),
         callback_data='escrow {} {} 1'.format(order['_id'], new_currency_arg)
     ))
     answer = _('Send exchange sum in {}.').format(sum_currency)
     if edit:
         await database.escrow.update_one(
-            {'sell_id': call.from_user.id},
+            {'init.id': call.from_user.id, 'stage': 'creation'},
             {'$set': {'sum_currency': currency_arg}}
         )
         await call.answer()
@@ -225,7 +228,8 @@ async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
             'init.id': init_user['id'],
             'stage': 'creation'
         })
-        await database.escrow.insert_one({
+        offer = EscrowOffer(**{
+            '_id': ObjectId(),
             'order': order['_id'],
             'buy': order['buy'],
             'sell': order['sell'],
@@ -242,6 +246,7 @@ async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
             },
             'stage': 'creation',
         })
+        await offer.insert_document()
         await call.answer()
         await tg.send_message(call.message.chat.id, answer, reply_markup=keyboard)
         await states.Escrow.sum.set()
