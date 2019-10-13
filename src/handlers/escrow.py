@@ -296,19 +296,17 @@ async def set_counter_address(message: types.Message, state: FSMContext, offer: 
         await tg.send_message(message.chat.id, _('Address is invalid.'))
         return
 
+    memo = 'escrow to {} for {} {} to {}'
     escrow_currency = offer.type
     if escrow_currency == 'buy':
+        memo.format(message.text, offer.sum_sell, offer.sell, offer.init['receive_address'])
         escrow_user = offer.init
-        memo_address = offer.init['receive_address']
         send_reply = True
     elif escrow_currency == 'sell':
+        memo.format(offer.init['receive_address'], offer.sum_buy, offer.buy, message.text)
         escrow_user = offer.counter
-        memo_address = message.text
         send_reply = False
 
-    memo = 'escrow for {} {} to {}'.format(
-        offer.sum_buy, offer.buy, memo_address
-    )
     await database.escrow.update_one(
         {'_id': offer._id},
         {'$set': {
