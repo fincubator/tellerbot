@@ -22,9 +22,10 @@ import json
 from time import time
 
 from golos import Api
+from golos.exceptions import RetriesExceeded
 from asyncio import get_event_loop
 
-from src.escrow.blockchain import BaseBlockchain
+from src.escrow.blockchain import BaseBlockchain, BlockchainConnectionError
 
 
 class GolosBlockchain(BaseBlockchain):
@@ -33,7 +34,10 @@ class GolosBlockchain(BaseBlockchain):
     explorer = 'https://golos.cf/tx/?={}'
 
     def __init__(self):
-        self.golos = Api(nodes='wss://api.golos.blckchnd.com/ws')
+        try:
+            self.golos = Api(nodes='wss://api.golos.blckchnd.com/ws')
+        except RetriesExceeded as exception:
+            raise BlockchainConnectionError(exception)
 
     async def transfer(self, to: str, amount: Decimal, asset: str):
         with open('wif.json') as f:
@@ -60,6 +64,3 @@ class GolosBlockchain(BaseBlockchain):
                 return transaction
 
         return None
-
-
-golos_instance = GolosBlockchain()

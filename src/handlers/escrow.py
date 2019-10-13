@@ -34,7 +34,7 @@ from aiogram.utils import markdown
 
 from src.handlers import tg, dp, private_handler, show_order, validate_money, start_keyboard
 from src.database import database
-from src.escrow import EscrowOffer, get_escrow_instance
+from src.escrow import EscrowOffer, get_escrow_class, get_escrow_instance
 from src.i18n import _
 from src import states
 from src.utils import normalize_money, MoneyValidationError
@@ -325,7 +325,7 @@ async def set_counter_address(message: types.Message, state: FSMContext, offer: 
             callback_data='escrow_cancel {}'.format(offer._id)
         )
     )
-    escrow_address = markdown.bold(get_escrow_instance(offer[escrow_currency]).address)
+    escrow_address = markdown.bold(get_escrow_class(offer[escrow_currency]).address)
     await state.finish()
     await tg.send_message(
         escrow_user['id'],
@@ -370,6 +370,8 @@ async def cancel_offer(call: types.CallbackQuery, offer: EscrowOffer):
 async def escrow_sent_confirmation(call: types.CallbackQuery, offer: EscrowOffer):
     escrow_currency = offer.type
 
+    escrow_instance = get_escrow_instance(offer[escrow_currency])
+
     if escrow_currency == 'buy':
         memo_address = offer.init['receive_address']
         other_user = offer.counter
@@ -379,7 +381,6 @@ async def escrow_sent_confirmation(call: types.CallbackQuery, offer: EscrowOffer
         other_user = offer.init
         new_currency = 'buy'
 
-    escrow_instance = get_escrow_instance(offer[escrow_currency])
     trx = await escrow_instance.get_transaction(
         offer.sum_fee_up.to_decimal(), offer[escrow_currency], offer.memo, offer.react_time
     )

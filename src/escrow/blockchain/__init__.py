@@ -35,3 +35,7 @@ class BaseBlockchain(ABC):
     @abstractmethod
     async def get_transaction(self, amount: Decimal, asset: str, memo: str, time_start: float):
         pass
+
+
+class BlockchainConnectionError(Exception):
+    pass
