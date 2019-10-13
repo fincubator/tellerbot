@@ -144,7 +144,7 @@ async def init_pay_fee(call: types.CallbackQuery, offer: EscrowOffer):
         call.message.chat.id,
         _('Send your {} address.').format(offer.sell)
     )
-    await states.Escrow.init_address.set()
+    await states.Escrow.init_receive_address.set()
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('init_decline_fee '), state=states.Escrow.init_fee)
@@ -293,7 +293,7 @@ async def counter_pay_fee(call: types.CallbackQuery, offer: EscrowOffer):
         call.message.chat.id,
         _('Send your {} address.').format(offer.buy)
     )
-    await states.Escrow.counter_address.set()
+    await states.Escrow.counter_receive_address.set()
 
 
 @escrow_callback_handler(
@@ -310,11 +310,27 @@ async def counter_decline_fee(call: types.CallbackQuery, offer: EscrowOffer):
         call.message.chat.id,
         _('Send your {} address.').format(offer.buy)
     )
-    await states.Escrow.counter_address.set()
+    await states.Escrow.counter_receive_address.set()
 
 
-@escrow_message_handler(id_filter='counter.id', stage='active', state=states.Escrow.counter_address)
-async def set_counter_address(message: types.Message, state: FSMContext, offer: EscrowOffer):
+@escrow_message_handler(id_filter='counter.id', stage='active', state=states.Escrow.counter_receive_address)
+async def set_counter_receive_address(message: types.Message, state: FSMContext, offer: EscrowOffer):
+    if not is_address_valid(message.text):
+        await tg.send_message(message.chat.id, _('Address is invalid.'))
+        return
+
+    await offer.update_document(
+        {'$set': {'counter.receive_address': message.text}}
+    )
+    await tg.send_message(
+        message.chat.id,
+        _('Send your {} address.').format(offer.sell)
+    )
+    await states.Escrow.counter_send_address.set()
+
+
+@escrow_message_handler(id_filter='counter.id', stage='active', state=states.Escrow.counter_send_address)
+async def set_counter_send_address(message: types.Message, state: FSMContext, offer: EscrowOffer):
     if not is_address_valid(message.text):
         await tg.send_message(message.chat.id, _('Address is invalid.'))
         return
@@ -331,7 +347,7 @@ async def set_counter_address(message: types.Message, state: FSMContext, offer: 
 
     await offer.update_document(
         {'$set': {
-            'counter.receive_address': message.text,
+            'counter.send_address': message.text,
             'memo': memo
         }}
     )
@@ -488,7 +504,9 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer
     )
     reply = await tg.send_message(
         confirm_user['id'],
-        _('Did you get {}?', locale=confirm_user['locale']).format(offer[new_currency]),
+        _('Did you get {} from {}?', locale=confirm_user['locale']).format(
+            offer[new_currency], other_user['send_address']
+        ),
         reply_markup=keyboard
     )
     keyboard.add(
