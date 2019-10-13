@@ -31,6 +31,9 @@ class I18nMiddlewareManual(I18nMiddleware):
     async def get_user_locale(
         self, action: Optional[str] = None, args: Optional[Tuple[Any]] = None
     ) -> str:
+        if action not in ('pre_process_message', 'pre_process_callback_query'):
+            return
+
         user: User = User.get_current()
         document = await database.users.find_one({'id': user.id})
         if document:

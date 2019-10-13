@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-13 07:05+0300\n"
+"POT-Creation-Date: 2019-10-13 17:07+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -247,6 +247,14 @@ msgstr "Неизвестная команда."
 #: src/handlers/default.py
 msgid "Unknown button."
 msgstr "Неизвестная кнопка."
+
+#: src/handlers/default.py
+msgid ""
+"There was an unexpected error when handling your request. We're already "
+"notified and will fix it as soon as possible!"
+msgstr ""
+"Возникла неожиданная ошибка во время обработки вашего обращения. Мы уже"
+"оповещены и исправим её как можно скорее!"
 
 #: src/handlers/escrow.py
 msgid "Offer is not found."

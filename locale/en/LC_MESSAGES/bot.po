@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-13 07:05+0300\n"
+"POT-Creation-Date: 2019-10-13 17:07+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -242,6 +242,12 @@ msgstr ""
 
 #: src/handlers/default.py
 msgid "Unknown button."
+msgstr ""
+
+#: src/handlers/default.py
+msgid ""
+"There was an unexpected error when handling your request. We're already "
+"notified and will fix it as soon as possible!"
 msgstr ""
 
 #: src/handlers/escrow.py

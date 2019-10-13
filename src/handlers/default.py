@@ -16,11 +16,19 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from aiogram.types import Message, CallbackQuery
-from aiogram.dispatcher.filters.state import any_state
+import traceback
+import logging
 
+from aiogram.types import Message, CallbackQuery, ParseMode
+from aiogram.dispatcher.filters.state import any_state
+from aiogram.utils import markdown
+
+from config import EXCEPTIONS_CHAT_ID
 from src.handlers import tg, dp, private_handler, start_keyboard
 from src.i18n import _
+
+
+log = logging.getLogger(__name__)
 
 
 @private_handler(state=any_state)
@@ -34,3 +42,39 @@ async def default_message(message: Message):
 @dp.callback_query_handler(state=any_state)
 async def default_callback_query(call: CallbackQuery):
     await call.answer(_('Unknown button.'))
+
+
+@dp.errors_handler()
+async def errors_handler(update, exception):
+    log.error('Error handling request', exc_info=True)
+
+    chat_id = None
+    if update.message:
+        update_type = 'message'
+        from_user = update.message.from_user
+        chat_id = update.message.chat.id
+    if update.callback_query:
+        update_type = 'callback query'
+        from_user = update.callback_query.from_user
+        chat_id = update.callback_query.message.chat.id
+
+    if chat_id is not None:
+        await tg.send_message(
+            EXCEPTIONS_CHAT_ID,
+            'Error handling {} {} from {} ({}) in chat {}\n{}'.format(
+                update_type,
+                update.update_id,
+                markdown.link(from_user.mention, from_user.url),
+                from_user.id,
+                chat_id,
+                markdown.escape_md(traceback.format_exc(limit=-3))
+            ), parse_mode=ParseMode.MARKDOWN
+        )
+        await tg.send_message(
+            chat_id, _(
+                'There was an unexpected error when handling your request. '
+                "We're already notified and will fix it as soon as possible!"
+            ), reply_markup=start_keyboard()
+        )
+
+    return True
