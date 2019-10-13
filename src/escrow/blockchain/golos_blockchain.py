@@ -48,7 +48,10 @@ class GolosBlockchain(BaseBlockchain):
         transaction = await get_event_loop().run_in_executor(None, func)
         return self.trx_url(transaction['id'])
 
-    async def get_transaction(self, amount: Decimal, asset: str, memo: str, time_start: float):
+    async def get_transaction(
+        self, from_address: str, amount: Decimal,
+        asset: str, memo: str, time_start: float
+    ):
         func = functools.partial(
             self.golos.get_account_history,
             self.address, op_limit='transfer', age=int(time() - time_start)
@@ -57,10 +60,13 @@ class GolosBlockchain(BaseBlockchain):
         for transaction in history:
             tr_amount, tr_asset = transaction['amount'].split()
             decimal_amount = Decimal(tr_amount)
-            if (transaction['to'] == self.address and
-               tr_asset == asset and
-               decimal_amount == amount and
-               transaction['memo'] == memo):
+            if (
+                transaction['to'] == self.address and
+                transaction['from'] == from_address and
+                decimal_amount == amount and
+                tr_asset == asset and
+                transaction['memo'] == memo
+            ):
                 return transaction
 
         return None

@@ -33,7 +33,10 @@ class BaseBlockchain(ABC):
         pass
 
     @abstractmethod
-    async def get_transaction(self, amount: Decimal, asset: str, memo: str, time_start: float):
+    async def get_transaction(
+        self, from_address: str, amount: Decimal,
+        asset: str, memo: str, time_start: float
+    ):
         pass
 
 

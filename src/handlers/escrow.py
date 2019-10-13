@@ -408,16 +408,20 @@ async def escrow_sent_confirmation(call: types.CallbackQuery, offer: EscrowOffer
     escrow_instance = get_escrow_instance(offer[offer.type])
 
     if offer.type == 'buy':
-        memo_address = offer.init['receive_address']
+        escrow_user = offer.init
         other_user = offer.counter
         new_currency = 'sell'
     elif offer.type == 'sell':
-        memo_address = offer.counter['receive_address']
+        escrow_user = offer.counter
         other_user = offer.init
         new_currency = 'buy'
 
     trx = await escrow_instance.get_transaction(
-        offer.sum_fee_up.to_decimal(), offer[offer.type], offer.memo, offer.react_time
+        escrow_user['send_address'],
+        offer.sum_fee_up.to_decimal(),
+        offer[offer.type],
+        offer.memo,
+        offer.react_time
     )
     if trx:
         url = markdown.link(
@@ -445,7 +449,9 @@ async def escrow_sent_confirmation(call: types.CallbackQuery, offer: EscrowOffer
         await tg.send_message(
             other_user['id'],
             url + '\n' + _('Send {} {} to address {}', locale=other_user['locale']).format(
-                offer[f'sum_{new_currency}'], offer[new_currency], memo_address
+                offer[f'sum_{new_currency}'],
+                offer[new_currency],
+                escrow_user['receive_address']
             ) + '.',
             reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
         )
