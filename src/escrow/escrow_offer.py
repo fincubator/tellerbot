@@ -16,13 +16,17 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Any, Mapping, Optional
 
 from bson.objectid import ObjectId
 from bson.decimal128 import Decimal128
 
 from src.database import database
+
+
+def asdict(instance):
+    return {key: value for key, value in instance.__dict__.items() if value is not None}
 
 
 @dataclass
