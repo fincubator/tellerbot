@@ -27,5 +27,5 @@ def get_escrow_class(asset: str):
 
 
 def get_escrow_instance(asset: str):
-    escrow_class = get_escrow_class(asset)
-    return escrow_class()
+    if (escrow_class := get_escrow_class(asset)):
+        return escrow_class()

@@ -5,7 +5,7 @@
 
 
 ## Requirements
-* [Python](https://www.python.org/downloads) >= 3.6.0
+* [Python](https://www.python.org/downloads) >= 3.8
 * [MongoDB](https://docs.mongodb.com/manual/installation/)
 * [Motor](https://github.com/mongodb/motor) - asynchronous Python driver for MongoDB
 * [AIOgram](https://github.com/aiogram/aiogram) - asynchronous Python library for Telegram Bot API
@@ -15,7 +15,7 @@
 ## Installation and launch
 1. Create a new Telegram bot by talking to [@BotFather](https://t.me/BotFather) and get its API Token.
 2. Install and start MongoDB server
-3. Install Python version no less than 3.6.0
+3. Install Python version no less than 3.8
 4. Clone the repository:  
 ```bash
 git clone https://github.com/PreICO/tellerbot
