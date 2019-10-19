@@ -1,15 +1,14 @@
-from asyncio import get_event_loop, Task, CancelledError
+from asyncio import get_event_loop, all_tasks, CancelledError
 
 from src.app import main
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
     print()
 
     loop = get_event_loop()
-    tasks = Task.all_tasks()
-    for task in tasks:
+    for task in all_tasks(loop):
         task.cancel()
         try:
             loop.run_until_complete(task)
