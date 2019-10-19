@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-13 19:29+0300\n"
+"POT-Creation-Date: 2019-10-20 00:37+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -253,8 +253,8 @@ msgid ""
 "There was an unexpected error when handling your request. We're already "
 "notified and will fix it as soon as possible!"
 msgstr ""
-"Возникла неожиданная ошибка во время обработки вашего обращения. Мы "
-"уже оповещены и исправим её как можно скорее!"
+"Возникла неожиданная ошибка во время обработки вашего обращения. Мы уже "
+"оповещены и исправим её как можно скорее!"
 
 #: src/handlers/escrow.py
 msgid "Offer is not found."
@@ -304,21 +304,13 @@ msgstr "Отклонить"
 msgid "You got an escrow offer to sell {} {} for {} {}."
 msgstr "Вы получили предложение эскроу на продажу {} {} за {} {}."
 
-#: src/handlers/escrow.py
-msgid "Offer sent."
-msgstr "Предложение отправлено."
-
 #: src/handlers/escrow.py src/handlers/start_menu.py
 msgid "Cancel"
 msgstr "Отменить"
 
 #: src/handlers/escrow.py
-msgid "Your escrow offer was accepted."
-msgstr "Ваше предложение эскроу принято."
-
-#: src/handlers/escrow.py
-msgid "I'll notify you when transaction is complete."
-msgstr "Я оповещу вас когда транзакция будет совершена."
+msgid "Offer sent."
+msgstr "Предложение отправлено."
 
 #: src/handlers/escrow.py
 msgid "Your escrow offer was declined."
@@ -345,6 +337,10 @@ msgid "Transfer information sent."
 msgstr "Информация для перевода отправлена."
 
 #: src/handlers/escrow.py
+msgid "I'll notify you when transaction is complete."
+msgstr "Я оповещу вас когда транзакция будет совершена."
+
+#: src/handlers/escrow.py
 msgid "You can't cancel escrow on this stage."
 msgstr "Вы не можете отменить эскроу на этой стадии."
 
@@ -369,12 +365,16 @@ msgid "You got your {} {} back."
 msgstr "Вы получили ваши {} {} обратно."
 
 #: src/handlers/escrow.py
-msgid "Did you get {}?"
-msgstr "Вы получили {}?"
+msgid "Did you get {} from {}?"
+msgstr "Вы получили {} от {}?"
 
 #: src/handlers/escrow.py
 msgid "When your transfer is confirmed, I'll complete escrow."
 msgstr "Когда ваш перевод подтвердится, я завершу эскроу."
+
+#: src/handlers/escrow.py
+msgid "Escrow is being completed, please wait."
+msgstr "Эскроу завершается, пожалуйста, подождите."
 
 #: src/handlers/escrow.py
 msgid "Escrow is completed!"
@@ -403,14 +403,6 @@ msgstr "Поменять на {}"
 #: src/handlers/order.py
 msgid "Send exchange sum in {}."
 msgstr "Отправьте сумму обмена в {}."
-
-#: src/handlers/order.py
-msgid "You're already in active escrow."
-msgstr "Вы уже в активном эскроу."
-
-#: src/handlers/order.py
-msgid "Order creator is already in active escrow."
-msgstr "Создатель заявки уже в активном эскроу."
 
 #: src/handlers/order.py
 msgid "Send new amount of buying."
@@ -483,4 +475,13 @@ msgstr "Ответ отправлен."
 #: src/notifications.py
 msgid "Your order has expired."
 msgstr "Срок действия вашего заказа истёк."
+
+#~ msgid "Did you get {}?"
+#~ msgstr "Вы получили {}?"
+
+#~ msgid "You're already in active escrow."
+#~ msgstr "Вы уже в активном эскроу."
+
+#~ msgid "Order creator is already in active escrow."
+#~ msgstr "Создатель заявки уже в активном эскроу."
 
