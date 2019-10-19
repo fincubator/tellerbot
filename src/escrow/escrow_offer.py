@@ -39,14 +39,12 @@ class EscrowOffer:
     time: float
     init: Mapping[str, Any]
     counter: Mapping[str, Any]
-    stage: str
+    pending_input_from: Optional[int] = None
     sum_currency: Optional[str] = None
     sum_buy: Optional[Decimal128] = None
     sum_sell: Optional[Decimal128] = None
     sum_fee_up: Optional[Decimal128] = None
     sum_fee_down: Optional[Decimal128] = None
-    buy_address: Optional[str] = None
-    sell_address: Optional[str] = None
     react_time: Optional[float] = None
     transaction_time: Optional[float] = None
     memo: Optional[str] = None

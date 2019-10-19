@@ -212,7 +212,7 @@ def get_order_field_names():
 async def show_order(
     order, chat_id, user_id,
     message_id=None, location_message_id=None,
-    show_id=False, invert=False, edit=False
+    show_id=False, invert=False, edit=False, locale=None
 ):
     if location_message_id is None:
         if order.get('lat') is not None and order.get('lon') is not None:
@@ -228,9 +228,9 @@ async def show_order(
         header += 'ID: {}\n'.format(order['_id'])
     header += order['username'] + ' '
     if invert:
-        header += _('sells {} for {}').format(order['sell'], order['buy'])
+        header += _('sells {} for {}', locale=locale).format(order['sell'], order['buy'])
     else:
-        header += _('buys {} for {}').format(order['buy'], order['sell'])
+        header += _('buys {} for {}', locale=locale).format(order['buy'], order['sell'])
     header += '\n'
 
     lines = [header]
@@ -263,7 +263,7 @@ async def show_order(
     keyboard = InlineKeyboardMarkup(row_width=6)
 
     keyboard.row(InlineKeyboardButton(
-        _('Invert'), callback_data='{} {} {} {}'.format(
+        _('Invert', locale=locale), callback_data='{} {} {} {}'.format(
             'revert' if invert else 'invert',
             order['_id'], location_message_id, int(edit)
         )
@@ -284,7 +284,7 @@ async def show_order(
 
         keyboard.add(*buttons)
         keyboard.row(InlineKeyboardButton(
-            _('Finish'), callback_data='{} {} {} 0'.format(
+            _('Finish', locale=locale), callback_data='{} {} {} 0'.format(
                 'invert' if invert else 'revert',
                 order['_id'], location_message_id
             )
@@ -297,34 +297,34 @@ async def show_order(
 
         keyboard.row(
             InlineKeyboardButton(
-                _('Similar'), callback_data='similar {}'.format(order['_id'])
+                _('Similar', locale=locale), callback_data='similar {}'.format(order['_id'])
             ),
             InlineKeyboardButton(
-                _('Match'), callback_data='match {}'.format(order['_id'])
+                _('Match', locale=locale), callback_data='match {}'.format(order['_id'])
             )
         )
 
         if order['user_id'] == user_id:
             keyboard.row(
                 InlineKeyboardButton(
-                    _('Edit'), callback_data='{} {} {} 1'.format(
+                    _('Edit', locale=locale), callback_data='{} {} {} 1'.format(
                         'invert' if invert else 'revert',
                         order['_id'], location_message_id
                     )
                 ),
                 InlineKeyboardButton(
-                    _('Delete'), callback_data='delete {} {}'.format(
+                    _('Delete', locale=locale), callback_data='delete {} {}'.format(
                         order['_id'], location_message_id
                     )
                 )
             )
         elif order.get('escrow'):
             keyboard.row(InlineKeyboardButton(
-                _('Escrow'), callback_data='escrow {} sum_buy 0'.format(order['_id'])
+                _('Escrow', locale=locale), callback_data='escrow {} sum_buy 0'.format(order['_id'])
             ))
 
         keyboard.row(InlineKeyboardButton(
-            _('Hide'), callback_data='hide {}'.format(location_message_id)
+            _('Hide', locale=locale), callback_data='hide {}'.format(location_message_id)
         ))
 
     answer = '\n'.join(lines)

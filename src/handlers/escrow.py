@@ -17,9 +17,7 @@
 
 
 import asyncio
-from config import SUPPORT_CHAT_ID
 from decimal import Decimal
-import functools
 from time import time
 from typing import Optional
 import string
@@ -30,8 +28,10 @@ from bson.decimal128 import Decimal128
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
 from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import any_state
 from aiogram.utils import markdown
 
+from config import SUPPORT_CHAT_ID
 from src.handlers import tg, dp, private_handler, show_order, validate_money, start_keyboard
 from src.database import database
 from src.escrow import EscrowOffer, get_escrow_class, get_escrow_instance
@@ -41,14 +41,17 @@ from src.utils import normalize_money, MoneyValidationError
 
 
 def is_address_valid(address):
-    allowed_alphabet = string.ascii_letters + string.digits
-    all_characters_allowed = all(ch in allowed_alphabet for ch in address)
-    return len(address) <= 35 and all_characters_allowed
+    return len(address) <= 64
 
 
-def escrow_callback_handler(*args, **kwargs):
+async def call_later(delay, callback, *args, **kwargs):
+    await asyncio.sleep(delay)
+    return (await callback(*args, **kwargs))
+
+
+def escrow_callback_handler(*args, state=any_state, **kwargs):
     def decorator(handler):
-        @dp.callback_query_handler(*args, **kwargs)
+        @dp.callback_query_handler(*args, state=state, **kwargs)
         async def wrapper(call: types.CallbackQuery):
             offer_id = call.data.split()[1]
             offer = await database.escrow.find_one({'_id': ObjectId(offer_id)})
@@ -62,18 +65,11 @@ def escrow_callback_handler(*args, **kwargs):
     return decorator
 
 
-def escrow_message_handler(*args, id_filter: Optional[str] = None, stage: Optional[str] = None, **kwargs):
+def escrow_message_handler(*args, **kwargs):
     def decorator(handler):
         @private_handler(*args, **kwargs)
         async def wrapper(message: types.Message, state: FSMContext):
-            user_id = message.from_user.id
-            if id_filter is not None:
-                search_filter = {id_filter: user_id}
-            else:
-                search_filter = {'$or': [{'init.id': user_id}, {'counter.id': user_id}]}
-            if stage is not None:
-                search_filter['stage'] = stage
-            offer = await database.escrow.find_one(search_filter)
+            offer = await database.escrow.find_one({'pending_input_from': message.from_user.id})
             if not offer:
                 await tg.send_message(message.chat.id, _('Offer is not found.'))
                 return
@@ -83,7 +79,7 @@ def escrow_message_handler(*args, id_filter: Optional[str] = None, stage: Option
     return decorator
 
 
-@escrow_message_handler(id_filter='init.id', stage='creation', state=states.Escrow.sum)
+@escrow_message_handler(state=states.Escrow.sum)
 async def set_escrow_sum(message: types.Message, state: FSMContext, offer: EscrowOffer):
     try:
         escrow_sum = await validate_money(message.text, message.chat.id)
@@ -161,7 +157,7 @@ async def init_decline_fee(call: types.CallbackQuery, offer: EscrowOffer):
     await states.Escrow.init_receive_address.set()
 
 
-@escrow_message_handler(id_filter='init.id', stage='creation', state=states.Escrow.init_receive_address)
+@escrow_message_handler(state=states.Escrow.init_receive_address)
 async def set_init_receive_address(message: types.Message, state: FSMContext, offer: EscrowOffer):
     if not is_address_valid(message.text):
         await tg.send_message(message.chat.id, _('Address is invalid.'))
@@ -177,18 +173,20 @@ async def set_init_receive_address(message: types.Message, state: FSMContext, of
     await states.Escrow.init_send_address.set()
 
 
-@escrow_message_handler(id_filter='init.id', stage='creation', state=states.Escrow.init_send_address)
+@escrow_message_handler(state=states.Escrow.init_send_address)
 async def set_init_send_address(message: types.Message, state: FSMContext, offer: EscrowOffer):
     if not is_address_valid(message.text):
         await tg.send_message(message.chat.id, _('Address is invalid.'))
         return
 
-    await offer.update_document(
-        {'$set': {'init.send_address': message.text, 'stage': 'pending'}}
-    )
+    await offer.update_document({
+        '$set': {'init.send_address': message.text},
+        '$unset': {'pending_input_from': True}
+    })
     order = await database.orders.find_one({'_id': offer.order})
     await show_order(
-        order, offer.counter['id'], offer.counter['id'], show_id=True
+        order, offer.counter['id'], offer.counter['id'],
+        show_id=True, locale=offer.counter['locale']
     )
     locale = offer.counter['locale']
     buy_keyboard = InlineKeyboardMarkup()
@@ -208,41 +206,22 @@ async def set_init_send_address(message: types.Message, state: FSMContext, offer
         ),
         reply_markup=buy_keyboard
     )
-    answer = _('Offer sent.')
-    reply = await tg.send_message(message.from_user.id, answer)
     sell_keyboard = InlineKeyboardMarkup()
     sell_keyboard.add(InlineKeyboardButton(
         _('Cancel'), callback_data='escrow_cancel {}'.format(offer._id)
     ))
-    partial_edit = functools.partial(
-        tg.edit_message_reply_markup, message.chat.id, reply.message_id,
+    await tg.send_message(
+        message.from_user.id,
+        _('Offer sent.'),
         reply_markup=sell_keyboard
     )
-    asyncio.get_running_loop().call_later(60 * 60, partial_edit)
     await state.finish()
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('accept '))
 async def accept_offer(call: types.CallbackQuery, offer: EscrowOffer):
-    locale = offer.init['locale']
-    sell_keyboard = InlineKeyboardMarkup()
-    sell_keyboard.add(InlineKeyboardButton(
-        _('Cancel', locale=locale), callback_data='escrow_cancel {}'.format(offer._id)
-    ))
-    await tg.send_message(
-        offer.init['id'],
-        _('Your escrow offer was accepted.', locale=locale) + ' ' +
-        _("I'll notify you when transaction is complete.", locale=locale),
-        reply_markup=sell_keyboard
-    )
-    await call.answer()
-
-    await database.escrow.delete_many({
-        'init.id': offer.init['id'],
-        'stage': 'pending'
-    })
     await offer.update_document(
-        {'$set': {'stage': 'active', 'react_time': time()}}
+        {'$set': {'pending_input_from': call.message.chat.id, 'react_time': time()}}
     )
     answer = _('Do you agree to pay a fee of 5%?') + ' '
     if offer.type == 'buy':
@@ -261,6 +240,7 @@ async def accept_offer(call: types.CallbackQuery, offer: EscrowOffer):
             _('No'), callback_data='counter_decline_fee {} {}'.format(offer._id, sum_fee_field)
         )
     )
+    await call.answer()
     await tg.send_message(call.message.chat.id, answer, reply_markup=buy_keyboard)
     await states.Escrow.counter_fee.set()
 
@@ -307,7 +287,7 @@ async def counter_decline_fee(call: types.CallbackQuery, offer: EscrowOffer):
     await states.Escrow.counter_receive_address.set()
 
 
-@escrow_message_handler(id_filter='counter.id', stage='active', state=states.Escrow.counter_receive_address)
+@escrow_message_handler(state=states.Escrow.counter_receive_address)
 async def set_counter_receive_address(message: types.Message, state: FSMContext, offer: EscrowOffer):
     if not is_address_valid(message.text):
         await tg.send_message(message.chat.id, _('Address is invalid.'))
@@ -323,29 +303,49 @@ async def set_counter_receive_address(message: types.Message, state: FSMContext,
     await states.Escrow.counter_send_address.set()
 
 
-@escrow_message_handler(id_filter='counter.id', stage='active', state=states.Escrow.counter_send_address)
+@escrow_message_handler(state=states.Escrow.counter_send_address)
 async def set_counter_send_address(message: types.Message, state: FSMContext, offer: EscrowOffer):
     if not is_address_valid(message.text):
         await tg.send_message(message.chat.id, _('Address is invalid.'))
         return
 
-    memo = 'escrow to {} for {} {} to {}'
+    template = (
+        'to {escrow_receive_address} '
+        'for {not_escrow_amount} {not_escrow_currency} '
+        'from {not_escrow_send_address} to {not_escrow_receive_address} '
+        'via escrow service on https://t.me/TellerBot'
+    )
     if offer.type == 'buy':
-        memo.format(message.text, offer.sum_sell, offer.sell, offer.init['receive_address'])
+        memo = template.format(**{
+            'escrow_receive_address': offer.counter['receive_address'],
+            'not_escrow_amount': offer.sum_sell,
+            'not_escrow_currency': offer.sell,
+            'not_escrow_send_address': message.text,
+            'not_escrow_receive_address': offer.init['receive_address']
+        })
         escrow_user = offer.init
         send_reply = True
     elif offer.type == 'sell':
-        memo.format(offer.init['receive_address'], offer.sum_buy, offer.buy, message.text)
+        memo = template.format(**{
+            'escrow_receive_address': offer.init['receive_address'],
+            'not_escrow_amount': offer.sum_buy,
+            'not_escrow_currency': offer.buy,
+            'not_escrow_send_address': offer.init['send_address'],
+            'not_escrow_receive_address': offer.counter['receive_address']
+        })
         escrow_user = offer.counter
         send_reply = False
 
-    await offer.update_document(
-        {'$set': {
+    await offer.update_document({
+        '$set': {
             'counter.send_address': message.text,
             'memo': memo,
             'transaction_time': time(),
-        }}
-    )
+        },
+        '$unset': {
+            'pending_input_from': True
+        }
+    })
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
         InlineKeyboardButton(
@@ -434,13 +434,12 @@ async def escrow_sent_confirmation(call: types.CallbackQuery, offer: EscrowOffer
                 callback_data='tokens_cancel {}'.format(offer._id)
             )
         )
-        await offer.update_document(
-            {'$set': {
+        await offer.update_document({
+            '$set': {
                 'return_address': trx['from'],
-                'trx_id': trx['trx_id'],
-                'stage': 'confirmed'
-            }}
-        )
+                'trx_id': trx['trx_id']
+            }
+        })
         await tg.send_message(
             other_user['id'],
             url + '\n' + _('Send {} {} to address {}', locale=other_user['locale']).format(
@@ -516,11 +515,11 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer
             callback_data='escrow_validate {}'.format(offer._id)
         )
     )
-    partial_edit = functools.partial(
-        tg.edit_message_reply_markup, call.message.chat.id, reply.message_id,
+    await call_later(
+        60 * 10, tg.edit_message_reply_markup,
+        call.message.chat.id, reply.message_id,
         reply_markup=keyboard
     )
-    asyncio.get_running_loop().call_later(60 * 10, partial_edit)
     await call.answer()
     await tg.send_message(
         other_user['id'],
@@ -539,9 +538,10 @@ async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
         recipient_user = offer.init
         other_user = offer.counter
 
+    await call.answer(_('Escrow is being completed, please wait.'))
     escrow_instance = get_escrow_instance(offer[offer.type])
     trx_url = await escrow_instance.transfer(
-        offer[f'{offer.type}_address'],
+        recipient_user['receive_address'],
         offer.sum_fee_down.to_decimal(),
         offer[offer.type]
     )
@@ -552,9 +552,14 @@ async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
         ), trx_url
     )
     await offer.delete_document()
-    await tg.send_message(recipient_user['id'], recipient_answer, reply_markup=start_keyboard())
-    await tg.send_message(other_user['id'], answer, reply_markup=start_keyboard())
-    await call.answer()
+    await tg.send_message(
+        recipient_user['id'], recipient_answer,
+        reply_markup=start_keyboard(), parse_mode=ParseMode.MARKDOWN
+    )
+    await tg.send_message(
+        other_user['id'], answer,
+        reply_markup=start_keyboard()
+    )
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('escrow_validate '))

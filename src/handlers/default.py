@@ -22,6 +22,7 @@ import logging
 from aiogram.types import Message, CallbackQuery, ParseMode
 from aiogram.dispatcher.filters.state import any_state
 from aiogram.utils import markdown
+from aiogram.utils.exceptions import MessageNotModified
 
 from config import EXCEPTIONS_CHAT_ID
 from src.handlers import tg, dp, private_handler, start_keyboard
@@ -42,6 +43,11 @@ async def default_message(message: Message):
 @dp.callback_query_handler(state=any_state)
 async def default_callback_query(call: CallbackQuery):
     await call.answer(_('Unknown button.'))
+
+
+@dp.errors_handler(exception=MessageNotModified)
+async def message_not_modified_handler(update, exception):
+    return True
 
 
 @dp.errors_handler()
