@@ -57,7 +57,7 @@ def escrow_callback_handler(*args, state=any_state, **kwargs):
             offer = await database.escrow.find_one({'_id': ObjectId(offer_id)})
 
             if not offer:
-                await call.answer(_('Offer is not found.'))
+                await call.answer(_('Offer is not active.'))
                 return
 
             return await handler(call, EscrowOffer(**offer))
@@ -71,7 +71,7 @@ def escrow_message_handler(*args, **kwargs):
         async def wrapper(message: types.Message, state: FSMContext):
             offer = await database.escrow.find_one({'pending_input_from': message.from_user.id})
             if not offer:
-                await tg.send_message(message.chat.id, _('Offer is not found.'))
+                await tg.send_message(message.chat.id, _('Offer is not active.'))
                 return
 
             return await handler(message, state, EscrowOffer(**offer))
