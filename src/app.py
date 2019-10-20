@@ -16,7 +16,7 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from asyncio import get_event_loop
+from asyncio import get_event_loop, create_task
 
 from aiogram.utils import executor
 
@@ -29,12 +29,10 @@ async def on_startup(dp):
     await tg.delete_webhook()
     url = 'https://{}'.format(config.SERVER_HOST)
     await tg.set_webhook(url + config.WEBHOOK_PATH)
+    create_task(run_loop())
 
 
 def main():
-    loop = get_event_loop()
-    loop.run_until_complete(run_loop())
-
     executor.start_webhook(
         dispatcher=dp,
         webhook_path=config.WEBHOOK_PATH,

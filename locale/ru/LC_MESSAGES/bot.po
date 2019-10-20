@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-20 00:47+0300\n"
+"POT-Creation-Date: 2019-10-20 19:08+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -321,10 +321,6 @@ msgid "Offer was declined."
 msgstr "Предложение отклонено."
 
 #: src/handlers/escrow.py
-msgid "Sent"
-msgstr "Отправлено"
-
-#: src/handlers/escrow.py
 msgid "Send {} {} to address {}"
 msgstr "Отправьте {} {} на адрес {}"
 
@@ -341,8 +337,8 @@ msgid "I'll notify you when transaction is complete."
 msgstr "Я оповещу вас когда транзакция будет совершена."
 
 #: src/handlers/escrow.py
-msgid "You can't cancel escrow on this stage."
-msgstr "Вы не можете отменить эскроу на этой стадии."
+msgid "You can't cancel this offer until transaction will be verified."
+msgstr "Вы не можете отменить это предложение пока транзакция не будет подтверждена."
 
 #: src/handlers/escrow.py
 msgid "Escrow was cancelled."
@@ -353,12 +349,12 @@ msgid "Transaction is confirmed."
 msgstr "Транзакция подтверждена."
 
 #: src/handlers/escrow.py
-msgid "I'll notify should you get {}."
-msgstr "Я оповещу когда вы должны будете получить {}."
+msgid "Sent"
+msgstr "Отправлено"
 
 #: src/handlers/escrow.py
-msgid "Transaction wasn't found."
-msgstr "Транзакция не найдена."
+msgid "I'll notify should you get {}."
+msgstr "Я оповещу когда вы должны будете получить {}."
 
 #: src/handlers/escrow.py
 msgid "You got your {} {} back."

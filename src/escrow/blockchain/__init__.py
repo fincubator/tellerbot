@@ -18,26 +18,50 @@
 
 from abc import ABC, abstractmethod
 from decimal import Decimal
+from typing import Any, Callable, Mapping
+
+from bson.objectid import ObjectId
 
 
 class BaseBlockchain(ABC):
     assets = []
     address = None
     explorer = ''
-
-    def trx_url(self, trx_id):
-        return self.explorer.format(trx_id)
+    _queue = []
 
     @abstractmethod
     async def transfer(self, to: str, amount: Decimal, asset: str):
         pass
 
     @abstractmethod
-    async def get_transaction(
-        self, from_address: str, amount: Decimal,
-        asset: str, memo: str, time_start: float
-    ):
+    async def start_streaming(self):
         pass
+
+    def trx_url(self, trx_id):
+        return self.explorer.format(trx_id)
+
+    async def check_transaction(
+        self, offer_id: ObjectId, from_address: str, amount: Decimal,
+        asset: str, memo: str, callback: Callable[[str], Any]
+    ):
+        trx = {
+            'offer_id': offer_id,
+            'from_address': from_address,
+            'amount': amount,
+            'asset': asset,
+            'memo': memo,
+        }
+
+        self._queue.append((trx, callback))
+        if len(self._queue) == 1:
+            await self.start_streaming()
+
+    def remove_from_queue(self, offer_id: ObjectId):
+        for queue_member in self._queue:
+            if queue_member[0]['offer_id'] == offer_id:
+                self._queue.remove(queue_member)
+                return True
+        return False
 
 
 class BlockchainConnectionError(Exception):

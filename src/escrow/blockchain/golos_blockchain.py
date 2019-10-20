@@ -16,14 +16,13 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
+from asyncio import get_running_loop, create_task
 from decimal import Decimal
-import functools
 import json
-from time import time
 
 from golos import Api
+from golos.ws_client import error_handler
 from golos.exceptions import RetriesExceeded
-from asyncio import get_event_loop
 
 from src.escrow.blockchain import BaseBlockchain, BlockchainConnectionError
 
@@ -33,40 +32,73 @@ class GolosBlockchain(BaseBlockchain):
     address = 'tellerbot'
     explorer = 'https://golos.cf/tx/?={}'
 
+    _NODES = [
+        'wss://api.golos.blckchnd.com/ws',
+        'wss://golosd.privex.io',
+        'wss://golos.solox.world/ws',
+        'wss://golos.lexa.host/ws',
+    ]
+
     def __init__(self):
         try:
-            self.golos = Api(nodes='wss://api.golos.blckchnd.com/ws')
+            self._golos = Api(nodes=self._NODES)
+            self._stream = Api(nodes=self._NODES)
+            self._stream.rpc.api_total['set_block_applied_callback'] = 'database_api'
         except RetriesExceeded as exception:
             raise BlockchainConnectionError(exception)
 
     async def transfer(self, to: str, amount: Decimal, asset: str):
-        with open('wif.json') as f:
-            func = functools.partial(
-                self.golos.transfer,
-                to, amount, self.address, json.load(f)['golos'], asset
+        with open('wif.json') as wif_file:
+            transaction = await get_running_loop().run_in_executor(
+                None, self._golos.transfer,
+                to, amount, self.address, json.load(wif_file)['golos'], asset
             )
-        transaction = await get_event_loop().run_in_executor(None, func)
         return self.trx_url(transaction['id'])
 
-    async def get_transaction(
-        self, from_address: str, amount: Decimal,
-        asset: str, memo: str, time_start: float
-    ):
-        func = functools.partial(
-            self.golos.get_account_history,
-            self.address, op_limit='transfer', age=int(time() - time_start)
-        )
-        history = await get_event_loop().run_in_executor(None, func)
-        for transaction in history:
-            tr_amount, tr_asset = transaction['amount'].split()
-            decimal_amount = Decimal(tr_amount)
-            if (
-                transaction['to'] == self.address and
-                transaction['from'] == from_address and
-                decimal_amount == amount and
-                tr_asset == asset and
-                transaction['memo'] == memo
-            ):
-                return transaction
+    async def start_streaming(self):
+        create_task(self._start_streaming())
 
-        return None
+    async def _start_streaming(self):
+        loop = get_running_loop()
+        block = await loop.run_in_executor(
+            None, self._stream.rpc.call, 'set_block_applied_callback', [0]
+        )
+        while True:
+            for trx in block['transactions']:
+                for op_type, op in trx['operations']:
+                    queue_member = self._check_operation(op_type, op)
+                    if not queue_member:
+                        continue
+                    trx_id = await loop.run_in_executor(
+                        None, self._golos.get_transaction_id, trx
+                    )
+                    req, callback = queue_member
+                    await callback(req['offer_id'], trx_id)
+                    self._queue.remove(queue_member)
+                    if not self._queue:
+                        await loop.run_in_executor(None, self._stream.rpc.close)
+                        return
+            response = await loop.run_in_executor(None, self._stream.rpc.ws.recv)
+            response_json = json.loads(response)
+            if 'error' in response_json:
+                return error_handler(response_json)
+            block = response_json['result']
+
+    def _check_operation(self, op_type, op):
+        if op_type != 'transfer':
+            return None
+        tr_amount, tr_asset = op['amount'].split()
+        decimal_amount = Decimal(tr_amount)
+        for queue_member in self._queue:
+            req = queue_member[0]
+            if (
+                op['to'] == self.address and
+                op['from'] == req['from_address'] and
+                decimal_amount == req['amount'] and
+                tr_asset == req['asset'] and
+                op['memo'] == req['memo']
+            ):
+                return queue_member
+
+
+golos_blockchain = GolosBlockchain()

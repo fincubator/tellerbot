@@ -18,7 +18,7 @@
 
 from src.escrow.escrow_offer import EscrowOffer
 
-from src.escrow.blockchain.golos_blockchain import GolosBlockchain
+from src.escrow.blockchain.golos_blockchain import GolosBlockchain, golos_blockchain
 
 
 def get_escrow_class(asset: str):
@@ -27,5 +27,5 @@ def get_escrow_class(asset: str):
 
 
 def get_escrow_instance(asset: str):
-    if (escrow_class := get_escrow_class(asset)):
-        return escrow_class()
+    if asset in golos_blockchain.assets:
+        return golos_blockchain

@@ -27,7 +27,7 @@ from src.handlers import show_order
 from src.i18n import _
 
 
-async def expired_order():
+async def run_loop():
     while True:
         cursor = database.orders.find({
             'expiration_time': {'$lte': time()},
@@ -49,7 +49,3 @@ async def expired_order():
                     {'_id': order['_id']},
                     {'$set': {'notify': False}}
                 )
-
-
-async def run_loop():
-    asyncio.create_task(expired_order())
