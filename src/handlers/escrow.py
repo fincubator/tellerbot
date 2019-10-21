@@ -137,16 +137,54 @@ async def set_escrow_sum(
     await states.Escrow.fee.set()
 
 
+async def ask_credentials(
+    call: types.CallbackQuery, offer: EscrowOffer, update_dict: dict = {}
+):
+    await call.answer()
+    fiat = 'RUB'
+    is_user_init = call.from_user.id == offer.init['id']
+    if is_user_init and fiat in {offer.buy, offer.sell}:
+        keyboard = InlineKeyboardMarkup()
+        for bank in SUPPORTED_BANKS:
+            keyboard.row(InlineKeyboardButton(
+                bank, callback_data=f'bank {offer._id} {bank}'
+            ))
+        await tg.send_message(
+            call.message.chat.id, _('Choose bank.'), reply_markup=keyboard
+        )
+        await states.Escrow.bank.set()
+        if update_dict:
+            await offer.update_document({'$set': update_dict})
+        return
+
+    update_dict['pending_input_from'] = call.from_user.id
+    await offer.update_document({'$set': update_dict})
+
+    if is_user_init:
+        receive_currency = offer.sell
+    elif offer.type == 'sell':
+        await tg.send_message(
+            call.message.chat.id,
+            _('Send first and last 4 digits of your {} card number separated '
+              'by space.').format(offer.buy)
+        )
+        await states.Escrow.receive_card_number.set()
+        return
+    else:
+        receive_currency = offer.buy
+    await tg.send_message(
+        call.message.chat.id,
+        _('Send your {} address.').format(receive_currency)
+    )
+    await states.Escrow.receive_address.set()
+
+
 @escrow_callback_handler(
     lambda call: call.data.startswith('accept_fee '),
     state=states.Escrow.fee
 )
 async def pay_fee(call: types.CallbackQuery, offer: EscrowOffer):
-    await call.answer()
-    await tg.send_message(
-        call.message.chat.id, _('Send your {} address.').format(offer.sell)
-    )
-    await states.Escrow.receive_address.set()
+    await ask_credentials(call, offer)
 
 
 @escrow_callback_handler(
@@ -154,24 +192,70 @@ async def pay_fee(call: types.CallbackQuery, offer: EscrowOffer):
     state=states.Escrow.fee
 )
 async def decline_fee(call: types.CallbackQuery, offer: EscrowOffer):
-    is_user_init = call.from_user.id == offer.init['id']
-    if is_user_init == (offer.type == 'buy'):
+    if (call.from_user.id == offer.init['id']) == (offer.type == 'buy'):
         sum_fee_field = 'sum_fee_up'
     else:
         sum_fee_field = 'sum_fee_down'
+    update_dict = {sum_fee_field: offer[f'sum_{offer.type}']}
+    await ask_credentials(call, offer, update_dict)
+
+
+@escrow_callback_handler(
+    lambda call: call.data.startswith('bank '),
+    state=states.Escrow.bank
+)
+async def choose_bank(call: types.CallbackQuery, offer: EscrowOffer):
+    bank = call.data.split()[2]
+    if bank not in SUPPORTED_BANKS:
+        await call.answer(_('This bank is not supported.'))
+        return
 
     await offer.update_document({
         '$set': {
-            sum_fee_field: offer[f'sum_{offer.type}'],
+            'bank': bank,
             'pending_input_from': call.from_user.id
         }
     })
     await call.answer()
-    receive_currency = offer.sell if is_user_init else offer.buy
+    if offer.type == 'buy':
+        await tg.send_message(
+            call.message.chat.id,
+            _('Send first and last 4 digits of your {} card number separated '
+              'by space.').format(offer.buy)
+        )
+        await states.Escrow.receive_card_number.set()
+    else:
+        await tg.send_message(
+            call.message.chat.id,
+            _('Send your {} address.').format(offer.sell)
+        )
+        await states.Escrow.receive_address.set()
+
+
+@escrow_message_handler(state=states.Escrow.receive_card_number)
+async def set_receive_card_number(
+    message: types.Message, state: FSMContext, offer: EscrowOffer
+):
+    digits = message.text.split()
+    if len(digits) != 2:
+        await tg.send_message(
+            message.chat.id,
+            _('You should send {} words separated by spaces.').format(2)
+        )
+        return
+
+    if message.from_user.id == offer.init['id']:
+        user_field = 'init'
+    else:
+        user_field = 'counter'
+
+    await offer.update_document({
+        '$set': {f'{user_field}.receive_address': ('*' * 8).join(digits)}
+    })
     await tg.send_message(
-        call.message.chat.id, _('Send your {} address.').format(receive_currency)
+        message.chat.id, _('Send your {} address.').format(offer[offer.type])
     )
-    await states.Escrow.receive_address.set()
+    await states.Escrow.send_address.set()
 
 
 @escrow_message_handler(state=states.Escrow.receive_address)
@@ -185,17 +269,27 @@ async def set_receive_address(
     if message.from_user.id == offer.init['id']:
         user_field = 'init'
         send_currency = offer.buy
+        ask_name = offer.bank and offer.type == 'sell'
     else:
         user_field = 'counter'
         send_currency = offer.sell
+        ask_name = offer.bank and offer.type == 'buy'
 
     await offer.update_document({
         '$set': {f'{user_field}.receive_address': message.text}
     })
-    await tg.send_message(
-        message.chat.id, _('Send your {} address.').format(send_currency)
-    )
-    await states.Escrow.send_address.set()
+    if ask_name:
+        await tg.send_message(
+            message.chat.id,
+            _('Send your name, patronymic and first letter of surname '
+              'separated by spaces.')
+        )
+        await states.Escrow.name.set()
+    else:
+        await tg.send_message(
+            message.chat.id, _('Send your {} address.').format(send_currency)
+        )
+        await states.Escrow.send_address.set()
 
 
 @escrow_message_handler(state=states.Escrow.send_address)
@@ -207,16 +301,66 @@ async def set_send_address(
         return
 
     if message.from_user.id == offer.init['id']:
-        await set_init_send_address(message, state, offer)
+        await set_init_send_address(message.text, message, state, offer)
     else:
-        await set_counter_send_address(message, state, offer)
+        await set_counter_send_address(message.text, message, state, offer)
+
+
+@escrow_message_handler(state=states.Escrow.name)
+async def set_name(
+    message: types.Message, state: FSMContext, offer: EscrowOffer
+):
+    name = message.text.split()
+    if len(name) != 3:
+        await tg.send_message(
+            message.chat.id,
+            _('You should send {} words separated by spaces.').format(3)
+        )
+        return
+    name[2] = name[2][0] + '.'  # Leaving the first letter of surname with dot
+
+    if offer.type == 'buy':
+        user_field = 'counter'
+        currency = offer.sell
+    else:
+        user_field = 'init'
+        currency = offer.buy
+
+    await offer.update_document({
+        '$set': {f'{user_field}.name': ' '.join(name).upper()}
+    })
+    await tg.send_message(
+        message.chat.id,
+        _('Send first and last 4 digits of your {} card number separated by '
+          'space.').format(currency)
+    )
+    await states.Escrow.send_card_number.set()
+
+
+@escrow_message_handler(state=states.Escrow.send_card_number)
+async def set_send_card_number(
+    message: types.Message, state: FSMContext, offer: EscrowOffer
+):
+    digits = message.text.split()
+    if len(digits) != 2:
+        await tg.send_message(
+            message.chat.id,
+            _('You should send {} words separated by spaces.').format(2)
+        )
+        return
+
+    address = ('*' * 8).join(digits)
+    if message.from_user.id == offer.init['id']:
+        await set_init_send_address(address, message, state, offer)
+    else:
+        await set_counter_send_address(address, message, state, offer)
 
 
 async def set_init_send_address(
-    message: types.Message, state: FSMContext, offer: EscrowOffer
+    address: str, message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
     await offer.update_document({
-        '$set': {'init.send_address': message.text},
+        '$set': {'init.send_address': address},
         '$unset': {'pending_input_from': True}
     })
     order = await database.orders.find_one({'_id': offer.order})
@@ -234,13 +378,13 @@ async def set_init_send_address(
             _('Decline', locale=locale), callback_data=f'decline {offer._id}'
         )
     )
-    await tg.send_message(
-        offer.counter['id'],
-        _('You got an escrow offer to sell {} {} for {} {}.', locale=locale).format(
-            offer.sum_sell, offer.sell, offer.sum_buy, offer.buy
-        ),
-        reply_markup=buy_keyboard
+    answer = _('You got an escrow offer to sell {} {} for {} {}', locale=locale).format(
+        offer.sum_sell, offer.sell, offer.sum_buy, offer.buy
     )
+    if offer.bank:
+        answer += ' ' + _('using {}').format(offer.bank)
+    answer += '.'
+    await tg.send_message(offer.counter['id'], answer, reply_markup=buy_keyboard)
     sell_keyboard = InlineKeyboardMarkup()
     sell_keyboard.add(InlineKeyboardButton(
         _('Cancel'), callback_data=f'escrow_cancel {offer._id}'
@@ -292,7 +436,7 @@ async def decline_offer(call: types.CallbackQuery, offer: EscrowOffer):
 
 
 async def set_counter_send_address(
-    message: types.Message, state: FSMContext, offer: EscrowOffer
+    address: str, message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
     template = (
         'to {escrow_receive_address} '
@@ -323,7 +467,7 @@ async def set_counter_send_address(
 
     await offer.update_document({
         '$set': {
-            'counter.send_address': message.text,
+            'counter.send_address': address,
             'memo': memo,
         },
         '$unset': {

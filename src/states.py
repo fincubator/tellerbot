@@ -33,12 +33,13 @@ class OrderCreation(StatesGroup):
 
 class Escrow(StatesGroup):
     sum = State()
-    init_fee = State()
-    init_receive_address = State()
-    init_send_address = State()
-    counter_fee = State()
-    counter_receive_address = State()
-    counter_send_address = State()
+    fee = State()
+    bank = State()
+    name = State()
+    receive_address = State()
+    receive_card_number = State()
+    send_address = State()
+    send_card_number = State()
 
 
 asking_support = State('asking_support')

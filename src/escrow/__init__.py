@@ -21,6 +21,9 @@ from src.escrow.escrow_offer import EscrowOffer
 from src.escrow.blockchain.golos_blockchain import GolosBlockchain, golos_blockchain
 
 
+SUPPORTED_BANKS = ('Alfa-Bank', 'Rocketbank', 'Sberbank', 'Tinkoff')
+
+
 def get_escrow_class(asset: str):
     if asset in GolosBlockchain.assets:
         return GolosBlockchain
