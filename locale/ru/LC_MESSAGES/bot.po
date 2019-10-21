@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-21 12:04+0300\n"
+"POT-Creation-Date: 2019-10-21 13:27+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -257,6 +257,14 @@ msgstr ""
 "оповещены и исправим её как можно скорее!"
 
 #: src/handlers/escrow.py
+msgid "You should send at least 8 digits."
+msgstr "Вы должны отправить хотя бы 8 цифр."
+
+#: src/handlers/escrow.py
+msgid "Can't get digits from message."
+msgstr "Не удалось получить цифры из сообщения."
+
+#: src/handlers/escrow.py
 msgid "Offer is not active."
 msgstr "Предложение неактивно."
 
@@ -289,8 +297,8 @@ msgid "Choose bank."
 msgstr "Выберите банк."
 
 #: src/handlers/escrow.py
-msgid "Send first and last 4 digits of your {} card number separated by space."
-msgstr "Отправьте первые и последние 4 цифры номера вашей карты {}, разделённые пробелами."
+msgid "Send first and last 4 digits of your {} card number."
+msgstr "Отправьте первые и последние 4 цифры номера вашей карты {}."
 
 #: src/handlers/escrow.py
 msgid "Send your {} address."
@@ -299,10 +307,6 @@ msgstr "Отправьте ваш адрес {}."
 #: src/handlers/escrow.py
 msgid "This bank is not supported."
 msgstr "Этот банк не поддерживается."
-
-#: src/handlers/escrow.py
-msgid "You should send {} words separated by spaces."
-msgstr "Вы должны отправить {} слов, разделённых пробелами."
 
 #: src/handlers/escrow.py
 msgid "Address is invalid."
@@ -315,6 +319,10 @@ msgid ""
 msgstr ""
 "Отправьте ваше имя, отчество и первую букву фамилии, разделённые "
 "пробелами."
+
+#: src/handlers/escrow.py
+msgid "You should send {} words separated by spaces."
+msgstr "Вы должны отправить {} слов, разделённых пробелами."
 
 #: src/handlers/escrow.py
 msgid "Accept"

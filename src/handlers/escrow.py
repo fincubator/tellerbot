@@ -44,6 +44,18 @@ def is_address_valid(address):
     return len(address) <= 64
 
 
+async def get_card_number(text, chat_id):
+    if len(text) < 8:
+        await tg.send_message(chat_id, _('You should send at least 8 digits.'))
+        return None
+    first = text[:4]
+    last = text[-4:]
+    if not first.isdigit() or not last.isdigit():
+        await tg.send_message(chat_id, _("Can't get digits from message."))
+        return None
+    return (first, last)
+
+
 async def call_later(delay, callback, *args, **kwargs):
     await asyncio.sleep(delay)
     return (await callback(*args, **kwargs))
@@ -165,8 +177,7 @@ async def ask_credentials(
     elif offer.type == 'sell':
         await tg.send_message(
             call.message.chat.id,
-            _('Send first and last 4 digits of your {} card number separated '
-              'by space.').format(offer.buy)
+            _('Send first and last 4 digits of your {} card number.').format(offer.buy)
         )
         await states.Escrow.receive_card_number.set()
         return
@@ -220,8 +231,7 @@ async def choose_bank(call: types.CallbackQuery, offer: EscrowOffer):
     if offer.type == 'buy':
         await tg.send_message(
             call.message.chat.id,
-            _('Send first and last 4 digits of your {} card number separated '
-              'by space.').format(offer.buy)
+            _('Send first and last 4 digits of your {} card number.').format(offer.buy)
         )
         await states.Escrow.receive_card_number.set()
     else:
@@ -236,12 +246,8 @@ async def choose_bank(call: types.CallbackQuery, offer: EscrowOffer):
 async def set_receive_card_number(
     message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
-    digits = message.text.split()
-    if len(digits) != 2:
-        await tg.send_message(
-            message.chat.id,
-            _('You should send {} words separated by spaces.').format(2)
-        )
+    card_number = await get_card_number(message.text, message.chat.id)
+    if not card_number:
         return
 
     if message.from_user.id == offer.init['id']:
@@ -250,7 +256,7 @@ async def set_receive_card_number(
         user_field = 'counter'
 
     await offer.update_document({
-        '$set': {f'{user_field}.receive_address': ('*' * 8).join(digits)}
+        '$set': {f'{user_field}.receive_address': ('*' * 8).join(card_number)}
     })
     await tg.send_message(
         message.chat.id, _('Send your {} address.').format(offer[offer.type])
@@ -331,8 +337,7 @@ async def set_name(
     })
     await tg.send_message(
         message.chat.id,
-        _('Send first and last 4 digits of your {} card number separated by '
-          'space.').format(currency)
+        _('Send first and last 4 digits of your {} card number.').format(currency)
     )
     await states.Escrow.send_card_number.set()
 
@@ -341,15 +346,11 @@ async def set_name(
 async def set_send_card_number(
     message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
-    digits = message.text.split()
-    if len(digits) != 2:
-        await tg.send_message(
-            message.chat.id,
-            _('You should send {} words separated by spaces.').format(2)
-        )
+    card_number = await get_card_number(message.text, message.chat.id)
+    if not card_number:
         return
 
-    address = ('*' * 8).join(digits)
+    address = ('*' * 8).join(card_number)
     if message.from_user.id == offer.init['id']:
         await set_init_send_address(address, message, state, offer)
     else:
