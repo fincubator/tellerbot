@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-21 13:27+0300\n"
+"POT-Creation-Date: 2019-10-21 18:17+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -365,6 +365,10 @@ msgid "I'll notify you when transaction is complete."
 msgstr ""
 
 #: src/handlers/escrow.py
+msgid "You can't cancel offer after transfer to escrow."
+msgstr ""
+
+#: src/handlers/escrow.py
 msgid "You can't cancel this offer until transaction will be verified."
 msgstr ""
 
@@ -385,10 +389,6 @@ msgid "I'll notify should you get {}."
 msgstr ""
 
 #: src/handlers/escrow.py
-msgid "You got your {} {} back."
-msgstr ""
-
-#: src/handlers/escrow.py
 msgid "Did you get {} from {}?"
 msgstr ""
 
@@ -397,7 +397,7 @@ msgid "When your transfer is confirmed, I'll complete escrow."
 msgstr ""
 
 #: src/handlers/escrow.py
-msgid "Escrow is being completed, please wait."
+msgid "Escrow is being completed, just one moment."
 msgstr ""
 
 #: src/handlers/escrow.py

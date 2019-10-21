@@ -518,7 +518,9 @@ async def set_counter_send_address(
 @escrow_callback_handler(lambda call: call.data.startswith('escrow_cancel '))
 async def cancel_offer(call: types.CallbackQuery, offer: EscrowOffer):
     if offer.trx_id:
-        return await cancel_confirmed_offer(call, offer)
+        return await call.answer(
+            _("You can't cancel offer after transfer to escrow.")
+        )
     if offer.memo:
         if offer.type == 'buy':
             escrow_user = offer.init
@@ -573,10 +575,6 @@ async def escrow_sent_confirmation(offer_id: ObjectId, trx_id: str):
         InlineKeyboardButton(
             _('Sent', locale=other_user['locale']),
             callback_data=f'tokens_sent {offer._id}'
-        ),
-        InlineKeyboardButton(
-            _('Cancel', locale=other_user['locale']),
-            callback_data=f'tokens_cancel {offer._id}'
         )
     )
     await offer.update_document({
@@ -602,42 +600,6 @@ async def escrow_sent_confirmation(offer_id: ObjectId, trx_id: str):
             offer[new_currency]
         )
     )
-
-
-async def cancel_confirmed_offer(call: types.CallbackQuery, offer: EscrowOffer):
-    if offer.type == 'buy':
-        return_user = offer.init
-        cancel_user = offer.counter
-    elif offer.type == 'sell':
-        return_user = offer.counter
-        cancel_user = offer.init
-
-    escrow_instance = get_escrow_instance(offer[offer.type])
-    trx_url = await escrow_instance.transfer(
-        return_user['send_address'], offer.sum_fee_up.to_decimal(), offer[offer.type]
-    )
-    cancel_answer = _('Escrow was cancelled.', locale=cancel_user['locale'])
-    return_answer = _('Escrow was cancelled.', locale=return_user['locale'])
-    return_answer += ' ' + markdown.link(
-        _('You got your {} {} back.', locale=return_user['locale']).format(
-            offer.sum_fee_up, offer[offer.type]
-        ), trx_url
-    )
-    await offer.delete_document()
-    await call.answer()
-    await tg.send_message(
-        cancel_user['id'], cancel_answer,
-        reply_markup=start_keyboard()
-    )
-    await tg.send_message(
-        return_user['id'], return_answer,
-        reply_markup=start_keyboard()
-    )
-
-
-@escrow_callback_handler(lambda call: call.data.startswith('tokens_cancel '))
-async def cancel_tokens_handler(call: types.CallbackQuery, offer: EscrowOffer):
-    await cancel_confirmed_offer(call, offer)
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('tokens_sent '))
@@ -694,7 +656,7 @@ async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
         recipient_user = offer.init
         other_user = offer.counter
 
-    await call.answer(_('Escrow is being completed, please wait.'))
+    await call.answer(_('Escrow is being completed, just one moment.'))
     escrow_instance = get_escrow_instance(offer[offer.type])
     trx_url = await escrow_instance.transfer(
         recipient_user['receive_address'],
