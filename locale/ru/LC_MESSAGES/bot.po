@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-20 19:08+0300\n"
+"POT-Creation-Date: 2019-10-21 12:04+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -285,12 +285,36 @@ msgid "No"
 msgstr "Нет"
 
 #: src/handlers/escrow.py
+msgid "Choose bank."
+msgstr "Выберите банк."
+
+#: src/handlers/escrow.py
+msgid "Send first and last 4 digits of your {} card number separated by space."
+msgstr "Отправьте первые и последние 4 цифры номера вашей карты {}, разделённые пробелами."
+
+#: src/handlers/escrow.py
 msgid "Send your {} address."
 msgstr "Отправьте ваш адрес {}."
 
 #: src/handlers/escrow.py
+msgid "This bank is not supported."
+msgstr "Этот банк не поддерживается."
+
+#: src/handlers/escrow.py
+msgid "You should send {} words separated by spaces."
+msgstr "Вы должны отправить {} слов, разделённых пробелами."
+
+#: src/handlers/escrow.py
 msgid "Address is invalid."
 msgstr "Адрес неверный."
+
+#: src/handlers/escrow.py
+msgid ""
+"Send your name, patronymic and first letter of surname separated by "
+"spaces."
+msgstr ""
+"Отправьте ваше имя, отчество и первую букву фамилии, разделённые "
+"пробелами."
 
 #: src/handlers/escrow.py
 msgid "Accept"
@@ -301,8 +325,12 @@ msgid "Decline"
 msgstr "Отклонить"
 
 #: src/handlers/escrow.py
-msgid "You got an escrow offer to sell {} {} for {} {}."
-msgstr "Вы получили предложение эскроу на продажу {} {} за {} {}."
+msgid "You got an escrow offer to sell {} {} for {} {}"
+msgstr "Вы получили предложение эскроу на продажу {} {} за {} {}"
+
+#: src/handlers/escrow.py
+msgid "using {}"
+msgstr "используя {}"
 
 #: src/handlers/escrow.py src/handlers/start_menu.py
 msgid "Cancel"
@@ -338,7 +366,9 @@ msgstr "Я оповещу вас когда транзакция будет со
 
 #: src/handlers/escrow.py
 msgid "You can't cancel this offer until transaction will be verified."
-msgstr "Вы не можете отменить это предложение пока транзакция не будет подтверждена."
+msgstr ""
+"Вы не можете отменить это предложение пока транзакция не будет "
+"подтверждена."
 
 #: src/handlers/escrow.py
 msgid "Escrow was cancelled."

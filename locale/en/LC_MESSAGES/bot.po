@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-20 19:08+0300\n"
+"POT-Creation-Date: 2019-10-21 12:04+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -279,11 +279,33 @@ msgid "No"
 msgstr ""
 
 #: src/handlers/escrow.py
+msgid "Choose bank."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "Send first and last 4 digits of your {} card number separated by space."
+msgstr ""
+
+#: src/handlers/escrow.py
 msgid "Send your {} address."
 msgstr ""
 
 #: src/handlers/escrow.py
+msgid "This bank is not supported."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "You should send {} words separated by spaces."
+msgstr ""
+
+#: src/handlers/escrow.py
 msgid "Address is invalid."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid ""
+"Send your name, patronymic and first letter of surname separated by "
+"spaces."
 msgstr ""
 
 #: src/handlers/escrow.py
@@ -295,7 +317,11 @@ msgid "Decline"
 msgstr ""
 
 #: src/handlers/escrow.py
-msgid "You got an escrow offer to sell {} {} for {} {}."
+msgid "You got an escrow offer to sell {} {} for {} {}"
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "using {}"
 msgstr ""
 
 #: src/handlers/escrow.py src/handlers/start_menu.py
