@@ -439,6 +439,7 @@ async def decline_offer(call: types.CallbackQuery, offer: EscrowOffer):
 async def set_counter_send_address(
     address: str, message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
+    offer.counter['send_address'] = address
     template = (
         'to {escrow_receive_address} '
         'for {not_escrow_amount} {not_escrow_currency} '
@@ -450,7 +451,7 @@ async def set_counter_send_address(
             'escrow_receive_address': offer.counter['receive_address'],
             'not_escrow_amount': offer.sum_sell,
             'not_escrow_currency': offer.sell,
-            'not_escrow_send_address': message.text,
+            'not_escrow_send_address': address,
             'not_escrow_receive_address': offer.init['receive_address']
         })
         escrow_user = offer.init
@@ -496,7 +497,7 @@ async def set_counter_send_address(
         offer.sum_fee_up, offer[offer.type], escrow_address
     )
     answer += ' ' + _('with memo', locale=escrow_user['locale'])
-    answer += ':\n' + markdown.code(memo),
+    answer += ':\n' + markdown.code(memo)
     await tg.send_message(
         escrow_user['id'], answer,
         reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
@@ -582,10 +583,12 @@ async def escrow_sent_confirmation(offer_id: ObjectId, trx_id: str):
         '$set': {'trx_id': trx_id}
     })
     answer = url + '\n'
-    answer += _('Send {} {} to address {}', locale=other_user['locale']).format(
-        offer[f'sum_{new_currency}'],
-        offer[new_currency],
-        escrow_user['receive_address']
+    answer += markdown.escape_md(
+        _('Send {} {} to address {}', locale=other_user['locale']).format(
+            offer[f'sum_{new_currency}'],
+            offer[new_currency],
+            escrow_user['receive_address']
+        )
     )
     answer += '.'
     await tg.send_message(
