@@ -18,13 +18,23 @@
 
 from asyncio import get_running_loop, create_task
 from decimal import Decimal
+import functools
 import json
 
 from golos import Api
 from golos.ws_client import error_handler
 from golos.exceptions import RetriesExceeded
 
+from src.database import database
 from src.escrow.blockchain import BaseBlockchain, BlockchainConnectionError
+
+
+NODES = (
+    'wss://api.golos.blckchnd.com/ws',
+    'wss://golosd.privex.io',
+    'wss://golos.solox.world/ws',
+    'wss://golos.lexa.host/ws',
+)
 
 
 class GolosBlockchain(BaseBlockchain):
@@ -32,20 +42,28 @@ class GolosBlockchain(BaseBlockchain):
     address = 'tellerbot'
     explorer = 'https://golos.cf/tx/?={}'
 
-    _NODES = [
-        'wss://api.golos.blckchnd.com/ws',
-        'wss://golosd.privex.io',
-        'wss://golos.solox.world/ws',
-        'wss://golos.lexa.host/ws',
-    ]
-
-    def __init__(self):
+    async def connect(self):
+        loop = get_running_loop()
+        connect_to_node = functools.partial(Api, nodes=NODES)
         try:
-            self._golos = Api(nodes=self._NODES)
-            self._stream = Api(nodes=self._NODES)
+            self._golos = await loop.run_in_executor(None, connect_to_node)
+            self._stream = await loop.run_in_executor(None, connect_to_node)
             self._stream.rpc.api_total['set_block_applied_callback'] = 'database_api'
         except RetriesExceeded as exception:
             raise BlockchainConnectionError(exception)
+
+        cursor = database.escrow.find({
+            'memo': {'$exists': True},
+            'trx_id': {'$exists': False}
+        })
+        async for offer in cursor:
+            await self.check_transaction(
+                offer['_id'],
+                offer['init' if offer['type'] == 'buy' else 'counter']['send_address'],
+                offer['sum_fee_up'].to_decimal(),
+                offer[offer['type']],
+                offer['memo'],
+            )
 
     async def transfer(self, to: str, amount: Decimal, asset: str):
         with open('wif.json') as wif_file:
@@ -66,15 +84,14 @@ class GolosBlockchain(BaseBlockchain):
         while True:
             for trx in block['transactions']:
                 for op_type, op in trx['operations']:
-                    queue_member = self._check_operation(op_type, op)
-                    if not queue_member:
+                    req = self._check_operation(op_type, op)
+                    if not req:
                         continue
                     trx_id = await loop.run_in_executor(
                         None, self._golos.get_transaction_id, trx
                     )
-                    req, callback = queue_member
-                    await callback(req['offer_id'], trx_id)
-                    self._queue.remove(queue_member)
+                    await self._confirmation_callback(req['offer_id'], trx_id)
+                    self._queue.remove(req)
                     if not self._queue:
                         await loop.run_in_executor(None, self._stream.rpc.close)
                         return
@@ -89,8 +106,7 @@ class GolosBlockchain(BaseBlockchain):
             return None
         tr_amount, tr_asset = op['amount'].split()
         decimal_amount = Decimal(tr_amount)
-        for queue_member in self._queue:
-            req = queue_member[0]
+        for req in self._queue:
             if (
                 op['to'] == self.address and
                 op['from'] == req['from_address'] and
@@ -98,7 +114,4 @@ class GolosBlockchain(BaseBlockchain):
                 tr_asset == req['asset'] and
                 op['memo'] == req['memo']
             ):
-                return queue_member
-
-
-golos_blockchain = GolosBlockchain()
+                return req

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-21 18:17+0300\n"
+"POT-Creation-Date: 2019-10-22 17:01+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -17,6 +17,22 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.6.0\n"
+
+#: src/escrow/blockchain/__init__.py
+msgid "Sent"
+msgstr ""
+
+#: src/escrow/blockchain/__init__.py
+msgid "Transaction is confirmed."
+msgstr ""
+
+#: src/escrow/blockchain/__init__.py src/handlers/escrow.py
+msgid "Send {} {} to address {}"
+msgstr ""
+
+#: src/escrow/blockchain/__init__.py
+msgid "I'll notify should you get {}."
+msgstr ""
 
 #: src/handlers/__init__.py
 msgid ""
@@ -349,10 +365,6 @@ msgid "Offer was declined."
 msgstr ""
 
 #: src/handlers/escrow.py
-msgid "Send {} {} to address {}"
-msgstr ""
-
-#: src/handlers/escrow.py
 msgid "with memo"
 msgstr ""
 
@@ -374,18 +386,6 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "Escrow was cancelled."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Transaction is confirmed."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Sent"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "I'll notify should you get {}."
 msgstr ""
 
 #: src/handlers/escrow.py
@@ -499,3 +499,4 @@ msgstr ""
 #: src/notifications.py
 msgid "Your order has expired."
 msgstr ""
+

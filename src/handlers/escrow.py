@@ -33,8 +33,8 @@ from config import SUPPORT_CHAT_ID
 from src.handlers import tg, dp, private_handler
 from src.handlers import show_order, validate_money, start_keyboard
 from src.database import database
-from src.escrow import SUPPORTED_BANKS, EscrowOffer
-from src.escrow import get_escrow_class, get_escrow_instance
+from src.escrow import SUPPORTED_BANKS, get_escrow_instance
+from src.escrow.escrow_offer import EscrowOffer
 from src.i18n import _
 from src import states
 from src.utils import normalize_money, MoneyValidationError
@@ -483,7 +483,7 @@ async def set_counter_send_address(
             callback_data=f'escrow_cancel {offer._id}'
         )
     )
-    escrow_address = markdown.bold(get_escrow_class(offer[offer.type]).address)
+    escrow_address = markdown.bold(get_escrow_instance(offer[offer.type]).address)
     await state.finish()
     await get_escrow_instance(offer[offer.type]).check_transaction(
         offer._id,
@@ -491,7 +491,6 @@ async def set_counter_send_address(
         offer.sum_fee_up.to_decimal(),
         offer[offer.type],
         offer.memo,
-        escrow_sent_confirmation
     )
     answer = _('Send {} {} to address {}', locale=escrow_user['locale']).format(
         offer.sum_fee_up, offer[offer.type], escrow_address
@@ -549,57 +548,6 @@ async def cancel_offer(call: types.CallbackQuery, offer: EscrowOffer):
     buy_state = FSMContext(dp.storage, offer.counter['id'], offer.counter['id'])
     await sell_state.finish()
     await buy_state.finish()
-
-
-async def escrow_sent_confirmation(offer_id: ObjectId, trx_id: str):
-    offer_document = await database.escrow.find_one({'_id': ObjectId(offer_id)})
-    if not offer_document:
-        return
-    offer = EscrowOffer(**offer_document)
-
-    if offer.type == 'buy':
-        escrow_user = offer.init
-        other_user = offer.counter
-        new_currency = 'sell'
-    elif offer.type == 'sell':
-        escrow_user = offer.counter
-        other_user = offer.init
-        new_currency = 'buy'
-
-    url = markdown.link(
-        _('Transaction is confirmed.', locale=other_user['locale']),
-        get_escrow_instance(offer[offer.type]).trx_url(trx_id)
-    )
-    keyboard = InlineKeyboardMarkup()
-    keyboard.add(
-        InlineKeyboardButton(
-            _('Sent', locale=other_user['locale']),
-            callback_data=f'tokens_sent {offer._id}'
-        )
-    )
-    await offer.update_document({
-        '$set': {'trx_id': trx_id}
-    })
-    answer = url + '\n'
-    answer += markdown.escape_md(
-        _('Send {} {} to address {}', locale=other_user['locale']).format(
-            offer[f'sum_{new_currency}'],
-            offer[new_currency],
-            escrow_user['receive_address']
-        )
-    )
-    answer += '.'
-    await tg.send_message(
-        other_user['id'], answer,
-        reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
-    )
-    await tg.send_message(
-        escrow_user['id'],
-        _('Transaction is confirmed.', locale=escrow_user['locale']) + ' ' +
-        _("I'll notify should you get {}.", locale=escrow_user['locale']).format(
-            offer[new_currency]
-        )
-    )
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('tokens_sent '))

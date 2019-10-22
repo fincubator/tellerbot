@@ -16,19 +16,19 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from src.escrow.escrow_offer import EscrowOffer
-
-from src.escrow.blockchain.golos_blockchain import GolosBlockchain, golos_blockchain
+from src.escrow.blockchain.golos_blockchain import GolosBlockchain
 
 
+SUPPORTED_BLOCKCHAINS = (GolosBlockchain(),)
 SUPPORTED_BANKS = ('Alfa-Bank', 'Rocketbank', 'Sberbank', 'Tinkoff')
 
 
-def get_escrow_class(asset: str):
-    if asset in GolosBlockchain.assets:
-        return GolosBlockchain
-
-
 def get_escrow_instance(asset: str):
-    if asset in golos_blockchain.assets:
-        return golos_blockchain
+    for bc in SUPPORTED_BLOCKCHAINS:
+        if asset in bc.assets:
+            return bc
+
+
+async def connect_to_blockchains():
+    for bc in SUPPORTED_BLOCKCHAINS:
+        await bc.connect()

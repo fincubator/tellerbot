@@ -31,7 +31,7 @@ from aiogram.dispatcher.filters.state import any_state
 
 from src.handlers import tg, dp, private_handler, show_order, show_orders, validate_money, orders_list
 from src.database import database, STATE_KEY
-from src.escrow import EscrowOffer
+from src.escrow.escrow_offer import EscrowOffer
 from src.i18n import _
 from src import states
 from src.utils import normalize_money, MoneyValidationError

@@ -16,20 +16,22 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from asyncio import get_event_loop, create_task
+from asyncio import create_task
 
 from aiogram.utils import executor
 
 import config
+from src.escrow import connect_to_blockchains
 from src.notifications import run_loop
 from src.registered_handlers import tg, dp
 
 
-async def on_startup(dp):
+async def on_startup(*args):
     await tg.delete_webhook()
     url = 'https://{}'.format(config.SERVER_HOST)
     await tg.set_webhook(url + config.WEBHOOK_PATH)
     create_task(run_loop())
+    create_task(connect_to_blockchains())
 
 
 def main():
