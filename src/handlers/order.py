@@ -213,7 +213,9 @@ async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
     else:
         init_user = await database.users.find_one({'id': call.from_user.id})
         counter_user = await database.users.find_one({'id': order['user_id']})
-        await database.escrow.delete_many({'pending_input_from': call.message.chat.id})
+        await database.escrow.delete_many({
+            'init.send_address': {'$exists': False}
+        })
         offer = EscrowOffer(**{
             '_id': ObjectId(),
             'order': order['_id'],
