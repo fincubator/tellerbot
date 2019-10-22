@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-22 17:01+0300\n"
+"POT-Creation-Date: 2019-10-23 02:46+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.6.0\n"
 
-#: src/escrow/blockchain/__init__.py
+#: src/escrow/blockchain/__init__.py src/handlers/escrow.py
 msgid "Sent"
 msgstr ""
 
@@ -303,11 +303,11 @@ msgid "No"
 msgstr ""
 
 #: src/handlers/escrow.py
-msgid "Choose bank."
+msgid "Send your full {currency} card number to {user}."
 msgstr ""
 
 #: src/handlers/escrow.py
-msgid "Send first and last 4 digits of your {} card number."
+msgid "Choose bank."
 msgstr ""
 
 #: src/handlers/escrow.py
@@ -316,6 +316,10 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "This bank is not supported."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "Send first and last 4 digits of your {} card number."
 msgstr ""
 
 #: src/handlers/escrow.py
@@ -341,7 +345,7 @@ msgid "Decline"
 msgstr ""
 
 #: src/handlers/escrow.py
-msgid "You got an escrow offer to sell {} {} for {} {}"
+msgid "You got an escrow offer from {} to sell {} {} for {} {}"
 msgstr ""
 
 #: src/handlers/escrow.py

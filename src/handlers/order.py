@@ -224,11 +224,13 @@ async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
             'sum_currency': currency_arg,
             'init': {
                 'id': init_user['id'],
-                'locale': init_user.get('locale')
+                'locale': init_user.get('locale'),
+                'mention': call.from_user.mention
             },
             'counter': {
                 'id': counter_user['id'],
-                'locale': counter_user.get('locale')
+                'locale': counter_user.get('locale'),
+                'mention': order['mention']
             },
             'pending_input_from': call.message.chat.id,
         })

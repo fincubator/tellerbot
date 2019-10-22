@@ -25,6 +25,7 @@ from bson.decimal128 import Decimal128
 
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
+from aiogram.types import User
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import any_state
 from aiogram.utils import markdown
@@ -149,6 +150,27 @@ async def set_escrow_sum(
     await states.Escrow.fee.set()
 
 
+async def full_card_number_request(chat_id: int, offer: EscrowOffer):
+    keyboard = InlineKeyboardMarkup()
+    keyboard.add(InlineKeyboardButton(
+        _('Sent'), callback_data=f'card_sent {offer._id}'
+    ))
+    if offer.type == 'buy':
+        user = offer.init
+        currency = offer.sell
+    else:
+        user = offer.counter
+        currency = offer.buy
+    mention = markdown.link(user['mention'], User(id=user['id']).url)
+    await tg.send_message(
+        chat_id,
+        _('Send your full {currency} card number to {user}.').format(
+            currency=currency, user=mention
+        ),
+        reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
+    )
+
+
 async def ask_credentials(
     call: types.CallbackQuery, offer: EscrowOffer, update_dict: dict = {}
 ):
@@ -169,17 +191,11 @@ async def ask_credentials(
             await offer.update_document({'$set': update_dict})
         return
 
-    update_dict['pending_input_from'] = call.from_user.id
-    await offer.update_document({'$set': update_dict})
-
     if is_user_init:
         receive_currency = offer.sell
     elif offer.type == 'sell':
-        await tg.send_message(
-            call.message.chat.id,
-            _('Send first and last 4 digits of your {} card number.').format(offer.buy)
-        )
-        await states.Escrow.receive_card_number.set()
+        await offer.update_document({'$set': update_dict})
+        await full_card_number_request(call.message.chat.id, offer)
         return
     else:
         receive_currency = offer.buy
@@ -187,6 +203,8 @@ async def ask_credentials(
         call.message.chat.id,
         _('Send your {} address.').format(receive_currency)
     )
+    update_dict['pending_input_from'] = call.from_user.id
+    await offer.update_document({'$set': update_dict})
     await states.Escrow.receive_address.set()
 
 
@@ -221,25 +239,33 @@ async def choose_bank(call: types.CallbackQuery, offer: EscrowOffer):
         await call.answer(_('This bank is not supported.'))
         return
 
-    await offer.update_document({
-        '$set': {
-            'bank': bank,
-            'pending_input_from': call.from_user.id
-        }
-    })
+    update_dict = {'bank': bank}
     await call.answer()
     if offer.type == 'buy':
-        await tg.send_message(
-            call.message.chat.id,
-            _('Send first and last 4 digits of your {} card number.').format(offer.buy)
-        )
-        await states.Escrow.receive_card_number.set()
+        await full_card_number_request(call.message.chat.id, offer)
     else:
+        update_dict['pending_input_from'] = call.from_user.id
         await tg.send_message(
             call.message.chat.id,
             _('Send your {} address.').format(offer.sell)
         )
         await states.Escrow.receive_address.set()
+    await offer.update_document({'$set': update_dict})
+
+
+@escrow_callback_handler(lambda call: call.data.startswith('card_sent '))
+async def full_card_number_sent(call: types.CallbackQuery, offer: EscrowOffer):
+    await offer.update_document({
+        '$set': {'pending_input_from': call.from_user.id}
+    })
+    await call.answer()
+    await tg.send_message(
+        call.message.chat.id,
+        _('Send first and last 4 digits of your {} card number.').format(
+            offer.sell if offer.type == 'buy' else offer.buy
+        )
+    )
+    await states.Escrow.receive_card_number.set()
 
 
 @escrow_message_handler(state=states.Escrow.receive_card_number)
@@ -379,8 +405,11 @@ async def set_init_send_address(
             _('Decline', locale=locale), callback_data=f'decline {offer._id}'
         )
     )
-    answer = _('You got an escrow offer to sell {} {} for {} {}', locale=locale).format(
-        offer.sum_sell, offer.sell, offer.sum_buy, offer.buy
+    mention = markdown.link(offer.init['mention'], User(id=offer.init['id']).url)
+    answer = _('You got an escrow offer from {} to sell {} {} for {} {}',
+               locale=locale)
+    answer = answer.format(
+        mention, offer.sum_sell, offer.sell, offer.sum_buy, offer.buy
     )
     if offer.bank:
         answer += ' ' + _('using {}').format(offer.bank)

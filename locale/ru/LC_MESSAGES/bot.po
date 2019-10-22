@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-22 17:01+0300\n"
+"POT-Creation-Date: 2019-10-23 02:46+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.6.0\n"
 
-#: src/escrow/blockchain/__init__.py
+#: src/escrow/blockchain/__init__.py src/handlers/escrow.py
 msgid "Sent"
 msgstr "Отправлено"
 
@@ -309,12 +309,12 @@ msgid "No"
 msgstr "Нет"
 
 #: src/handlers/escrow.py
-msgid "Choose bank."
-msgstr "Выберите банк."
+msgid "Send your full {currency} card number to {user}."
+msgstr "Отправьте {user} полный номер вашей карты {currency}."
 
 #: src/handlers/escrow.py
-msgid "Send first and last 4 digits of your {} card number."
-msgstr "Отправьте первые и последние 4 цифры номера вашей карты {}."
+msgid "Choose bank."
+msgstr "Выберите банк."
 
 #: src/handlers/escrow.py
 msgid "Send your {} address."
@@ -323,6 +323,10 @@ msgstr "Отправьте ваш адрес {}."
 #: src/handlers/escrow.py
 msgid "This bank is not supported."
 msgstr "Этот банк не поддерживается."
+
+#: src/handlers/escrow.py
+msgid "Send first and last 4 digits of your {} card number."
+msgstr "Отправьте первые и последние 4 цифры номера вашей карты {}."
 
 #: src/handlers/escrow.py
 msgid "Address is invalid."
@@ -349,8 +353,8 @@ msgid "Decline"
 msgstr "Отклонить"
 
 #: src/handlers/escrow.py
-msgid "You got an escrow offer to sell {} {} for {} {}"
-msgstr "Вы получили предложение эскроу на продажу {} {} за {} {}"
+msgid "You got an escrow offer from {} to sell {} {} for {} {}"
+msgstr "Вы получили предложение эскроу от {} на продажу {} {} за {} {}"
 
 #: src/handlers/escrow.py
 msgid "using {}"

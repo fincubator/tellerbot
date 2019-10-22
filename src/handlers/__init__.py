@@ -23,7 +23,8 @@ from time import time
 
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.types import ParseMode
+from aiogram.types import ParseMode, User
+from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 from aiogram.utils.exceptions import MessageNotModified
 
@@ -226,7 +227,7 @@ async def show_order(
     header = ''
     if show_id:
         header += 'ID: {}\n'.format(order['_id'])
-    header += order['username'] + ' '
+    header += markdown.link(order['mention'], User(id=order['user_id']).url) + ' '
     if invert:
         header += _('sells {} for {}', locale=locale).format(order['sell'], order['buy'])
     else:
