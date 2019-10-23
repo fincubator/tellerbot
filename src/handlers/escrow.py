@@ -539,7 +539,7 @@ async def set_counter_send_address(
     await get_escrow_instance(offer[offer.type]).check_transaction(
         offer._id,
         escrow_user['send_address'],
-        offer.sum_fee_up.to_decimal(),
+        offer[f'sum_{offer.type}'].to_decimal(),
         offer[offer.type],
         offer.memo,
     )

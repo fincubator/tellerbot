@@ -63,11 +63,16 @@ class GolosBlockchain(BaseBlockchain):
         })
         min_time = None
         async for offer in cursor:
-            user = 'init' if offer['type'] == 'buy' else 'counter'
+            if offer['type'] == 'buy':
+                address = offer['init']['send_address']
+                amount = offer['sum_buy'].to_decimal()
+            else:
+                address = offer['counter']['send_address']
+                amount = offer['sum_sell'].to_decimal()
             queue.append({
                 'offer_id': offer['_id'],
-                'from_address': offer[user]['send_address'],
-                'amount': offer['sum_fee_up'].to_decimal(),
+                'from_address': address,
+                'amount': amount,
                 'asset': offer[offer['type']],
                 'memo': offer['memo'],
                 'transaction_time': offer['transaction_time']
