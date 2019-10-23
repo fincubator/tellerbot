@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-23 02:46+0300\n"
+"POT-Creation-Date: 2019-10-23 17:41+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -323,6 +323,10 @@ msgstr "Отправьте ваш адрес {}."
 #: src/handlers/escrow.py
 msgid "This bank is not supported."
 msgstr "Этот банк не поддерживается."
+
+#: src/handlers/escrow.py
+msgid "You should send it to {}, not me!"
+msgstr "Вы должны отправить это {}, а не мне!"
 
 #: src/handlers/escrow.py
 msgid "Send first and last 4 digits of your {} card number."

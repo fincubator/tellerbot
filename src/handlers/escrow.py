@@ -169,6 +169,7 @@ async def full_card_number_request(chat_id: int, offer: EscrowOffer):
         ),
         reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
     )
+    await states.Escrow.full_card.set()
 
 
 async def ask_credentials(
@@ -254,7 +255,26 @@ async def choose_bank(call: types.CallbackQuery, offer: EscrowOffer):
     await offer.update_document({'$set': update_dict})
 
 
-@escrow_callback_handler(lambda call: call.data.startswith('card_sent '))
+@escrow_message_handler(state=states.Escrow.full_card)
+async def full_card_number_message(
+    message: types.Message, state: FSMContext, offer: EscrowOffer
+):
+    if message.from_user.id == offer.init['id']:
+        user = offer.counter
+    else:
+        user = offer.init
+    mention = markdown.link(user['mention'], User(id=user['id']).url)
+    await tg.send_message(
+        message.chat.id,
+        _('You should send it to {}, not me!').format(mention),
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+
+@escrow_callback_handler(
+    lambda call: call.data.startswith('card_sent '),
+    state=states.Escrow.full_card
+)
 async def full_card_number_sent(call: types.CallbackQuery, offer: EscrowOffer):
     await offer.update_document({
         '$set': {'pending_input_from': call.from_user.id}

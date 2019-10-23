@@ -36,6 +36,7 @@ class Escrow(StatesGroup):
     fee = State()
     bank = State()
     name = State()
+    full_card = State()
     receive_address = State()
     receive_card_number = State()
     send_address = State()
