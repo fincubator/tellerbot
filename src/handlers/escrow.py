@@ -156,10 +156,10 @@ async def full_card_number_request(chat_id: int, offer: EscrowOffer):
         _('Sent'), callback_data=f'card_sent {offer._id}'
     ))
     if offer.type == 'buy':
-        user = offer.init
+        user = offer.counter
         currency = offer.sell
     else:
-        user = offer.counter
+        user = offer.init
         currency = offer.buy
     mention = markdown.link(user['mention'], User(id=user['id']).url)
     await tg.send_message(
