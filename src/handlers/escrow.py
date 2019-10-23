@@ -194,7 +194,8 @@ async def ask_credentials(
     if is_user_init:
         receive_currency = offer.sell
     elif offer.type == 'sell':
-        await offer.update_document({'$set': update_dict})
+        if update_dict:
+            await offer.update_document({'$set': update_dict})
         await full_card_number_request(call.message.chat.id, offer)
         return
     else:
