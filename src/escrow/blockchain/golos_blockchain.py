@@ -112,7 +112,7 @@ class GolosBlockchain(BaseBlockchain):
                 for op_type, op in trx['operations']:
                     if op_type != 'transfer':
                         continue
-                    req = self._check_operation(op_type, op)
+                    req = self._check_operation(op)
                     if not req:
                         continue
                     trx_id = await loop.run_in_executor(
