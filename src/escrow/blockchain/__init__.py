@@ -55,15 +55,13 @@ class BaseBlockchain(ABC):
         self, offer_id: ObjectId, from_address: str, amount: Decimal,
         asset: str, memo: str
     ):
-        trx = {
+        self._queue.append({
             'offer_id': offer_id,
             'from_address': from_address,
             'amount': amount,
             'asset': asset,
             'memo': memo,
-        }
-
-        self._queue.append(trx)
+        })
         if len(self._queue) == 1:
             await self.start_streaming()
 

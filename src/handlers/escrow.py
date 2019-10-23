@@ -499,6 +499,7 @@ async def set_counter_send_address(
     await offer.update_document({
         '$set': {
             'counter.send_address': address,
+            'transaction_time': time(),
             'memo': memo,
         },
         '$unset': {

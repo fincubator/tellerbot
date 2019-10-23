@@ -17,9 +17,13 @@
 
 
 from asyncio import get_running_loop, create_task
+from datetime import datetime
 from decimal import Decimal
+from calendar import timegm
 import functools
 import json
+from time import time
+from typing import Any, List, Mapping, Optional
 
 from golos import Api
 from golos.ws_client import error_handler
@@ -52,18 +56,40 @@ class GolosBlockchain(BaseBlockchain):
         except RetriesExceeded as exception:
             raise BlockchainConnectionError(exception)
 
+        queue = []
         cursor = database.escrow.find({
             'memo': {'$exists': True},
             'trx_id': {'$exists': False}
         })
+        min_time = None
         async for offer in cursor:
-            await self.check_transaction(
-                offer['_id'],
-                offer['init' if offer['type'] == 'buy' else 'counter']['send_address'],
-                offer['sum_fee_up'].to_decimal(),
-                offer[offer['type']],
-                offer['memo'],
-            )
+            user = 'init' if offer['type'] == 'buy' else 'counter'
+            queue.append({
+                'offer_id': offer['_id'],
+                'from_address': offer[user]['send_address'],
+                'amount': offer['sum_fee_up'].to_decimal(),
+                'asset': offer[offer['type']],
+                'memo': offer['memo'],
+                'transaction_time': offer['transaction_time']
+            })
+            if min_time is None or offer['transaction_time'] < min_time:
+                min_time = offer['transaction_time']
+        if not queue:
+            return
+        func = functools.partial(
+            self._golos.get_account_history,
+            self.address, op_limit='transfer', age=int(time() - min_time)
+        )
+        history = await get_running_loop().run_in_executor(None, func)
+        for op in history:
+            req = self._check_operation(op, queue)
+            if req:
+                await self._confirmation_callback(req['offer_id'], op['trx_id'])
+                queue.remove(req)
+                if not queue:
+                    return
+        self._queue.extend(queue)
+        self._start_streaming()
 
     async def transfer(self, to: str, amount: Decimal, asset: str):
         with open('wif.json') as wif_file:
@@ -84,6 +110,8 @@ class GolosBlockchain(BaseBlockchain):
         while True:
             for trx in block['transactions']:
                 for op_type, op in trx['operations']:
+                    if op_type != 'transfer':
+                        continue
                     req = self._check_operation(op_type, op)
                     if not req:
                         continue
@@ -101,17 +129,24 @@ class GolosBlockchain(BaseBlockchain):
                 return error_handler(response_json)
             block = response_json['result']
 
-    def _check_operation(self, op_type, op):
-        if op_type != 'transfer':
-            return None
-        tr_amount, tr_asset = op['amount'].split()
-        decimal_amount = Decimal(tr_amount)
-        for req in self._queue:
+    def _check_operation(
+        self, op: Mapping[str, Any],
+        queue: Optional[List[Mapping[str, Any]]] = None
+    ):
+        if queue is None:
+            queue = self._queue
+        op_amount, asset = op['amount'].split()
+        amount = Decimal(op_amount)
+        for req in queue:
+            if 'transaction_time' in req and 'timestamp' in op:
+                date = datetime.strptime(op['timestamp'], '%Y-%m-%dT%H:%M:%S')
+                if timegm(date.timetuple()) < req['transaction_time']:
+                    continue
             if (
                 op['to'] == self.address and
                 op['from'] == req['from_address'] and
-                decimal_amount == req['amount'] and
-                tr_asset == req['asset'] and
+                amount == req['amount'] and
+                asset == req['asset'] and
                 op['memo'] == req['memo']
             ):
                 return req
