@@ -57,6 +57,7 @@ async def get_card_number(text, chat_id):
     return (first, last)
 
 
+@dp.async_task
 async def call_later(delay, callback, *args, **kwargs):
     await asyncio.sleep(delay)
     return (await callback(*args, **kwargs))
@@ -656,6 +657,7 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('escrow_complete '))
+@dp.async_task
 async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
     if offer.type == 'buy':
         recipient_user = offer.counter
