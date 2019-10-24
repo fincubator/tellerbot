@@ -601,6 +601,17 @@ async def cancel_offer(call: types.CallbackQuery, offer: EscrowOffer):
     await buy_state.finish()
 
 
+async def edit_keyboard(
+    offer: EscrowOffer, chat_id: int, message_id: int,
+    keyboard: InlineKeyboardMarkup
+):
+    offer_document = await database.escrow.find_one({'_id': offer._id})
+    if offer_document:
+        await tg.edit_message_reply_markup(
+            chat_id, message_id, reply_markup=keyboard
+        )
+
+
 @escrow_callback_handler(lambda call: call.data.startswith('tokens_sent '))
 async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer):
     if offer.type == 'buy':
@@ -633,9 +644,7 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer
         )
     )
     await call_later(
-        60 * 10, tg.edit_message_reply_markup,
-        call.message.chat.id, reply.message_id,
-        reply_markup=keyboard
+        60 * 10, edit_keyboard, confirm_user['id'], reply.message_id, keyboard
     )
     await call.answer()
     await tg.send_message(
