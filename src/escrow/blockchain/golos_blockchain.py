@@ -16,7 +16,7 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from asyncio import get_running_loop, create_task
+from asyncio import create_task, get_running_loop, sleep
 from datetime import datetime
 from decimal import Decimal
 from calendar import timegm
@@ -27,7 +27,7 @@ from typing import Any, List, Mapping, Optional
 
 from golos import Api
 from golos.ws_client import error_handler
-from golos.exceptions import RetriesExceeded
+from golos.exceptions import RetriesExceeded, TransactionNotFound
 
 from src.database import database
 from src.escrow.blockchain import BaseBlockchain, BlockchainConnectionError
@@ -88,8 +88,12 @@ class GolosBlockchain(BaseBlockchain):
         history = await get_running_loop().run_in_executor(None, func)
         for op in history:
             req = self._check_operation(op, queue)
-            if req:
-                await self._confirmation_callback(req['offer_id'], op['trx_id'])
+            if not req:
+                continue
+            is_confirmed = await self._confirmation_callback(
+                req['offer_id'], op['trx_id'], op['block']
+            )
+            if is_confirmed:
                 queue.remove(req)
                 if not queue:
                     return
@@ -103,6 +107,33 @@ class GolosBlockchain(BaseBlockchain):
                 to, amount, self.address, json.load(wif_file)['golos'], asset
             )
         return self.trx_url(transaction['id'])
+
+    async def is_block_confirmed(self, block_num, req):
+        loop = get_running_loop()
+        while True:
+            properties = await loop.run_in_executor(
+                None, self.golos.get_dynamic_global_properties
+            )
+            if properties:
+                head_block_num = properties['last_irreversible_block_num']
+                if block_num <= head_block_num:
+                    break
+            await sleep(3)
+        op = {
+            'block_num': block_num,
+            'type_op': 'transfer',
+            'to': self.address,
+            'from': req['from_address'],
+            'amount': req['amount'],
+            'asset': req['asset'],
+            'memo': req['memo'],
+        }
+        try:
+            await loop.run_in_executor(None, self.golos.find_op_transaction, op)
+        except TransactionNotFound:
+            return False
+        else:
+            return True
 
     async def start_streaming(self):
         create_task(self._start_streaming())
@@ -123,11 +154,15 @@ class GolosBlockchain(BaseBlockchain):
                     trx_id = await loop.run_in_executor(
                         None, self._golos.get_transaction_id, trx
                     )
-                    await self._confirmation_callback(req['offer_id'], trx_id)
-                    self._queue.remove(req)
-                    if not self._queue:
-                        await loop.run_in_executor(None, self._stream.rpc.close)
-                        return
+                    block_num = int(block['previous'][:8], 16) + 1
+                    is_confirmed = await self._confirmation_callback(
+                        req['offer_id'], trx_id, block_num
+                    )
+                    if is_confirmed:
+                        self._queue.remove(req)
+                        if not self._queue:
+                            await loop.run_in_executor(None, self._stream.rpc.close)
+                            return
             response = await loop.run_in_executor(None, self._stream.rpc.ws.recv)
             response_json = json.loads(response)
             if 'error' in response_json:

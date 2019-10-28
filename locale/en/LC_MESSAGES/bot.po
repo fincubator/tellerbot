@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-23 17:41+0300\n"
+"POT-Creation-Date: 2019-10-28 02:54+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -17,6 +17,10 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.6.0\n"
+
+#: src/escrow/blockchain/__init__.py
+msgid "Transaction has passed. I'll notify should you get {}."
+msgstr ""
 
 #: src/escrow/blockchain/__init__.py src/handlers/escrow.py
 msgid "Sent"
@@ -31,7 +35,11 @@ msgid "Send {} {} to address {}"
 msgstr ""
 
 #: src/escrow/blockchain/__init__.py
-msgid "I'll notify should you get {}."
+msgid "Transaction is not confirmed."
+msgstr ""
+
+#: src/escrow/blockchain/__init__.py
+msgid "Please try again."
 msgstr ""
 
 #: src/handlers/__init__.py
@@ -507,4 +515,3 @@ msgstr ""
 #: src/notifications.py
 msgid "Your order has expired."
 msgstr ""
-

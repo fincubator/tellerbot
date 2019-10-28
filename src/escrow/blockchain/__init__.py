@@ -17,7 +17,9 @@
 
 
 from abc import ABC, abstractmethod
+from asyncio import create_task
 from decimal import Decimal
+from time import time
 
 from bson.objectid import ObjectId
 
@@ -42,6 +44,10 @@ class BaseBlockchain(ABC):
 
     @abstractmethod
     async def transfer(self, to: str, amount: Decimal, asset: str):
+        pass
+
+    @abstractmethod
+    async def is_block_confirmed(self, block_num):
         pass
 
     @abstractmethod
@@ -72,7 +78,9 @@ class BaseBlockchain(ABC):
                 return True
         return False
 
-    async def _confirmation_callback(self, offer_id: ObjectId, trx_id: str):
+    async def _confirmation_callback(
+        self, offer_id: ObjectId, trx_id: str, block_num: int
+    ):
         offer_document = await database.escrow.find_one({
             '_id': ObjectId(offer_id)
         })
@@ -81,45 +89,51 @@ class BaseBlockchain(ABC):
         offer = EscrowOffer(**offer_document)
 
         if offer.type == 'buy':
+            new_currency = 'sell'
             escrow_user = offer.init
             other_user = offer.counter
-            new_currency = 'sell'
         elif offer.type == 'sell':
+            new_currency = 'buy'
             escrow_user = offer.counter
             other_user = offer.init
-            new_currency = 'buy'
 
-        keyboard = InlineKeyboardMarkup()
-        keyboard.add(
-            InlineKeyboardButton(
+        await offer.update_document({'$set': {'trx_id': trx_id}})
+        answer = _(
+            "Transaction has passed. I'll notify should you get {}.",
+            locale=escrow_user['locale']
+        )
+        answer = answer.format(offer[new_currency])
+        await tg.send_message(escrow_user['id'], answer)
+        is_confirmed = await create_task(self.is_block_confirmed(block_num))
+        if is_confirmed:
+            keyboard = InlineKeyboardMarkup()
+            keyboard.add(InlineKeyboardButton(
                 _('Sent', locale=other_user['locale']),
                 callback_data=f'tokens_sent {offer._id}'
+            ))
+            answer = markdown.link(
+                _('Transaction is confirmed.', locale=other_user['locale']),
+                self.trx_url(trx_id)
             )
-        )
-        await offer.update_document({'$set': {'trx_id': trx_id}})
-        answer = markdown.link(
-            _('Transaction is confirmed.', locale=other_user['locale']),
-            self.trx_url(trx_id)
-        )
-        answer += '\n' + markdown.escape_md(
-            _('Send {} {} to address {}', locale=other_user['locale']).format(
-                offer[f'sum_{new_currency}'],
-                offer[new_currency],
-                escrow_user['receive_address']
+            answer += '\n' + markdown.escape_md(
+                _('Send {} {} to address {}', locale=other_user['locale']).format(
+                    offer[f'sum_{new_currency}'],
+                    offer[new_currency],
+                    escrow_user['receive_address']
+                )
             )
-        )
-        answer += '.'
-        await tg.send_message(
-            other_user['id'], answer,
-            reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
-        )
-        await tg.send_message(
-            escrow_user['id'],
-            _('Transaction is confirmed.', locale=escrow_user['locale']) + ' ' +
-            _("I'll notify should you get {}.", locale=escrow_user['locale']).format(
-                offer[new_currency]
+            answer += '.'
+            await tg.send_message(
+                other_user['id'], answer,
+                reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
             )
-        )
+            return True
+        else:
+            answer = _('Transaction is not confirmed.', locale=escrow_user['locale'])
+            answer += ' ' + _('Please try again.', locale=escrow_user['locale'])
+            await tg.send_message(escrow_user['id'], answer)
+            await offer.update_document({'$set': {'transaction_time': time()}})
+            return False
 
 
 class BlockchainConnectionError(Exception):
