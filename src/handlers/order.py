@@ -360,7 +360,7 @@ async def edit_field(message: types.Message, state: FSMContext):
 
     elif field == 'payment_system':
         payment_system = message.text.replace('\n', ' ')
-        if len(payment_system) > 150:
+        if len(payment_system) >= 150:
             await tg.send_message(
                 message.chat.id,
                 _('This value should contain less than {} characters '
@@ -386,7 +386,7 @@ async def edit_field(message: types.Message, state: FSMContext):
 
     elif field == 'comments':
         comments = message.text
-        if len(comments) > 150:
+        if len(comments) >= 150:
             await tg.send_message(
                 message.chat.id,
                 _('This value should contain less than {} characters '

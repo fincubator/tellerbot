@@ -103,7 +103,7 @@ async def choose_buy(message: types.Message, state: FSMContext):
             _('Currency may only contain latin characters.')
         )
         return
-    if len(message.text) > 20:
+    if len(message.text) >= 20:
         await tg.send_message(
             message.chat.id,
             _('This value should contain less than {} characters '
@@ -144,7 +144,7 @@ async def choose_sell(message: types.Message, state: FSMContext):
             _('Currency may only contain latin characters.')
         )
         return
-    if len(message.text) > 20:
+    if len(message.text) >= 20:
         await tg.send_message(
             message.chat.id,
             _('This value should contain less than {} characters '
@@ -485,7 +485,7 @@ async def location_handler(call: types.CallbackQuery):
 @private_handler(state=OrderCreation.payment_system)
 async def choose_payment_system(message: types.Message, state: FSMContext):
     payment_system = message.text.replace('\n', ' ')
-    if len(payment_system) > 150:
+    if len(payment_system) >= 150:
         await tg.send_message(
             message.chat.id,
             _('This value should contain less than {} characters '
@@ -574,7 +574,7 @@ async def comment_handler(call: types.CallbackQuery):
 @private_handler(state=OrderCreation.comments)
 async def choose_comments(message: types.Message, state: FSMContext):
     comments = message.text
-    if len(comments) > 150:
+    if len(comments) >= 150:
         await tg.send_message(
             message.chat.id,
             _('This value should contain less than {} characters '

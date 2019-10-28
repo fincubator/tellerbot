@@ -41,10 +41,6 @@ from src import states
 from src.utils import normalize_money, MoneyValidationError
 
 
-def is_address_valid(address):
-    return len(address) <= 64
-
-
 async def get_card_number(text, chat_id):
     if len(text) < 8:
         await tg.send_message(chat_id, _('You should send at least 8 digits.'))
@@ -316,8 +312,12 @@ async def set_receive_card_number(
 async def set_receive_address(
     message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
-    if not is_address_valid(message.text):
-        await tg.send_message(message.chat.id, _('Address is invalid.'))
+    if len(message.text) >= 150:
+        await tg.send_message(
+            message.chat.id,
+            _('This value should contain less than {} characters '
+              '(you sent {} characters).').format(150, len(message.text))
+        )
         return
 
     if message.from_user.id == offer.init['id']:
@@ -350,8 +350,12 @@ async def set_receive_address(
 async def set_send_address(
     message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
-    if not is_address_valid(message.text):
-        await tg.send_message(message.chat.id, _('Address is invalid.'))
+    if len(message.text) >= 150:
+        await tg.send_message(
+            message.chat.id,
+            _('This value should contain less than {} characters '
+              '(you sent {} characters).').format(150, len(message.text))
+        )
         return
 
     if message.from_user.id == offer.init['id']:
