@@ -87,7 +87,7 @@ class GolosBlockchain(BaseBlockchain):
         )
         history = await get_running_loop().run_in_executor(None, func)
         for op in history:
-            req = self._check_operation(op, queue)
+            req = await self._check_operation(op, op['block'], queue)
             if not req:
                 continue
             is_confirmed = await self._confirmation_callback(
@@ -148,13 +148,13 @@ class GolosBlockchain(BaseBlockchain):
                 for op_type, op in trx['operations']:
                     if op_type != 'transfer':
                         continue
-                    req = self._check_operation(op)
+                    block_num = int(block['previous'][:8], 16) + 1
+                    req = await self._check_operation(op, block_num)
                     if not req:
                         continue
                     trx_id = await loop.run_in_executor(
                         None, self._golos.get_transaction_id, trx
                     )
-                    block_num = int(block['previous'][:8], 16) + 1
                     is_confirmed = await self._confirmation_callback(
                         req['offer_id'], trx_id, block_num
                     )
@@ -169,8 +169,8 @@ class GolosBlockchain(BaseBlockchain):
                 return error_handler(response_json)
             block = response_json['result']
 
-    def _check_operation(
-        self, op: Mapping[str, Any],
+    async def _check_operation(
+        self, op: Mapping[str, Any], block_num: int,
         queue: Optional[List[Mapping[str, Any]]] = None
     ):
         if queue is None:
@@ -185,8 +185,11 @@ class GolosBlockchain(BaseBlockchain):
             if (
                 op['to'] == self.address and
                 op['from'] == req['from_address'] and
-                amount == req['amount'] and
                 asset == req['asset'] and
                 op['memo'] == req['memo']
             ):
-                return req
+                if amount == req['amount']:
+                    return req
+                await self._wrong_amount_callback(
+                    req['offer_id'], op['from'], amount, asset, block_num
+                )

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-28 02:54+0300\n"
+"POT-Creation-Date: 2019-10-28 04:35+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -41,6 +41,14 @@ msgstr "Транзакция не подтверждена."
 #: src/escrow/blockchain/__init__.py
 msgid "Please try again."
 msgstr "Пожалуйста, попробуйте ещё раз."
+
+#: src/escrow/blockchain/__init__.py
+msgid "You've sent the wrong amount."
+msgstr "Вы отправили неверное количество."
+
+#: src/escrow/blockchain/__init__.py
+msgid "Transaction was refunded."
+msgstr "Транзакция возмещена."
 
 #: src/handlers/__init__.py
 msgid ""
@@ -202,7 +210,7 @@ msgstr "Какую валюту вы хотите купить?"
 msgid "Currency may only contain latin characters."
 msgstr "Валюта может содержать только латинские символы."
 
-#: src/handlers/creation.py src/handlers/order.py
+#: src/handlers/creation.py src/handlers/escrow.py src/handlers/order.py
 msgid ""
 "This value should contain less than {} characters (you sent {} "
 "characters)."
@@ -339,10 +347,6 @@ msgstr "Вы должны отправить это {}, а не мне!"
 #: src/handlers/escrow.py
 msgid "Send first and last 4 digits of your {} card number."
 msgstr "Отправьте первые и последние 4 цифры номера вашей карты {}."
-
-#: src/handlers/escrow.py
-msgid "Address is invalid."
-msgstr "Адрес неверный."
 
 #: src/handlers/escrow.py
 msgid ""
@@ -525,3 +529,4 @@ msgstr "Ответ отправлен."
 #: src/notifications.py
 msgid "Your order has expired."
 msgstr "Срок действия вашего заказа истёк."
+

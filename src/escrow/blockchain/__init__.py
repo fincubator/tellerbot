@@ -26,7 +26,6 @@ from bson.objectid import ObjectId
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
 from aiogram.utils import markdown
 
-from src.escrow.escrow_offer import EscrowOffer
 from src.handlers import tg
 from src.database import database
 from src.i18n import _
@@ -81,23 +80,19 @@ class BaseBlockchain(ABC):
     async def _confirmation_callback(
         self, offer_id: ObjectId, trx_id: str, block_num: int
     ):
-        offer_document = await database.escrow.find_one({
-            '_id': ObjectId(offer_id)
-        })
-        if not offer_document:
+        offer = await database.escrow.find_one({'_id': offer_id})
+        if not offer:
             return
-        offer = EscrowOffer(**offer_document)
 
-        if offer.type == 'buy':
+        if offer['type'] == 'buy':
             new_currency = 'sell'
-            escrow_user = offer.init
-            other_user = offer.counter
-        elif offer.type == 'sell':
+            escrow_user = offer['init']
+            other_user = offer['counter']
+        elif offer['type'] == 'sell':
             new_currency = 'buy'
-            escrow_user = offer.counter
-            other_user = offer.init
+            escrow_user = offer['counter']
+            other_user = offer['init']
 
-        await offer.update_document({'$set': {'trx_id': trx_id}})
         answer = _(
             "Transaction has passed. I'll notify should you get {}.",
             locale=escrow_user['locale']
@@ -106,10 +101,14 @@ class BaseBlockchain(ABC):
         await tg.send_message(escrow_user['id'], answer)
         is_confirmed = await create_task(self.is_block_confirmed(block_num))
         if is_confirmed:
+            await database.escrow.update_one(
+                {'_id': offer['_id']},
+                {'$set': {'trx_id': trx_id}}
+            )
             keyboard = InlineKeyboardMarkup()
             keyboard.add(InlineKeyboardButton(
                 _('Sent', locale=other_user['locale']),
-                callback_data=f'tokens_sent {offer._id}'
+                callback_data='tokens_sent {}'.format(offer['_id'])
             ))
             answer = markdown.link(
                 _('Transaction is confirmed.', locale=other_user['locale']),
@@ -128,12 +127,41 @@ class BaseBlockchain(ABC):
                 reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
             )
             return True
-        else:
-            answer = _('Transaction is not confirmed.', locale=escrow_user['locale'])
-            answer += ' ' + _('Please try again.', locale=escrow_user['locale'])
-            await tg.send_message(escrow_user['id'], answer)
-            await offer.update_document({'$set': {'transaction_time': time()}})
-            return False
+
+        await database.escrow.update_one(
+            {'_id': offer['_id']},
+            {'$set': {'transaction_time': time()}}
+        )
+        answer = _('Transaction is not confirmed.', locale=escrow_user['locale'])
+        answer += ' ' + _('Please try again.', locale=escrow_user['locale'])
+        await tg.send_message(escrow_user['id'], answer)
+        return False
+
+    async def _wrong_amount_callback(
+        self, offer_id: ObjectId, from_address: str, amount: Decimal,
+        asset: str, block_num: int
+    ):
+        offer = await database.escrow.find_one({'_id': offer_id})
+        if not offer:
+            return
+        user = offer['init'] if offer['type'] == 'buy' else offer['counter']
+        is_confirmed = await create_task(self.is_block_confirmed(block_num))
+        if not is_confirmed:
+            return
+        trx_id = await self.transfer(
+            from_address, amount, asset
+        )
+        await database.escrow.update_one(
+            {'_id': offer['_id']},
+            {'$set': {'transaction_time': time()}}
+        )
+        answer = _("You've sent the wrong amount.", locale=user['locale'])
+        answer += ' ' + markdown.link(
+            _('Transaction was refunded.', locale=user['locale']),
+            self.trx_url(trx_id)
+        )
+        answer += ' ' + _('Please try again.', locale=user['locale'])
+        await tg.send_message(user['id'], answer, parse_mode=ParseMode.MARKDOWN)
 
 
 class BlockchainConnectionError(Exception):
