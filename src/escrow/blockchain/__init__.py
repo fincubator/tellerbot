@@ -145,21 +145,25 @@ class BaseBlockchain(ABC):
         if not offer:
             return
         user = offer['init'] if offer['type'] == 'buy' else offer['counter']
-        is_confirmed = await create_task(self.is_block_confirmed(block_num))
-        if not is_confirmed:
-            return
-        trx_id = await self.transfer(
-            from_address, amount, asset
+        answer = _(
+            "You've sent the wrong amount. "
+            'Transaction will be refunded after confirmation.',
+            locale=user['locale']
         )
+        await tg.send_message(user['id'], answer, parse_mode=ParseMode.MARKDOWN)
+        is_confirmed = await create_task(self.is_block_confirmed(block_num))
         await database.escrow.update_one(
             {'_id': offer['_id']},
             {'$set': {'transaction_time': time()}}
         )
-        answer = _("You've sent the wrong amount.", locale=user['locale'])
-        answer += ' ' + markdown.link(
-            _('Transaction was refunded.', locale=user['locale']),
-            self.trx_url(trx_id)
-        )
+        if is_confirmed:
+            trx_id = await self.transfer(from_address, amount, asset)
+            answer = markdown.link(
+                _('Transaction is refunded.', locale=user['locale']),
+                self.trx_url(trx_id)
+            )
+        else:
+            answer = _('Transaction is not confirmed.', locale=user['locale'])
         answer += ' ' + _('Please try again.', locale=user['locale'])
         await tg.send_message(user['id'], answer, parse_mode=ParseMode.MARKDOWN)
 
