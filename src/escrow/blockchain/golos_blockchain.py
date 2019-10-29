@@ -182,14 +182,22 @@ class GolosBlockchain(BaseBlockchain):
                 date = datetime.strptime(op['timestamp'], '%Y-%m-%dT%H:%M:%S')
                 if timegm(date.timetuple()) < req['transaction_time']:
                     continue
-            if (
-                op['to'] == self.address and
-                op['from'] == req['from_address'] and
-                asset == req['asset'] and
-                op['memo'] == req['memo']
-            ):
-                if amount == req['amount']:
-                    return req
-                await self._wrong_amount_callback(
-                    req['offer_id'], op['from'], amount, asset, block_num
-                )
+            if op['to'] != self.address or op['from'] != req['from_address']:
+                continue
+            refund_reasons = set()
+            if asset != req['asset']:
+                refund_reasons.add('asset')
+            if amount != req['amount']:
+                refund_reasons.add('amount')
+            if op['memo'] != req['memo']:
+                refund_reasons.add('memo')
+            if not refund_reasons:
+                return req
+            await self._refund_callback(
+                frozenset(refund_reasons),
+                req['offer_id'],
+                op['from'],
+                amount,
+                asset,
+                block_num
+            )

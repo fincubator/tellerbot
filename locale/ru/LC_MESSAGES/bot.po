@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-29 02:47+0300\n"
+"POT-Creation-Date: 2019-10-29 03:16+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -43,12 +43,24 @@ msgid "Please try again."
 msgstr "Пожалуйста, попробуйте ещё раз."
 
 #: src/escrow/blockchain/__init__.py
-msgid ""
-"You've sent the wrong amount. Transaction will be refunded after "
-"confirmation."
-msgstr ""
-"Вы отправили неверное количество. Транзакция будет возмещена после "
-"подтверждения."
+msgid "There are mistakes in your transfer:"
+msgstr "В вашем переводе есть ошибки:"
+
+#: src/escrow/blockchain/__init__.py
+msgid "wrong asset"
+msgstr "неверный актив"
+
+#: src/escrow/blockchain/__init__.py
+msgid "wrong amount"
+msgstr "неверная сумма"
+
+#: src/escrow/blockchain/__init__.py
+msgid "wrong memo"
+msgstr "неверное мемо"
+
+#: src/escrow/blockchain/__init__.py
+msgid "Transaction will be refunded after confirmation."
+msgstr "Транзакция будет возмещена после подтверждения."
 
 #: src/escrow/blockchain/__init__.py
 msgid "Transaction is refunded."

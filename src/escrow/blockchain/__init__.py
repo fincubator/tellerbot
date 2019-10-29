@@ -20,6 +20,7 @@ from abc import ABC, abstractmethod
 from asyncio import create_task
 from decimal import Decimal
 from time import time
+from typing import FrozenSet
 
 from bson.objectid import ObjectId
 
@@ -137,16 +138,29 @@ class BaseBlockchain(ABC):
         await tg.send_message(escrow_user['id'], answer)
         return False
 
-    async def _wrong_amount_callback(
-        self, offer_id: ObjectId, from_address: str, amount: Decimal,
-        asset: str, block_num: int
+    async def _refund_callback(
+        self, reasons: FrozenSet[str], offer_id: ObjectId, from_address: str,
+        amount: Decimal, asset: str, block_num: int
     ):
         offer = await database.escrow.find_one({'_id': offer_id})
         if not offer:
             return
+
         user = offer['init'] if offer['type'] == 'buy' else offer['counter']
-        answer = _(
-            "You've sent the wrong amount. "
+        answer = _('There are mistakes in your transfer:', locale=user['locale'])
+
+        for reason in reasons:
+            if reason == 'asset':
+                point = _('wrong asset', locale=user['locale'])
+            elif reason == 'amount':
+                point = _('wrong amount', locale=user['locale'])
+            elif reason == 'memo':
+                point = _('wrong memo', locale=user['locale'])
+            else:
+                continue
+            answer += '\n• ' + point
+
+        answer += '\n\n' + _(
             'Transaction will be refunded after confirmation.',
             locale=user['locale']
         )
