@@ -72,7 +72,8 @@ class GolosBlockchain(BaseBlockchain):
             queue.append({
                 'offer_id': offer['_id'],
                 'from_address': address,
-                'amount': amount,
+                'amount_with_fee': offer['sum_fee_up'].to_decimal(),
+                'amount_without_fee': amount,
                 'asset': offer[offer['type']],
                 'memo': offer['memo'],
                 'transaction_time': offer['transaction_time']
@@ -91,14 +92,14 @@ class GolosBlockchain(BaseBlockchain):
             if not req:
                 continue
             is_confirmed = await self._confirmation_callback(
-                req['offer_id'], op['trx_id'], op['block']
+                req['offer_id'], op, op['trx_id'], op['block']
             )
             if is_confirmed:
                 queue.remove(req)
                 if not queue:
                     return
         self._queue.extend(queue)
-        self._start_streaming()
+        await self._start_streaming()
 
     async def transfer(self, to: str, amount: Decimal, asset: str):
         with open('wif.json') as wif_file:
@@ -108,11 +109,11 @@ class GolosBlockchain(BaseBlockchain):
             )
         return self.trx_url(transaction['id'])
 
-    async def is_block_confirmed(self, block_num, req):
+    async def is_block_confirmed(self, block_num, op):
         loop = get_running_loop()
         while True:
             properties = await loop.run_in_executor(
-                None, self.golos.get_dynamic_global_properties
+                None, self._golos.get_dynamic_global_properties
             )
             if properties:
                 head_block_num = properties['last_irreversible_block_num']
@@ -120,16 +121,15 @@ class GolosBlockchain(BaseBlockchain):
                     break
             await sleep(3)
         op = {
-            'block_num': block_num,
+            'block': block_num,
             'type_op': 'transfer',
-            'to': self.address,
-            'from': req['from_address'],
-            'amount': req['amount'],
-            'asset': req['asset'],
-            'memo': req['memo'],
+            'to': op['to'],
+            'from': op['from'],
+            'amount': op['amount'],
+            'memo': op['memo']
         }
         try:
-            await loop.run_in_executor(None, self.golos.find_op_transaction, op)
+            await loop.run_in_executor(None, self._golos.find_op_transaction, op)
         except TransactionNotFound:
             return False
         else:
@@ -156,7 +156,7 @@ class GolosBlockchain(BaseBlockchain):
                         None, self._golos.get_transaction_id, trx
                     )
                     is_confirmed = await self._confirmation_callback(
-                        req['offer_id'], trx_id, block_num
+                        req['offer_id'], op, trx_id, block_num
                     )
                     if is_confirmed:
                         self._queue.remove(req)
@@ -187,7 +187,7 @@ class GolosBlockchain(BaseBlockchain):
             refund_reasons = set()
             if asset != req['asset']:
                 refund_reasons.add('asset')
-            if amount != req['amount']:
+            if amount not in (req['amount_with_fee'], req['amount_without_fee']):
                 refund_reasons.add('amount')
             if op['memo'] != req['memo']:
                 refund_reasons.add('memo')
@@ -196,6 +196,7 @@ class GolosBlockchain(BaseBlockchain):
             await self._refund_callback(
                 frozenset(refund_reasons),
                 req['offer_id'],
+                op,
                 op['from'],
                 amount,
                 asset,

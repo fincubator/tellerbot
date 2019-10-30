@@ -20,7 +20,7 @@ from abc import ABC, abstractmethod
 from asyncio import create_task
 from decimal import Decimal
 from time import time
-from typing import FrozenSet
+from typing import Any, FrozenSet, Mapping
 
 from bson.objectid import ObjectId
 
@@ -47,24 +47,25 @@ class BaseBlockchain(ABC):
         pass
 
     @abstractmethod
-    async def is_block_confirmed(self, block_num):
+    async def is_block_confirmed(self, block_num: int, op: Mapping[str, Any]):
         pass
 
     @abstractmethod
     async def start_streaming(self):
         pass
 
-    def trx_url(self, trx_id):
+    def trx_url(self, trx_id: str):
         return self.explorer.format(trx_id)
 
     async def check_transaction(
-        self, offer_id: ObjectId, from_address: str, amount: Decimal,
-        asset: str, memo: str
+        self, offer_id: ObjectId, from_address: str, amount_with_fee: Decimal,
+        amount_without_fee: Decimal, asset: str, memo: str
     ):
         self._queue.append({
             'offer_id': offer_id,
             'from_address': from_address,
-            'amount': amount,
+            'amount_with_fee': amount_with_fee,
+            'amount_without_fee': amount_without_fee,
             'asset': asset,
             'memo': memo,
         })
@@ -79,7 +80,7 @@ class BaseBlockchain(ABC):
         return False
 
     async def _confirmation_callback(
-        self, offer_id: ObjectId, trx_id: str, block_num: int
+        self, offer_id: ObjectId, op: Mapping[str, Any], trx_id: str, block_num: int
     ):
         offer = await database.escrow.find_one({'_id': offer_id})
         if not offer:
@@ -100,7 +101,7 @@ class BaseBlockchain(ABC):
         )
         answer = answer.format(offer[new_currency])
         await tg.send_message(escrow_user['id'], answer)
-        is_confirmed = await create_task(self.is_block_confirmed(block_num))
+        is_confirmed = await create_task(self.is_block_confirmed(block_num, op))
         if is_confirmed:
             await database.escrow.update_one(
                 {'_id': offer['_id']},
@@ -139,8 +140,8 @@ class BaseBlockchain(ABC):
         return False
 
     async def _refund_callback(
-        self, reasons: FrozenSet[str], offer_id: ObjectId, from_address: str,
-        amount: Decimal, asset: str, block_num: int
+        self, reasons: FrozenSet[str], offer_id: ObjectId, op: Mapping[str, Any],
+        from_address: str, amount: Decimal, asset: str, block_num: int
     ):
         offer = await database.escrow.find_one({'_id': offer_id})
         if not offer:
@@ -165,7 +166,7 @@ class BaseBlockchain(ABC):
             locale=user['locale']
         )
         await tg.send_message(user['id'], answer, parse_mode=ParseMode.MARKDOWN)
-        is_confirmed = await create_task(self.is_block_confirmed(block_num))
+        is_confirmed = await create_task(self.is_block_confirmed(block_num, op))
         await database.escrow.update_one(
             {'_id': offer['_id']},
             {'$set': {'transaction_time': time()}}
