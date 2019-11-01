@@ -14,23 +14,28 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-
-
-from asyncio import create_task, get_running_loop, sleep
-from datetime import datetime
-from decimal import Decimal
-from calendar import timegm
 import functools
 import json
+from asyncio import create_task
+from asyncio import get_running_loop
+from asyncio import sleep
+from calendar import timegm
+from datetime import datetime
+from decimal import Decimal
 from time import time
-from typing import Any, List, Mapping, Optional
+from typing import Any
+from typing import List
+from typing import Mapping
+from typing import Optional
 
 from golos import Api
+from golos.exceptions import RetriesExceeded
+from golos.exceptions import TransactionNotFound
 from golos.ws_client import error_handler
-from golos.exceptions import RetriesExceeded, TransactionNotFound
 
 from src.database import database
-from src.escrow.blockchain import BaseBlockchain, BlockchainConnectionError
+from src.escrow.blockchain import BaseBlockchain
+from src.escrow.blockchain import BlockchainConnectionError
 
 
 NODES = (
@@ -57,10 +62,9 @@ class GolosBlockchain(BaseBlockchain):
             raise BlockchainConnectionError(exception)
 
         queue = []
-        cursor = database.escrow.find({
-            'memo': {'$exists': True},
-            'trx_id': {'$exists': False}
-        })
+        cursor = database.escrow.find(
+            {'memo': {'$exists': True}, 'trx_id': {'$exists': False}}
+        )
         min_time = None
         async for offer in cursor:
             if offer['type'] == 'buy':
@@ -69,22 +73,26 @@ class GolosBlockchain(BaseBlockchain):
             else:
                 address = offer['counter']['send_address']
                 amount = offer['sum_sell'].to_decimal()
-            queue.append({
-                'offer_id': offer['_id'],
-                'from_address': address,
-                'amount_with_fee': offer['sum_fee_up'].to_decimal(),
-                'amount_without_fee': amount,
-                'asset': offer[offer['type']],
-                'memo': offer['memo'],
-                'transaction_time': offer['transaction_time']
-            })
+            queue.append(
+                {
+                    'offer_id': offer['_id'],
+                    'from_address': address,
+                    'amount_with_fee': offer['sum_fee_up'].to_decimal(),
+                    'amount_without_fee': amount,
+                    'asset': offer[offer['type']],
+                    'memo': offer['memo'],
+                    'transaction_time': offer['transaction_time'],
+                }
+            )
             if min_time is None or offer['transaction_time'] < min_time:
                 min_time = offer['transaction_time']
         if not queue:
             return
         func = functools.partial(
             self._golos.get_account_history,
-            self.address, op_limit='transfer', age=int(time() - min_time)
+            self.address,
+            op_limit='transfer',
+            age=int(time() - min_time),
         )
         history = await get_running_loop().run_in_executor(None, func)
         for op in history:
@@ -104,8 +112,13 @@ class GolosBlockchain(BaseBlockchain):
     async def transfer(self, to: str, amount: Decimal, asset: str):
         with open('wif.json') as wif_file:
             transaction = await get_running_loop().run_in_executor(
-                None, self._golos.transfer,
-                to, amount, self.address, json.load(wif_file)['golos'], asset
+                None,
+                self._golos.transfer,
+                to,
+                amount,
+                self.address,
+                json.load(wif_file)['golos'],
+                asset,
             )
         return self.trx_url(transaction['id'])
 
@@ -126,7 +139,7 @@ class GolosBlockchain(BaseBlockchain):
             'to': op['to'],
             'from': op['from'],
             'amount': op['amount'],
-            'memo': op['memo']
+            'memo': op['memo'],
         }
         try:
             await loop.run_in_executor(None, self._golos.find_op_transaction, op)
@@ -170,8 +183,10 @@ class GolosBlockchain(BaseBlockchain):
             block = response_json['result']
 
     async def _check_operation(
-        self, op: Mapping[str, Any], block_num: int,
-        queue: Optional[List[Mapping[str, Any]]] = None
+        self,
+        op: Mapping[str, Any],
+        block_num: int,
+        queue: Optional[List[Mapping[str, Any]]] = None,
     ):
         if queue is None:
             queue = self._queue
@@ -200,5 +215,5 @@ class GolosBlockchain(BaseBlockchain):
                 op['from'],
                 amount,
                 asset,
-                block_num
+                block_num,
             )

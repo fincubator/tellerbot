@@ -14,27 +14,30 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-
-
+import config
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 
-import config
-from src.handlers import tg, dp, private_handler, start_keyboard
+from src.handlers import dp
+from src.handlers import private_handler
+from src.handlers import start_keyboard
+from src.handlers import tg
 from src.i18n import _
 from src.states import asking_support
 
 
-@dp.callback_query_handler(lambda call: call.data.startswith('unhelp'), state=asking_support)
+@dp.callback_query_handler(
+    lambda call: call.data.startswith('unhelp'), state=asking_support
+)
 async def unhelp_button(call: types.CallbackQuery, state: FSMContext):
     await state.finish()
     await call.answer()
     await tg.send_message(
         call.message.chat.id,
         _('Your request is cancelled.'),
-        reply_markup=start_keyboard()
+        reply_markup=start_keyboard(),
     )
 
 
@@ -46,12 +49,15 @@ async def send_message_to_support(message: types.Message):
 
     await tg.send_message(
         config.SUPPORT_CHAT_ID,
-        emojize(f':envelope: #chat_{message.chat.id} {message.message_id}\n{username}:\n') + message.text
+        emojize(
+            f':envelope: #chat_{message.chat.id} {message.message_id}\n{username}:\n'
+        )
+        + message.text,
     )
     await tg.send_message(
         message.chat.id,
         _("Your message was forwarded. We'll respond to you within 24 hours."),
-        reply_markup=start_keyboard()
+        reply_markup=start_keyboard(),
     )
 
 
@@ -62,9 +68,8 @@ async def contact_support(message: types.Message, state: FSMContext):
 
 
 @private_handler(
-    lambda msg:
-    msg.reply_to_message is not None and
-    msg.reply_to_message.text.startswith(emojize(':speech_balloon:'))
+    lambda msg: msg.reply_to_message is not None
+    and msg.reply_to_message.text.startswith(emojize(':speech_balloon:'))
 )
 async def handle_reply(message: types.Message):
     me = await tg.me
@@ -73,10 +78,9 @@ async def handle_reply(message: types.Message):
 
 
 @dp.message_handler(
-    lambda msg:
-    msg.chat.id == config.SUPPORT_CHAT_ID and
-    msg.reply_to_message is not None and
-    msg.reply_to_message.text.startswith(emojize(':envelope: '))
+    lambda msg: msg.chat.id == config.SUPPORT_CHAT_ID
+    and msg.reply_to_message is not None
+    and msg.reply_to_message.text.startswith(emojize(':envelope: '))
 )
 async def answer_support_ticket(message: types.Message):
     me = await tg.me
@@ -86,7 +90,8 @@ async def answer_support_ticket(message: types.Message):
         reply_to_message_id = int(args[2])
 
         await tg.send_message(
-            chat_id, emojize(':speech_balloon:') + message.text,
-            reply_to_message_id=reply_to_message_id
+            chat_id,
+            emojize(':speech_balloon:') + message.text,
+            reply_to_message_id=reply_to_message_id,
         )
         await tg.send_message(message.chat.id, _('Reply is sent.'))

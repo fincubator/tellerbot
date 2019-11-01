@@ -14,9 +14,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-
-
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal
+from decimal import ROUND_HALF_UP
 
 HIGH_EXP = Decimal('1e15')
 LOW_EXP = Decimal('1e-8')

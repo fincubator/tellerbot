@@ -1,4 +1,6 @@
-from asyncio import get_event_loop, all_tasks, CancelledError
+from asyncio import all_tasks
+from asyncio import CancelledError
+from asyncio import get_event_loop
 
 from src.app import main
 

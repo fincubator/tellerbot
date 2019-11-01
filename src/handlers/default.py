@@ -14,18 +14,21 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-
-
-import traceback
 import logging
+import traceback
 
-from aiogram.types import Message, CallbackQuery, ParseMode
 from aiogram.dispatcher.filters.state import any_state
+from aiogram.types import CallbackQuery
+from aiogram.types import Message
+from aiogram.types import ParseMode
 from aiogram.utils import markdown
 from aiogram.utils.exceptions import MessageNotModified
-
 from config import EXCEPTIONS_CHAT_ID
-from src.handlers import tg, dp, private_handler, start_keyboard
+
+from src.handlers import dp
+from src.handlers import private_handler
+from src.handlers import start_keyboard
+from src.handlers import tg
 from src.i18n import _
 
 
@@ -35,8 +38,7 @@ log = logging.getLogger(__name__)
 @private_handler(state=any_state)
 async def default_message(message: Message):
     await tg.send_message(
-        message.chat.id, _('Unknown command.'),
-        reply_markup=start_keyboard()
+        message.chat.id, _('Unknown command.'), reply_markup=start_keyboard()
     )
 
 
@@ -73,14 +75,17 @@ async def errors_handler(update, exception):
                 markdown.link(from_user.mention, from_user.url),
                 from_user.id,
                 chat_id,
-                markdown.escape_md(traceback.format_exc(limit=-3))
-            ), parse_mode=ParseMode.MARKDOWN
+                markdown.escape_md(traceback.format_exc(limit=-3)),
+            ),
+            parse_mode=ParseMode.MARKDOWN,
         )
         await tg.send_message(
-            chat_id, _(
+            chat_id,
+            _(
                 'There was an unexpected error when handling your request. '
                 "We're already notified and will fix it as soon as possible!"
-            ), reply_markup=start_keyboard()
+            ),
+            reply_markup=start_keyboard(),
         )
 
     return True

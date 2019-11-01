@@ -14,12 +14,9 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-
-
-from motor.motor_asyncio import AsyncIOMotorClient
 from aiogram.dispatcher.storage import BaseStorage
-
 from config import DATABASE_NAME
+from motor.motor_asyncio import AsyncIOMotorClient
 
 
 client = AsyncIOMotorClient()

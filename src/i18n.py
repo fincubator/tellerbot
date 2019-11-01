@@ -14,15 +14,14 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-
-
 from pathlib import Path
-from typing import Any, Tuple, Optional
-
-from babel import Locale
+from typing import Any
+from typing import Optional
+from typing import Tuple
 
 from aiogram.contrib.middlewares.i18n import I18nMiddleware
 from aiogram.types import User
+from babel import Locale
 
 from src.database import database
 

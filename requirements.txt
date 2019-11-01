@@ -1,4 +1,4 @@
-pymongo==3.7.2
 aiogram==2.0.1
-motor==2.0.0
 emoji==0.5.1
+motor==2.0.0
+pymongo==3.7.2

@@ -14,13 +14,13 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+from typing import Any
+from typing import Mapping
+from typing import Optional
 
-
-from dataclasses import dataclass
-from typing import Any, Mapping, Optional
-
-from bson.objectid import ObjectId
 from bson.decimal128 import Decimal128
+from bson.objectid import ObjectId
+from dataclasses import dataclass
 
 from src.database import database
 

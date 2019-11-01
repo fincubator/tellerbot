@@ -14,16 +14,15 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-
-
 from asyncio import create_task
 
+import config
 from aiogram.utils import executor
 
-import config
 from src.escrow import connect_to_blockchains
 from src.notifications import run_loop
-from src.registered_handlers import tg, dp
+from src.registered_handlers import dp
+from src.registered_handlers import tg
 
 
 async def on_startup(*args):
@@ -40,5 +39,5 @@ def main():
         webhook_path=config.WEBHOOK_PATH,
         on_startup=on_startup,
         host='127.0.0.1',
-        port=config.SERVER_PORT
+        port=config.SERVER_PORT,
     )

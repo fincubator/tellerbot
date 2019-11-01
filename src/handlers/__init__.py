@@ -14,24 +14,33 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-
-
-from datetime import datetime
-from decimal import Decimal, InvalidOperation
 import math
+from datetime import datetime
+from decimal import Decimal
+from decimal import InvalidOperation
 from time import time
 
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.types import ParseMode, User
+import config
+from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import KeyboardButton
+from aiogram.types import ParseMode
+from aiogram.types import ReplyKeyboardMarkup
+from aiogram.types import User
 from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 from aiogram.utils.exceptions import MessageNotModified
 
-import config
-from src.bot import tg, dp, private_handler, state_handler, state_handlers
+from src.bot import dp
+from src.bot import private_handler
+from src.bot import state_handler
+from src.bot import state_handlers
+from src.bot import tg
 from src.i18n import _
-from src.utils import normalize_money, LOW_EXP, HIGH_EXP, MoneyValidationError
+from src.utils import HIGH_EXP
+from src.utils import LOW_EXP
+from src.utils import MoneyValidationError
+from src.utils import normalize_money
 
 
 def help_message():
@@ -49,7 +58,7 @@ def start_keyboard():
         KeyboardButton(emojize(':bust_in_silhouette: ') + _('My orders')),
         KeyboardButton(emojize(':closed_book: ') + _('Order book')),
         KeyboardButton(emojize(':abcd: ') + _('Language')),
-        KeyboardButton(emojize(':question: ') + _('Support'))
+        KeyboardButton(emojize(':question: ') + _('Support')),
     )
     return keyboard
 
@@ -83,22 +92,30 @@ async def validate_money(data, chat_id):
 
 
 async def orders_list(
-    cursor, chat_id, start, quantity, buttons_data,
-    user_id=None, message_id=None, invert=False
+    cursor,
+    chat_id,
+    start,
+    quantity,
+    buttons_data,
+    user_id=None,
+    message_id=None,
+    invert=False,
 ):
     keyboard = InlineKeyboardMarkup(row_width=min(config.ORDERS_COUNT // 2, 8))
 
     inline_orders_buttons = (
         InlineKeyboardButton(
-            emojize(':arrow_left:'), callback_data='{} {} {}'.format(
+            emojize(':arrow_left:'),
+            callback_data='{} {} {}'.format(
                 buttons_data, start - config.ORDERS_COUNT, int(invert)
-            )
+            ),
         ),
         InlineKeyboardButton(
-            emojize(':arrow_right:'), callback_data='{} {} {}'.format(
+            emojize(':arrow_right:'),
+            callback_data='{} {} {}'.format(
                 buttons_data, start + config.ORDERS_COUNT, int(invert)
-            )
-        )
+            ),
+        ),
     )
 
     if quantity == 0:
@@ -120,7 +137,10 @@ async def orders_list(
         line = ''
 
         if user_id is None:
-            if 'expiration_time' not in order or order['expiration_time'] > current_time:
+            if (
+                'expiration_time' not in order
+                or order['expiration_time'] > current_time
+            ):
                 line += emojize(':arrow_forward: ')
             else:
                 line += emojize(':pause_button: ')
@@ -128,63 +148,75 @@ async def orders_list(
         exp = Decimal('1e-5')
 
         if 'sum_sell' in order:
-            line += '{:,} '.format(
-                normalize_money(order['sum_sell'].to_decimal(), exp)
-            )
+            line += '{:,} '.format(normalize_money(order['sum_sell'].to_decimal(), exp))
         line += '{} → '.format(order['sell'])
 
         if 'sum_buy' in order:
-            line += '{:,} '.format(
-                normalize_money(order['sum_buy'].to_decimal(), exp)
-            )
+            line += '{:,} '.format(normalize_money(order['sum_buy'].to_decimal(), exp))
         line += order['buy']
 
         if 'price_sell' in order:
             if invert:
                 line += ' ({:,} {}/{})'.format(
                     normalize_money(order['price_buy'].to_decimal(), exp),
-                    order['buy'], order['sell']
+                    order['buy'],
+                    order['sell'],
                 )
             else:
                 line += ' ({:,} {}/{})'.format(
                     normalize_money(order['price_sell'].to_decimal(), exp),
-                    order['sell'], order['buy']
+                    order['sell'],
+                    order['buy'],
                 )
 
         if user_id is not None and order['user_id'] == user_id:
             line = f'*{line}*'
 
         lines.append(f'{i + 1}. {line}')
-        buttons.append(InlineKeyboardButton(
-            '{}'.format(i + 1), callback_data='get_order {}'.format(order['_id'])
-        ))
-
-    keyboard.row(InlineKeyboardButton(
-        _('Invert'), callback_data='{} {} {}'.format(
-            buttons_data, start - config.ORDERS_COUNT, int(not invert)
+        buttons.append(
+            InlineKeyboardButton(
+                '{}'.format(i + 1), callback_data='get_order {}'.format(order['_id'])
+            )
         )
-    ))
+
+    keyboard.row(
+        InlineKeyboardButton(
+            _('Invert'),
+            callback_data='{} {} {}'.format(
+                buttons_data, start - config.ORDERS_COUNT, int(not invert)
+            ),
+        )
+    )
     keyboard.add(*buttons)
     keyboard.row(*inline_orders_buttons)
 
-    text = '\\[' + _('Page {} of {}').format(
-        math.ceil(start / config.ORDERS_COUNT) + 1,
-        math.ceil(quantity / config.ORDERS_COUNT)
-    ) + ']\n' + '\n'.join(lines)
+    text = (
+        '\\['
+        + _('Page {} of {}').format(
+            math.ceil(start / config.ORDERS_COUNT) + 1,
+            math.ceil(quantity / config.ORDERS_COUNT),
+        )
+        + ']\n'
+        + '\n'.join(lines)
+    )
 
     if message_id is None:
         await tg.send_message(
-            chat_id, text,
-            reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
+            chat_id, text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
         )
     else:
         await tg.edit_message_text(
-            text, chat_id, message_id,
-            reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
+            text,
+            chat_id,
+            message_id,
+            reply_markup=keyboard,
+            parse_mode=ParseMode.MARKDOWN,
         )
 
 
-async def show_orders(call, cursor, start, quantity, buttons_data, invert, user_id=None):
+async def show_orders(
+    call, cursor, start, quantity, buttons_data, invert, user_id=None
+):
     if start >= quantity > 0:
         await call.answer(_('There are no more orders.'))
         return
@@ -192,8 +224,14 @@ async def show_orders(call, cursor, start, quantity, buttons_data, invert, user_
     try:
         await call.answer()
         await orders_list(
-            cursor, call.message.chat.id, start, quantity, buttons_data,
-            user_id=user_id, message_id=call.message.message_id, invert=invert
+            cursor,
+            call.message.chat.id,
+            start,
+            quantity,
+            buttons_data,
+            user_id=user_id,
+            message_id=call.message.message_id,
+            invert=invert,
         )
     except MessageNotModified:
         await call.answer(_('There are no previous orders.'))
@@ -206,14 +244,20 @@ def get_order_field_names():
         'price': _('Price:'),
         'payment_system': _('Payment system:'),
         'duration': _('Duration:'),
-        'comments': _('Comments:')
+        'comments': _('Comments:'),
     }
 
 
 async def show_order(
-    order, chat_id, user_id,
-    message_id=None, location_message_id=None,
-    show_id=False, invert=False, edit=False, locale=None
+    order,
+    chat_id,
+    user_id,
+    message_id=None,
+    location_message_id=None,
+    show_id=False,
+    invert=False,
+    edit=False,
+    locale=None,
 ):
     if location_message_id is None:
         if order.get('lat') is not None and order.get('lon') is not None:
@@ -229,7 +273,9 @@ async def show_order(
         header += 'ID: {}\n'.format(order['_id'])
     header += markdown.link(order['mention'], User(id=order['user_id']).url) + ' '
     if invert:
-        header += _('sells {} for {}', locale=locale).format(order['sell'], order['buy'])
+        header += _('sells {} for {}', locale=locale).format(
+            order['sell'], order['buy']
+        )
     else:
         header += _('buys {} for {}', locale=locale).format(order['buy'], order['sell'])
     header += '\n'
@@ -263,12 +309,17 @@ async def show_order(
 
     keyboard = InlineKeyboardMarkup(row_width=6)
 
-    keyboard.row(InlineKeyboardButton(
-        _('Invert', locale=locale), callback_data='{} {} {} {}'.format(
-            'revert' if invert else 'invert',
-            order['_id'], location_message_id, int(edit)
+    keyboard.row(
+        InlineKeyboardButton(
+            _('Invert', locale=locale),
+            callback_data='{} {} {} {}'.format(
+                'revert' if invert else 'invert',
+                order['_id'],
+                location_message_id,
+                int(edit),
+            ),
         )
-    ))
+    )
 
     if edit:
         buttons = []
@@ -277,19 +328,24 @@ async def show_order(
                 lines.append(f'{i + 1}. {field_names[field]} {value}')
             elif edit:
                 lines.append(f'{i + 1}. {field_names[field]} -')
-            buttons.append(InlineKeyboardButton(
-                f'{i + 1}', callback_data='edit {} {} {} {}'.format(
-                    order['_id'], field, location_message_id, int(invert)
+            buttons.append(
+                InlineKeyboardButton(
+                    f'{i + 1}',
+                    callback_data='edit {} {} {} {}'.format(
+                        order['_id'], field, location_message_id, int(invert)
+                    ),
                 )
-            ))
+            )
 
         keyboard.add(*buttons)
-        keyboard.row(InlineKeyboardButton(
-            _('Finish', locale=locale), callback_data='{} {} {} 0'.format(
-                'invert' if invert else 'revert',
-                order['_id'], location_message_id
+        keyboard.row(
+            InlineKeyboardButton(
+                _('Finish', locale=locale),
+                callback_data='{} {} {} 0'.format(
+                    'invert' if invert else 'revert', order['_id'], location_message_id
+                ),
             )
-        ))
+        )
 
     else:
         for field, value in lines_format.items():
@@ -298,45 +354,57 @@ async def show_order(
 
         keyboard.row(
             InlineKeyboardButton(
-                _('Similar', locale=locale), callback_data='similar {}'.format(order['_id'])
+                _('Similar', locale=locale),
+                callback_data='similar {}'.format(order['_id']),
             ),
             InlineKeyboardButton(
                 _('Match', locale=locale), callback_data='match {}'.format(order['_id'])
-            )
+            ),
         )
 
         if order['user_id'] == user_id:
             keyboard.row(
                 InlineKeyboardButton(
-                    _('Edit', locale=locale), callback_data='{} {} {} 1'.format(
+                    _('Edit', locale=locale),
+                    callback_data='{} {} {} 1'.format(
                         'invert' if invert else 'revert',
-                        order['_id'], location_message_id
-                    )
+                        order['_id'],
+                        location_message_id,
+                    ),
                 ),
                 InlineKeyboardButton(
-                    _('Delete', locale=locale), callback_data='delete {} {}'.format(
+                    _('Delete', locale=locale),
+                    callback_data='delete {} {}'.format(
                         order['_id'], location_message_id
-                    )
-                )
+                    ),
+                ),
             )
         elif order.get('escrow'):
-            keyboard.row(InlineKeyboardButton(
-                _('Escrow', locale=locale), callback_data='escrow {} sum_buy 0'.format(order['_id'])
-            ))
+            keyboard.row(
+                InlineKeyboardButton(
+                    _('Escrow', locale=locale),
+                    callback_data='escrow {} sum_buy 0'.format(order['_id']),
+                )
+            )
 
-        keyboard.row(InlineKeyboardButton(
-            _('Hide', locale=locale), callback_data='hide {}'.format(location_message_id)
-        ))
+        keyboard.row(
+            InlineKeyboardButton(
+                _('Hide', locale=locale),
+                callback_data='hide {}'.format(location_message_id),
+            )
+        )
 
     answer = '\n'.join(lines)
 
     if message_id is not None:
         await tg.edit_message_text(
-            answer, chat_id, message_id,
-            reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
+            answer,
+            chat_id,
+            message_id,
+            reply_markup=keyboard,
+            parse_mode=ParseMode.MARKDOWN,
         )
     else:
         await tg.send_message(
-            chat_id, answer,
-            reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
+            chat_id, answer, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
         )

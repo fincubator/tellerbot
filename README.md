@@ -16,7 +16,7 @@
 1. Create a new Telegram bot by talking to [@BotFather](https://t.me/BotFather) and get its API Token.
 2. Install and start MongoDB server
 3. Install Python version no less than 3.8
-4. Clone the repository:  
+4. Clone the repository:
 ```bash
 git clone https://github.com/PreICO/tellerbot
 cd tellerbot

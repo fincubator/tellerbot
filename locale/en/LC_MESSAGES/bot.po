@@ -535,4 +535,3 @@ msgstr ""
 #: src/notifications.py
 msgid "Your order has expired."
 msgstr ""
-

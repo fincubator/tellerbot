@@ -14,16 +14,15 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-
-
 import asyncio
 import logging
 
-from aiogram import Bot, types
+import config
+from aiogram import Bot
+from aiogram import types
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
 
-import config
 from src.database import storage
 from src.i18n import i18n
 
@@ -33,9 +32,7 @@ dp = Dispatcher(tg, storage=storage)
 dp.middleware.setup(i18n)
 
 logging.basicConfig(
-    filename=config.LOG_FILENAME,
-    filemode='a',
-    level=config.LOGGER_LEVEL
+    filename=config.LOG_FILENAME, filemode='a', level=config.LOGGER_LEVEL
 )
 dp.middleware.setup(LoggingMiddleware())
 
@@ -45,9 +42,11 @@ def private_handler(*args, **kwargs):
         dp.register_message_handler(
             handler,
             lambda message: message.chat.type == types.ChatType.PRIVATE,
-            *args, **kwargs
+            *args,
+            **kwargs
         )
         return handler
+
     return decorator
 
 
@@ -58,4 +57,5 @@ def state_handler(state):
     def decorator(handler):
         state_handlers[state.state] = handler
         return handler
+
     return decorator

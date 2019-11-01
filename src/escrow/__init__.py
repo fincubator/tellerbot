@@ -14,8 +14,6 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-
-
 from src.escrow.blockchain.golos_blockchain import GolosBlockchain
 
 

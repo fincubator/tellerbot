@@ -14,8 +14,6 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-
-
 import asyncio
 from time import time
 
@@ -29,10 +27,9 @@ from src.i18n import _
 
 async def run_loop():
     while True:
-        cursor = database.orders.find({
-            'expiration_time': {'$lte': time()},
-            'notify': True
-        })
+        cursor = database.orders.find(
+            {'expiration_time': {'$lte': time()}, 'notify': True}
+        )
         async for order in cursor:
             user = await database.users.find_one({'id': order['user_id']})
             message = _('Your order has expired.', locale=user['locale'])
@@ -46,6 +43,5 @@ async def run_loop():
                 await asyncio.sleep(1)
             finally:
                 await database.orders.update_one(
-                    {'_id': order['_id']},
-                    {'$set': {'notify': False}}
+                    {'_id': order['_id']}, {'$set': {'notify': False}}
                 )

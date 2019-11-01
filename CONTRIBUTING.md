@@ -15,7 +15,7 @@ In order to give project's owner permission to use and redistribute your contrib
 To accept the CLA, contributors should:
 
   - declare the agreement with its terms in the comment to the pull request
-  - have a line like this with contributor's name and e-mail address in the end of every commit message:  
+  - have a line like this with contributor's name and e-mail address in the end of every commit message:
     ```Signed-off-by: John Smith <john@example.com>```
 
 The latter can be done with a ```--signoff``` option either to ```git commit``` if you are signing-off a single commit or to ```git rebase``` if you are signing-off all commits in a pull request.

@@ -14,9 +14,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-
-
-from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.dispatcher.filters.state import State
+from aiogram.dispatcher.filters.state import StatesGroup
 
 
 class OrderCreation(StatesGroup):

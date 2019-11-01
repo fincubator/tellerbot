@@ -545,4 +545,3 @@ msgstr "Ответ отправлен."
 #: src/notifications.py
 msgid "Your order has expired."
 msgstr "Срок действия вашего заказа истёк."
-

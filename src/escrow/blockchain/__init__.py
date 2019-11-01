@@ -14,21 +14,23 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-
-
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 from asyncio import create_task
 from decimal import Decimal
 from time import time
-from typing import Any, FrozenSet, Mapping
+from typing import Any
+from typing import FrozenSet
+from typing import Mapping
 
+from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import ParseMode
+from aiogram.utils import markdown
 from bson.objectid import ObjectId
 
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
-from aiogram.utils import markdown
-
-from src.handlers import tg
 from src.database import database
+from src.handlers import tg
 from src.i18n import _
 
 
@@ -58,17 +60,24 @@ class BaseBlockchain(ABC):
         return self.explorer.format(trx_id)
 
     async def check_transaction(
-        self, offer_id: ObjectId, from_address: str, amount_with_fee: Decimal,
-        amount_without_fee: Decimal, asset: str, memo: str
+        self,
+        offer_id: ObjectId,
+        from_address: str,
+        amount_with_fee: Decimal,
+        amount_without_fee: Decimal,
+        asset: str,
+        memo: str,
     ):
-        self._queue.append({
-            'offer_id': offer_id,
-            'from_address': from_address,
-            'amount_with_fee': amount_with_fee,
-            'amount_without_fee': amount_without_fee,
-            'asset': asset,
-            'memo': memo,
-        })
+        self._queue.append(
+            {
+                'offer_id': offer_id,
+                'from_address': from_address,
+                'amount_with_fee': amount_with_fee,
+                'amount_without_fee': amount_without_fee,
+                'asset': asset,
+                'memo': memo,
+            }
+        )
         if len(self._queue) == 1:
             await self.start_streaming()
 
@@ -97,42 +106,44 @@ class BaseBlockchain(ABC):
 
         answer = _(
             "Transaction has passed. I'll notify should you get {}.",
-            locale=escrow_user['locale']
+            locale=escrow_user['locale'],
         )
         answer = answer.format(offer[new_currency])
         await tg.send_message(escrow_user['id'], answer)
         is_confirmed = await create_task(self.is_block_confirmed(block_num, op))
         if is_confirmed:
             await database.escrow.update_one(
-                {'_id': offer['_id']},
-                {'$set': {'trx_id': trx_id}}
+                {'_id': offer['_id']}, {'$set': {'trx_id': trx_id}}
             )
             keyboard = InlineKeyboardMarkup()
-            keyboard.add(InlineKeyboardButton(
-                _('Sent', locale=other_user['locale']),
-                callback_data='tokens_sent {}'.format(offer['_id'])
-            ))
+            keyboard.add(
+                InlineKeyboardButton(
+                    _('Sent', locale=other_user['locale']),
+                    callback_data='tokens_sent {}'.format(offer['_id']),
+                )
+            )
             answer = markdown.link(
                 _('Transaction is confirmed.', locale=other_user['locale']),
-                self.trx_url(trx_id)
+                self.trx_url(trx_id),
             )
             answer += '\n' + markdown.escape_md(
                 _('Send {} {} to address {}', locale=other_user['locale']).format(
                     offer[f'sum_{new_currency}'],
                     offer[new_currency],
-                    escrow_user['receive_address']
+                    escrow_user['receive_address'],
                 )
             )
             answer += '.'
             await tg.send_message(
-                other_user['id'], answer,
-                reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
+                other_user['id'],
+                answer,
+                reply_markup=keyboard,
+                parse_mode=ParseMode.MARKDOWN,
             )
             return True
 
         await database.escrow.update_one(
-            {'_id': offer['_id']},
-            {'$set': {'transaction_time': time()}}
+            {'_id': offer['_id']}, {'$set': {'transaction_time': time()}}
         )
         answer = _('Transaction is not confirmed.', locale=escrow_user['locale'])
         answer += ' ' + _('Please try again.', locale=escrow_user['locale'])
@@ -140,8 +151,14 @@ class BaseBlockchain(ABC):
         return False
 
     async def _refund_callback(
-        self, reasons: FrozenSet[str], offer_id: ObjectId, op: Mapping[str, Any],
-        from_address: str, amount: Decimal, asset: str, block_num: int
+        self,
+        reasons: FrozenSet[str],
+        offer_id: ObjectId,
+        op: Mapping[str, Any],
+        from_address: str,
+        amount: Decimal,
+        asset: str,
+        block_num: int,
     ):
         offer = await database.escrow.find_one({'_id': offer_id})
         if not offer:
@@ -162,20 +179,18 @@ class BaseBlockchain(ABC):
             answer += '\n• ' + point
 
         answer += '\n\n' + _(
-            'Transaction will be refunded after confirmation.',
-            locale=user['locale']
+            'Transaction will be refunded after confirmation.', locale=user['locale']
         )
         await tg.send_message(user['id'], answer, parse_mode=ParseMode.MARKDOWN)
         is_confirmed = await create_task(self.is_block_confirmed(block_num, op))
         await database.escrow.update_one(
-            {'_id': offer['_id']},
-            {'$set': {'transaction_time': time()}}
+            {'_id': offer['_id']}, {'$set': {'transaction_time': time()}}
         )
         if is_confirmed:
             trx_id = await self.transfer(from_address, amount, asset)
             answer = markdown.link(
                 _('Transaction is refunded.', locale=user['locale']),
-                self.trx_url(trx_id)
+                self.trx_url(trx_id),
             )
         else:
             answer = _('Transaction is not confirmed.', locale=user['locale'])
