@@ -41,8 +41,8 @@ from src.handlers import show_orders
 from src.handlers import tg
 from src.handlers import validate_money
 from src.i18n import _
-from src.utils import MoneyValidationError
-from src.utils import normalize_money
+from src.money import MoneyValidationError
+from src.money import normalize
 
 
 def order_handler(handler):
@@ -282,7 +282,7 @@ async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
         await offer.insert_document()
         await call.answer()
         await tg.send_message(call.message.chat.id, answer, reply_markup=keyboard)
-        await states.Escrow.sum.set()
+        await states.Escrow.amount.set()
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('edit '), state=any_state)
@@ -352,7 +352,7 @@ async def edit_field(message: types.Message, state: FSMContext):
             set_dict['sum_buy'] = Decimal128(transaction_sum)
             if 'price_sell' in order:
                 set_dict['sum_sell'] = Decimal128(
-                    normalize_money(transaction_sum * order['price_sell'].to_decimal())
+                    normalize(transaction_sum * order['price_sell'].to_decimal())
                 )
 
     elif field == 'sum_sell':
@@ -365,7 +365,7 @@ async def edit_field(message: types.Message, state: FSMContext):
             set_dict['sum_sell'] = Decimal128(transaction_sum)
             if 'price_buy' in order:
                 set_dict['sum_buy'] = Decimal128(
-                    normalize_money(transaction_sum * order['price_buy'].to_decimal())
+                    normalize(transaction_sum * order['price_buy'].to_decimal())
                 )
 
     elif field == 'price':
@@ -377,30 +377,30 @@ async def edit_field(message: types.Message, state: FSMContext):
             order = await database.orders.find_one({'_id': edit['order_id']})
 
             if invert:
-                price_sell = normalize_money(Decimal(1) / price)
+                price_sell = normalize(Decimal(1) / price)
                 set_dict['price_buy'] = Decimal128(price)
                 set_dict['price_sell'] = Decimal128(price_sell)
 
                 if order['sum_currency'] == 'buy':
                     set_dict['sum_sell'] = Decimal128(
-                        normalize_money(order['sum_buy'].to_decimal() * price_sell)
+                        normalize(order['sum_buy'].to_decimal() * price_sell)
                     )
                 elif 'sum_sell' in order:
                     set_dict['sum_buy'] = Decimal128(
-                        normalize_money(order['sum_sell'].to_decimal() * price)
+                        normalize(order['sum_sell'].to_decimal() * price)
                     )
             else:
-                price_buy = normalize_money(Decimal(1) / price)
+                price_buy = normalize(Decimal(1) / price)
                 set_dict['price_buy'] = Decimal128(price_buy)
                 set_dict['price_sell'] = Decimal128(price)
 
                 if order['sum_currency'] == 'sell':
                     set_dict['sum_buy'] = Decimal128(
-                        normalize_money(order['sum_sell'].to_decimal() * price_buy)
+                        normalize(order['sum_sell'].to_decimal() * price_buy)
                     )
                 elif 'sum_buy' in order:
                     set_dict['sum_sell'] = Decimal128(
-                        normalize_money(order['sum_buy'].to_decimal() * price)
+                        normalize(order['sum_buy'].to_decimal() * price)
                     )
 
     elif field == 'payment_system':
@@ -514,7 +514,7 @@ async def delete_button(call: types.CallbackQuery, order: Mapping[str, Any]):
 async def confirm_delete_button(call: types.CallbackQuery):
     order_id = call.data.split()[1]
     order = await database.orders.find_one_and_delete(
-        {'_id': ObjectId(order_id), 'user_id': call.from_user.id,}
+        {'_id': ObjectId(order_id), 'user_id': call.from_user.id}
     )
     if not order:
         await call.answer(_("Couldn't delete order."))

@@ -31,16 +31,18 @@ from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 from aiogram.utils.exceptions import MessageNotModified
 
-from src.bot import dp
-from src.bot import private_handler
-from src.bot import state_handler
-from src.bot import state_handlers
+from src.bot import (  # noqa: F401, noreorder
+    dp,
+    private_handler,
+    state_handler,
+    state_handlers,
+)
 from src.bot import tg
 from src.i18n import _
-from src.utils import HIGH_EXP
-from src.utils import LOW_EXP
-from src.utils import MoneyValidationError
-from src.utils import normalize_money
+from src.money import HIGH_EXP
+from src.money import LOW_EXP
+from src.money import MoneyValidationError
+from src.money import normalize
 
 
 def help_message():
@@ -85,7 +87,7 @@ async def validate_money(data, chat_id):
     if money >= HIGH_EXP:
         raise MoneyValidationError(_('Send number less than') + f' {HIGH_EXP:,f}')
 
-    normalized = normalize_money(money)
+    normalized = normalize(money)
     if normalized.is_zero():
         raise MoneyValidationError(_('Send number greater than') + f' {LOW_EXP:.8f}')
     return normalized
@@ -148,23 +150,23 @@ async def orders_list(
         exp = Decimal('1e-5')
 
         if 'sum_sell' in order:
-            line += '{:,} '.format(normalize_money(order['sum_sell'].to_decimal(), exp))
+            line += '{:,} '.format(normalize(order['sum_sell'].to_decimal(), exp))
         line += '{} → '.format(order['sell'])
 
         if 'sum_buy' in order:
-            line += '{:,} '.format(normalize_money(order['sum_buy'].to_decimal(), exp))
+            line += '{:,} '.format(normalize(order['sum_buy'].to_decimal(), exp))
         line += order['buy']
 
         if 'price_sell' in order:
             if invert:
                 line += ' ({:,} {}/{})'.format(
-                    normalize_money(order['price_buy'].to_decimal(), exp),
+                    normalize(order['price_buy'].to_decimal(), exp),
                     order['buy'],
                     order['sell'],
                 )
             else:
                 line += ' ({:,} {}/{})'.format(
-                    normalize_money(order['price_sell'].to_decimal(), exp),
+                    normalize(order['price_sell'].to_decimal(), exp),
                     order['sell'],
                     order['buy'],
                 )

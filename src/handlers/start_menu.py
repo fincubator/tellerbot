@@ -21,7 +21,6 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import any_state
 from aiogram.types import InlineKeyboardButton
 from aiogram.types import InlineKeyboardMarkup
-from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 from babel import Locale
 from config import ORDERS_LIMIT_COUNT

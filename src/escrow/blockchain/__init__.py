@@ -16,11 +16,12 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 from abc import ABC
 from abc import abstractmethod
-from asyncio import create_task
+from asyncio import create_task  # type: ignore
 from decimal import Decimal
 from time import time
 from typing import Any
 from typing import FrozenSet
+from typing import List
 from typing import Mapping
 
 from aiogram.types import InlineKeyboardButton
@@ -35,10 +36,10 @@ from src.i18n import _
 
 
 class BaseBlockchain(ABC):
-    assets = []
-    address = None
-    explorer = ''
-    _queue = []
+    assets: FrozenSet = frozenset()
+    address: str
+    explorer: str = '{}'
+    _queue: List[Mapping[str, Any]] = []
 
     @abstractmethod
     async def connect(self):

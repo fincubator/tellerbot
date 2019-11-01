@@ -29,9 +29,9 @@ from src.database import database
 class I18nMiddlewareManual(I18nMiddleware):
     async def get_user_locale(
         self, action: Optional[str] = None, args: Optional[Tuple[Any]] = None
-    ) -> str:
+    ) -> Optional[str]:
         if action not in ('pre_process_message', 'pre_process_callback_query'):
-            return
+            return None
 
         user: User = User.get_current()
         document = await database.users.find_one({'id': user.id})
@@ -40,8 +40,8 @@ class I18nMiddlewareManual(I18nMiddleware):
 
         locale: Locale = user.locale
         if locale:
-            language = locale.language
-            return language
+            return locale.language
+        return None
 
 
 i18n = I18nMiddlewareManual('bot', Path(__file__).parents[1] / 'locale')

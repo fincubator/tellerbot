@@ -29,6 +29,7 @@ from aiogram.utils import markdown
 from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
 from config import SUPPORT_CHAT_ID
+from dataclasses import replace
 
 from src import states
 from src.database import database
@@ -42,8 +43,8 @@ from src.handlers import start_keyboard
 from src.handlers import tg
 from src.handlers import validate_money
 from src.i18n import _
-from src.utils import MoneyValidationError
-from src.utils import normalize_money
+from src.money import MoneyValidationError
+from src.money import normalize
 
 
 async def get_card_number(text, chat_id):
@@ -99,7 +100,7 @@ def escrow_message_handler(*args, **kwargs):
     return decorator
 
 
-@escrow_message_handler(state=states.Escrow.sum)
+@escrow_message_handler(state=states.Escrow.amount)
 async def set_escrow_sum(message: types.Message, state: FSMContext, offer: EscrowOffer):
     try:
         escrow_sum = await validate_money(message.text, message.chat.id)
@@ -118,14 +119,14 @@ async def set_escrow_sum(message: types.Message, state: FSMContext, offer: Escro
     update_dict = {offer.sum_currency: Decimal128(escrow_sum)}
     new_currency = 'sell' if offer.sum_currency == 'sum_buy' else 'buy'
     update_dict[f'sum_{new_currency}'] = Decimal128(
-        normalize_money(escrow_sum * order[f'price_{new_currency}'].to_decimal())
+        normalize(escrow_sum * order[f'price_{new_currency}'].to_decimal())
     )
     escrow_sum = update_dict[f'sum_{offer.type}']
     update_dict['sum_fee_up'] = Decimal128(
-        normalize_money(escrow_sum.to_decimal() * Decimal('1.05'))
+        normalize(escrow_sum.to_decimal() * Decimal('1.05'))
     )
     update_dict['sum_fee_down'] = Decimal128(
-        normalize_money(escrow_sum.to_decimal() * Decimal('0.95'))
+        normalize(escrow_sum.to_decimal() * Decimal('0.95'))
     )
 
     await offer.update_document({'$set': update_dict, '$unset': {'sum_currency': True}})
@@ -486,7 +487,6 @@ async def decline_offer(call: types.CallbackQuery, offer: EscrowOffer):
 async def set_counter_send_address(
     address: str, message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
-    offer.counter['send_address'] = address
     template = (
         'to {escrow_receive_address} '
         'for {not_escrow_amount} {not_escrow_currency} '
@@ -518,16 +518,15 @@ async def set_counter_send_address(
         escrow_user = offer.counter
         send_reply = False
 
+    update = {
+        'counter.send_address': address,
+        'transaction_time': time(),
+        'memo': memo,
+    }
     await offer.update_document(
-        {
-            '$set': {
-                'counter.send_address': address,
-                'transaction_time': time(),
-                'memo': memo,
-            },
-            '$unset': {'pending_input_from': True},
-        }
+        {'$set': update, '$unset': {'pending_input_from': True}}
     )
+    offer = replace(offer, **update)
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
         InlineKeyboardButton(
@@ -667,7 +666,7 @@ async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
     escrow_instance = get_escrow_instance(offer[offer.type])
     trx_url = await escrow_instance.transfer(
         recipient_user['receive_address'],
-        offer.sum_fee_down.to_decimal(),
+        offer.sum_fee_down.to_decimal(),  # type: ignore
         offer[offer.type],
     )
     answer = _('Escrow is completed!', locale=other_user['locale'])

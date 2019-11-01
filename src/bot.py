@@ -41,7 +41,7 @@ def private_handler(*args, **kwargs):
     def decorator(handler):
         dp.register_message_handler(
             handler,
-            lambda message: message.chat.type == types.ChatType.PRIVATE,
+            lambda message: message.chat.type == types.ChatType.PRIVATE,  # noqa: E721
             *args,
             **kwargs
         )

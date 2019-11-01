@@ -1,9 +1,11 @@
-from src.handlers import creation
-from src.handlers import default
-from src.handlers import dp
-from src.handlers import escrow
-from src.handlers import language
-from src.handlers import order
-from src.handlers import start_menu
-from src.handlers import support
-from src.handlers import tg
+from src.handlers import (  # noqa: F401, noreorder
+    start_menu,
+    language,
+    order,
+    escrow,
+    creation,
+    support,
+    default,
+    tg,
+    dp,
+)

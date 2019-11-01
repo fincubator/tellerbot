@@ -16,9 +16,9 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 import functools
 import json
-from asyncio import create_task
-from asyncio import get_running_loop
-from asyncio import sleep
+from asyncio import create_task  # type: ignore
+from asyncio import get_running_loop  # type: ignore
+from asyncio import sleep  # type: ignore
 from calendar import timegm
 from datetime import datetime
 from decimal import Decimal
@@ -47,7 +47,7 @@ NODES = (
 
 
 class GolosBlockchain(BaseBlockchain):
-    assets = ['GOLOS', 'GBG']
+    assets = frozenset({'GOLOS', 'GBG'})
     address = 'tellerbot'
     explorer = 'https://golos.cf/tx/?={}'
 

@@ -20,6 +20,7 @@ from string import ascii_letters
 from time import time
 from typing import Any
 from typing import Mapping
+from typing import MutableMapping
 
 import requests
 from aiogram import types
@@ -44,16 +45,16 @@ from src.handlers import tg
 from src.handlers import validate_money
 from src.i18n import _
 from src.i18n import i18n
+from src.money import MoneyValidationError
+from src.money import normalize
 from src.states import OrderCreation
-from src.utils import MoneyValidationError
-from src.utils import normalize_money
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('state '), state=any_state)
 async def previous_state(call: types.CallbackQuery, state: FSMContext):
     direction = call.data.split()[1]
-    state_name = await state.get_state()
-    if state_name in OrderCreation:
+    state_name: str = await state.get_state()
+    if state_name in OrderCreation.all_states_names:
         if direction == 'back':
             new_state = await OrderCreation.previous()
         elif direction == 'next':
@@ -249,12 +250,12 @@ async def choose_price(message: types.Message, state: FSMContext):
     if order['price_currency'] == 'sell':
         update_dict = {
             'price_sell': Decimal128(price),
-            'price_buy': Decimal128(normalize_money(Decimal(1) / price)),
+            'price_buy': Decimal128(normalize(Decimal(1) / price)),
         }
     else:
         update_dict = {
             'price_buy': Decimal128(price),
-            'price_sell': Decimal128(normalize_money(Decimal(1) / price)),
+            'price_sell': Decimal128(normalize(Decimal(1) / price)),
         }
 
     order = await database.creation.find_one_and_update(
@@ -271,13 +272,13 @@ async def choose_price(message: types.Message, state: FSMContext):
     for row in inline_control_buttons():
         keyboard.row(*row)
 
-    await OrderCreation.sum.set()
+    await OrderCreation.amount.set()
     await tg.send_message(
         message.chat.id, _('Choose currency of order sum.'), reply_markup=keyboard
     )
 
 
-@state_handler(OrderCreation.sum)
+@state_handler(OrderCreation.amount)
 async def sum_handler(call: types.CallbackQuery):
     order = await database.creation.find_one_and_update(
         {'user_id': call.from_user.id}, {'$unset': {'price_currency': True}}
@@ -304,7 +305,7 @@ async def sum_handler(call: types.CallbackQuery):
 
 
 @dp.callback_query_handler(
-    lambda call: call.data.startswith('sum '), state=OrderCreation.sum
+    lambda call: call.data.startswith('sum '), state=OrderCreation.amount
 )
 async def choose_sum_currency(call: types.CallbackQuery):
     sum_currency = call.data.split()[1]
@@ -317,7 +318,7 @@ async def choose_sum_currency(call: types.CallbackQuery):
     )
 
 
-@private_handler(state=OrderCreation.sum)
+@private_handler(state=OrderCreation.amount)
 async def choose_sum(message: types.Message, state: FSMContext):
     try:
         transaction_sum = await validate_money(message.text, message.chat.id)
@@ -342,7 +343,7 @@ async def choose_sum(message: types.Message, state: FSMContext):
 
     if price_field in order:
         update_dict[sum_field] = Decimal128(
-            normalize_money(transaction_sum * order[price_field].to_decimal())
+            normalize(transaction_sum * order[price_field].to_decimal())
         )
     elif sum_field not in order:
         update_dict['sum_currency'] = new_sum_currency
@@ -550,21 +551,17 @@ async def choose_duration(message: types.Message, state: FSMContext):
     )
 
 
-async def set_order(order: Mapping[str, Any], chat_id: int):
+async def set_order(order: MutableMapping[str, Any], chat_id: int):
     order['start_time'] = time()
     if 'duration' in order:
         order['expiration_time'] = time() + order['duration'] * 24 * 60 * 60
         order['notify'] = True
     if 'price_sell' not in order and 'sum_buy' in order and 'sum_sell' in order:
         order['price_sell'] = Decimal128(
-            normalize_money(
-                order['sum_sell'].to_decimal() / order['sum_buy'].to_decimal()
-            )
+            normalize(order['sum_sell'].to_decimal() / order['sum_buy'].to_decimal())
         )
         order['price_buy'] = Decimal128(
-            normalize_money(
-                order['sum_buy'].to_decimal() / order['sum_sell'].to_decimal()
-            )
+            normalize(order['sum_buy'].to_decimal() / order['sum_sell'].to_decimal())
         )
     if 'price_sell' in order:
         if get_escrow_instance(order['buy']) is not None:

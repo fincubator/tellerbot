@@ -22,7 +22,7 @@ class OrderCreation(StatesGroup):
     buy = State()
     sell = State()
     price = State()
-    sum = State()
+    amount = State()
     payment_system = State()
     location = State()
     duration = State()
@@ -31,7 +31,7 @@ class OrderCreation(StatesGroup):
 
 
 class Escrow(StatesGroup):
-    sum = State()
+    amount = State()
     fee = State()
     bank = State()
     name = State()

@@ -25,7 +25,7 @@ class MoneyValidationError(Exception):
     pass
 
 
-def normalize_money(money, exp=LOW_EXP):
+def normalize(money, exp=LOW_EXP):
     if money == money.to_integral_value():
         return money.quantize(Decimal(1))
     return money.quantize(exp, rounding=ROUND_HALF_UP).normalize()
