@@ -14,15 +14,12 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+import typing
 from abc import ABC
 from abc import abstractmethod
 from asyncio import create_task  # type: ignore
 from decimal import Decimal
 from time import time
-from typing import Any
-from typing import FrozenSet
-from typing import List
-from typing import Mapping
 
 from aiogram.types import InlineKeyboardButton
 from aiogram.types import InlineKeyboardMarkup
@@ -36,28 +33,60 @@ from src.i18n import _
 
 
 class BaseBlockchain(ABC):
-    assets: FrozenSet = frozenset()
+    """Abstract class to represent blockchain node client for escrow exchange.
+
+    Attributes:
+        assets    Frozen set of assets supported by blockchain.
+        address   Address used by bot.
+        explorer  Template of URL to transaction in blockchain explorer. Should
+            contain ``{}`` which gets replaced with transaction id.
+
+    """
+
+    assets: typing.FrozenSet[str] = frozenset()
     address: str
     explorer: str = '{}'
-    _queue: List[Mapping[str, Any]] = []
+    _queue: typing.List[typing.Mapping[str, typing.Any]] = []
 
     @abstractmethod
-    async def connect(self):
-        pass
+    async def connect(self) -> None:
+        """Establish connection with blockchain node."""
 
     @abstractmethod
-    async def transfer(self, to: str, amount: Decimal, asset: str):
-        pass
+    async def transfer(self, to: str, amount: Decimal, asset: str) -> str:
+        """Transfer ``asset`` from ``self.address``.
+
+        :param to: Address assets are transferred to.
+        :param amount: Amount of transferred asset.
+        :param asset: Transferred asset.
+        """
 
     @abstractmethod
-    async def is_block_confirmed(self, block_num: int, op: Mapping[str, Any]):
-        pass
+    async def is_block_confirmed(
+        self, block_num: int, op: typing.Mapping[str, typing.Any]
+    ) -> bool:
+        """Check if block #``block_num`` has ``op`` after confirmation.
+
+        Check block on blockchain-specific conditions to consider it confirmed.
+
+        :param block_num: Number of block to check.
+        :param op: Operation to check.
+        """
 
     @abstractmethod
-    async def start_streaming(self):
-        pass
+    async def start_streaming(self) -> None:
+        """Stream new blocks and check if they contain transactions from ``self._queue``.
 
-    def trx_url(self, trx_id: str):
+        Use built-in method to subscribe to new blocks if node has it,
+        otherwise get new blocks in blockchain-specific time interval between blocks.
+
+        If block contains desired transaction, call ``self._confirmation_callback``.
+        If it returns True, remove transaction from ``self._queue`` and stop
+        streaming if ``self._queue`` is empty.
+        """
+
+    def trx_url(self, trx_id: str) -> str:
+        """Get URL on transaction with ID ``trx_id`` on explorer."""
         return self.explorer.format(trx_id)
 
     async def check_transaction(
@@ -69,6 +98,7 @@ class BaseBlockchain(ABC):
         asset: str,
         memo: str,
     ):
+        """Add transaction in ``self._queue`` to be checked."""
         self._queue.append(
             {
                 'offer_id': offer_id,
@@ -79,10 +109,16 @@ class BaseBlockchain(ABC):
                 'memo': memo,
             }
         )
+        # Start streaming if not already streaming
         if len(self._queue) == 1:
             await self.start_streaming()
 
-    def remove_from_queue(self, offer_id: ObjectId):
+    def remove_from_queue(self, offer_id: ObjectId) -> bool:
+        """Remove transaction with specified ``offer_id`` value from ``self._queue``.
+
+        :param offer_id: ``_id`` of escrow offer.
+        :return: True if transaction was found and False otherwise.
+        """
         for queue_member in self._queue:
             if queue_member['offer_id'] == offer_id:
                 self._queue.remove(queue_member)
@@ -90,11 +126,27 @@ class BaseBlockchain(ABC):
         return False
 
     async def _confirmation_callback(
-        self, offer_id: ObjectId, op: Mapping[str, Any], trx_id: str, block_num: int
-    ):
+        self,
+        offer_id: ObjectId,
+        op: typing.Mapping[str, typing.Any],
+        trx_id: str,
+        block_num: int,
+    ) -> bool:
+        """Confirm found block with transaction.
+
+        Notify escrow asset sender and check if block is confirmed.
+        If it is, continue exchange. If it is not, send warning and
+        update ``transaction_time`` of escrow offer.
+
+        :param offer_id: ``_id`` of escrow offer.
+        :param op: Operation object to confirm.
+        :param trx_id: ID of transaction with desired operation.
+        :param block_num: Number of block to confirm.
+        :return: True if transaction was confirmed and False otherwise.
+        """
         offer = await database.escrow.find_one({'_id': offer_id})
         if not offer:
-            return
+            return False
 
         if offer['type'] == 'buy':
             new_currency = 'sell'
@@ -153,14 +205,24 @@ class BaseBlockchain(ABC):
 
     async def _refund_callback(
         self,
-        reasons: FrozenSet[str],
+        reasons: typing.FrozenSet[str],
         offer_id: ObjectId,
-        op: Mapping[str, Any],
+        op: typing.Mapping[str, typing.Any],
         from_address: str,
         amount: Decimal,
         asset: str,
         block_num: int,
-    ):
+    ) -> None:
+        """Refund transaction after confirmation because of mistakes in it.
+
+        :param reasons: Frozen set of mistakes in transaction.
+            The only allowed elements are ``asset``, ``amount`` and ``memo``.
+        :param offer_id: ``_id`` of escrow offer.
+        :param op: Operation object to confirm.
+        :param from_address: Address which sent assets.
+        :param amount: Amount of transferred asset.
+        :param asset: Transferred asset.
+        """
         offer = await database.escrow.find_one({'_id': offer_id})
         if not offer:
             return
@@ -200,4 +262,4 @@ class BaseBlockchain(ABC):
 
 
 class BlockchainConnectionError(Exception):
-    pass
+    """Unsuccessful attempt at connection to blockchain node."""

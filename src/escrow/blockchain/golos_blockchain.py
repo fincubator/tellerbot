@@ -16,6 +16,7 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 import functools
 import json
+import typing
 from asyncio import create_task  # type: ignore
 from asyncio import get_running_loop  # type: ignore
 from asyncio import sleep  # type: ignore
@@ -23,10 +24,6 @@ from calendar import timegm
 from datetime import datetime
 from decimal import Decimal
 from time import time
-from typing import Any
-from typing import List
-from typing import Mapping
-from typing import Optional
 
 from golos import Api
 from golos.exceptions import RetriesExceeded
@@ -47,6 +44,8 @@ NODES = (
 
 
 class GolosBlockchain(BaseBlockchain):
+    """Golos node client implementation for escrow exchange."""
+
     assets = frozenset({'GOLOS', 'GBG'})
     address = 'tellerbot'
     explorer = 'https://golos.cf/tx/?={}'
@@ -184,9 +183,9 @@ class GolosBlockchain(BaseBlockchain):
 
     async def _check_operation(
         self,
-        op: Mapping[str, Any],
+        op: typing.Mapping[str, typing.Any],
         block_num: int,
-        queue: Optional[List[Mapping[str, Any]]] = None,
+        queue: typing.Optional[typing.List] = None,
     ):
         if queue is None:
             queue = self._queue

@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+"""Handlers for setting language."""
 from aiogram.dispatcher.filters.state import any_state
 from aiogram.types import CallbackQuery
 
@@ -29,6 +30,7 @@ from src.i18n import i18n
     lambda call: call.data.startswith('locale '), state=any_state
 )
 async def locale_button(call: CallbackQuery):
+    """Choose language from list."""
     locale = call.data.split()[1]
     await database.users.update_one(
         {'id': call.from_user.id}, {'$set': {'locale': locale}}

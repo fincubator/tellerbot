@@ -27,7 +27,7 @@ pip install -r requirements.txt
 ```
 6. Create config file from template:
 ```bash
-cp config.py.sample config.py
+cp config.py.sample src/config.py
 ```
 7. Personalize settings by modifying ```config.py``` with your preferable text editor.
 8. Launch TellerBot:

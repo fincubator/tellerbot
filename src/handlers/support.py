@@ -14,12 +14,13 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-import config
+"""Handlers for interacting with support."""
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 
+from src.config import SUPPORT_CHAT_ID
 from src.handlers import dp
 from src.handlers import private_handler
 from src.handlers import start_keyboard
@@ -32,6 +33,7 @@ from src.states import asking_support
     lambda call: call.data.startswith('unhelp'), state=asking_support
 )
 async def unhelp_button(call: types.CallbackQuery, state: FSMContext):
+    """Cancel request to support."""
     await state.finish()
     await call.answer()
     await tg.send_message(
@@ -42,16 +44,19 @@ async def unhelp_button(call: types.CallbackQuery, state: FSMContext):
 
 
 async def send_message_to_support(message: types.Message):
+    """Format message and send it to support.
+
+    Envelope emoji at the beginning is the mark of support ticket.
+    """
     if message.from_user.username:
         username = '@' + message.from_user.username
     else:
         username = markdown.link(message.from_user.full_name, message.from_user.url)
 
     await tg.send_message(
-        config.SUPPORT_CHAT_ID,
-        emojize(
-            f':envelope: #chat_{message.chat.id} {message.message_id}\n{username}:\n'
-        )
+        SUPPORT_CHAT_ID,
+        emojize(f':envelope:')
+        + f' #chat_{message.chat.id} {message.message_id}\n{username}:\n'
         + message.text,
     )
     await tg.send_message(
@@ -63,6 +68,7 @@ async def send_message_to_support(message: types.Message):
 
 @private_handler(state=asking_support)
 async def contact_support(message: types.Message, state: FSMContext):
+    """Send message to support after request in start manu."""
     await send_message_to_support(message)
     await state.finish()
 
@@ -72,17 +78,24 @@ async def contact_support(message: types.Message, state: FSMContext):
     and msg.reply_to_message.text.startswith(emojize(':speech_balloon:'))
 )
 async def handle_reply(message: types.Message):
+    """Answer support's reply to ticket."""
     me = await tg.me
     if message.reply_to_message.from_user.id == me.id:
         await send_message_to_support(message)
 
 
 @dp.message_handler(
-    lambda msg: msg.chat.id == config.SUPPORT_CHAT_ID
+    lambda msg: msg.chat.id == SUPPORT_CHAT_ID
     and msg.reply_to_message is not None
     and msg.reply_to_message.text.startswith(emojize(':envelope: '))
 )
 async def answer_support_ticket(message: types.Message):
+    """
+    Answer support ticket.
+
+    Speech balloon emoji at the beginning is the mark of support's
+    reply to ticket.
+    """
     me = await tg.me
     if message.reply_to_message.from_user.id == me.id:
         args = message.reply_to_message.text.splitlines()[0].split()

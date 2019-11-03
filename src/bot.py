@@ -16,13 +16,14 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 import asyncio
 import logging
+import typing
 
-import config
 from aiogram import Bot
 from aiogram import types
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
 
+from src import config
 from src.database import storage
 from src.i18n import i18n
 
@@ -38,7 +39,9 @@ dp.middleware.setup(LoggingMiddleware())
 
 
 def private_handler(*args, **kwargs):
-    def decorator(handler):
+    """Register handler only for private message."""
+
+    def decorator(handler: typing.Callable):
         dp.register_message_handler(
             handler,
             lambda message: message.chat.type == types.ChatType.PRIVATE,  # noqa: E721
@@ -54,6 +57,8 @@ state_handlers = {}
 
 
 def state_handler(state):
+    """Associate ``state`` with decorated handler."""
+
     def decorator(handler):
         state_handlers[state.state] = handler
         return handler

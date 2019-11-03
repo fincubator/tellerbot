@@ -15,21 +15,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 import math
+import typing
 from datetime import datetime
 from decimal import Decimal
-from decimal import InvalidOperation
 from time import time
 
-import config
-from aiogram.types import InlineKeyboardButton
-from aiogram.types import InlineKeyboardMarkup
-from aiogram.types import KeyboardButton
-from aiogram.types import ParseMode
-from aiogram.types import ReplyKeyboardMarkup
-from aiogram.types import User
+from aiogram import types
 from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
-from aiogram.utils.exceptions import MessageNotModified
+from pymongo.cursor import Cursor
+
+from src import config
 
 from src.bot import (  # noqa: F401, noreorder
     dp,
@@ -39,13 +35,11 @@ from src.bot import (  # noqa: F401, noreorder
 )
 from src.bot import tg
 from src.i18n import _
-from src.money import HIGH_EXP
-from src.money import LOW_EXP
-from src.money import MoneyValidationError
 from src.money import normalize
 
 
-def help_message():
+def help_message() -> str:
+    """Translate initial greeting message."""
     return _(
         "Hello, I'm TellerBot. "
         'I can help you meet with people that you can swap money with.\n\n'
@@ -53,66 +47,66 @@ def help_message():
     )
 
 
-def start_keyboard():
-    keyboard = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+def start_keyboard() -> types.ReplyKeyboardMarkup:
+    """Create reply keyboard with main menu."""
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     keyboard.add(
-        KeyboardButton(emojize(':heavy_plus_sign: ') + _('Create order')),
-        KeyboardButton(emojize(':bust_in_silhouette: ') + _('My orders')),
-        KeyboardButton(emojize(':closed_book: ') + _('Order book')),
-        KeyboardButton(emojize(':abcd: ') + _('Language')),
-        KeyboardButton(emojize(':question: ') + _('Support')),
+        types.KeyboardButton(emojize(':heavy_plus_sign: ') + _('Create order')),
+        types.KeyboardButton(emojize(':bust_in_silhouette: ') + _('My orders')),
+        types.KeyboardButton(emojize(':closed_book: ') + _('Order book')),
+        types.KeyboardButton(emojize(':abcd: ') + _('Language')),
+        types.KeyboardButton(emojize(':question: ') + _('Support')),
     )
     return keyboard
 
 
-def inline_control_buttons(no_back=False, no_next=False):
+def inline_control_buttons(
+    no_back: bool = False, no_next: bool = False
+) -> typing.List[types.InlineKeyboardButton]:
+    """Create inline button row with translated labels to control current state."""
     buttons = []
     row = []
     if not no_back:
-        row.append(InlineKeyboardButton(_('Back'), callback_data='state back'))
+        row.append(types.InlineKeyboardButton(_('Back'), callback_data='state back'))
     if not no_next:
-        row.append(InlineKeyboardButton(_('Skip'), callback_data='state next'))
+        row.append(types.InlineKeyboardButton(_('Skip'), callback_data='state next'))
     if row:
         buttons.append(row)
     return buttons
 
 
-async def validate_money(data, chat_id):
-    try:
-        money = Decimal(data)
-    except InvalidOperation:
-        raise MoneyValidationError(_('Send decimal number.'))
-    if money <= 0:
-        raise MoneyValidationError(_('Send positive number.'))
-    if money >= HIGH_EXP:
-        raise MoneyValidationError(_('Send number less than') + f' {HIGH_EXP:,f}')
-
-    normalized = normalize(money)
-    if normalized.is_zero():
-        raise MoneyValidationError(_('Send number greater than') + f' {LOW_EXP:.8f}')
-    return normalized
-
-
 async def orders_list(
-    cursor,
-    chat_id,
-    start,
-    quantity,
-    buttons_data,
-    user_id=None,
-    message_id=None,
-    invert=False,
-):
-    keyboard = InlineKeyboardMarkup(row_width=min(config.ORDERS_COUNT // 2, 8))
+    cursor: Cursor,
+    chat_id: int,
+    start: int,
+    quantity: int,
+    buttons_data: str,
+    user_id: typing.Optional[int] = None,
+    message_id: typing.Optional[int] = None,
+    invert: bool = False,
+) -> None:
+    """Send list of orders.
+
+    :param cursor: Cursor of MongoDB query to orders.
+    :param chat_id: Telegram ID of current chat.
+    :param start: Start index.
+    :param quantity: Quantity of orders in cursor.
+    :param buttons_data: Beginning of callback data of left/right buttons.
+    :param user_id: If cursor is user-specific, Telegram ID of user
+        who created all orders in cursor.
+    :param message_id: Telegram ID of message to edit.
+    :param invert: Invert all prices.
+    """
+    keyboard = types.InlineKeyboardMarkup(row_width=min(config.ORDERS_COUNT // 2, 8))
 
     inline_orders_buttons = (
-        InlineKeyboardButton(
+        types.InlineKeyboardButton(
             emojize(':arrow_left:'),
             callback_data='{} {} {}'.format(
                 buttons_data, start - config.ORDERS_COUNT, int(invert)
             ),
         ),
-        InlineKeyboardButton(
+        types.InlineKeyboardButton(
             emojize(':arrow_right:'),
             callback_data='{} {} {}'.format(
                 buttons_data, start + config.ORDERS_COUNT, int(invert)
@@ -176,13 +170,13 @@ async def orders_list(
 
         lines.append(f'{i + 1}. {line}')
         buttons.append(
-            InlineKeyboardButton(
+            types.InlineKeyboardButton(
                 '{}'.format(i + 1), callback_data='get_order {}'.format(order['_id'])
             )
         )
 
     keyboard.row(
-        InlineKeyboardButton(
+        types.InlineKeyboardButton(
             _('Invert'),
             callback_data='{} {} {}'.format(
                 buttons_data, start - config.ORDERS_COUNT, int(not invert)
@@ -204,7 +198,7 @@ async def orders_list(
 
     if message_id is None:
         await tg.send_message(
-            chat_id, text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
+            chat_id, text, reply_markup=keyboard, parse_mode=types.ParseMode.MARKDOWN
         )
     else:
         await tg.edit_message_text(
@@ -212,34 +206,12 @@ async def orders_list(
             chat_id,
             message_id,
             reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN,
+            parse_mode=types.ParseMode.MARKDOWN,
         )
-
-
-async def show_orders(
-    call, cursor, start, quantity, buttons_data, invert, user_id=None
-):
-    if start >= quantity > 0:
-        await call.answer(_('There are no more orders.'))
-        return
-
-    try:
-        await call.answer()
-        await orders_list(
-            cursor,
-            call.message.chat.id,
-            start,
-            quantity,
-            buttons_data,
-            user_id=user_id,
-            message_id=call.message.message_id,
-            invert=invert,
-        )
-    except MessageNotModified:
-        await call.answer(_('There are no previous orders.'))
 
 
 def get_order_field_names():
+    """Get translated names of order fields."""
     return {
         'sum_buy': _('Amount of buying:'),
         'sum_sell': _('Amount of selling:'),
@@ -251,16 +223,29 @@ def get_order_field_names():
 
 
 async def show_order(
-    order,
-    chat_id,
-    user_id,
-    message_id=None,
-    location_message_id=None,
-    show_id=False,
-    invert=False,
-    edit=False,
-    locale=None,
+    order: typing.Mapping[str, typing.Any],
+    chat_id: int,
+    user_id: int,
+    message_id: typing.Optional[int] = None,
+    location_message_id: typing.Optional[int] = None,
+    show_id: bool = False,
+    invert: bool = False,
+    edit: bool = False,
+    locale: typing.Optional[str] = None,
 ):
+    """Send detailed order.
+
+    :param order: Order document.
+    :param chat_id: Telegram ID of chat to send message to.
+    :param user_id: Telegram user ID of message receiver.
+    :param message_id: Telegram ID of message to edit.
+    :param location_message_id: Telegram ID of message with location object.
+        It is deleted when **Hide** inline button is pressed.
+    :param show_id: Add ID of order to the top.
+    :param invert: Invert price.
+    :param edit: Enter edit mode.
+    :param locale: Locale of message receiver.
+    """
     if location_message_id is None:
         if order.get('lat') is not None and order.get('lon') is not None:
             location_message = await tg.send_location(
@@ -273,7 +258,7 @@ async def show_order(
     header = ''
     if show_id:
         header += 'ID: {}\n'.format(order['_id'])
-    header += markdown.link(order['mention'], User(id=order['user_id']).url) + ' '
+    header += markdown.link(order['mention'], types.User(id=order['user_id']).url) + ' '
     if invert:
         header += _('sells {} for {}', locale=locale).format(
             order['sell'], order['buy']
@@ -284,7 +269,9 @@ async def show_order(
 
     lines = [header]
     field_names = get_order_field_names()
-    lines_format = {k: None for k in field_names}
+    lines_format: typing.Dict[str, typing.Optional[str]] = {}
+    for name in field_names:
+        lines_format[name] = None
 
     if 'sum_buy' in order:
         lines_format['sum_buy'] = '{} {}'.format(order['sum_buy'], order['buy'])
@@ -309,10 +296,10 @@ async def show_order(
     if 'comments' in order:
         lines_format['comments'] = '«{}»'.format(order['comments'])
 
-    keyboard = InlineKeyboardMarkup(row_width=6)
+    keyboard = types.InlineKeyboardMarkup(row_width=6)
 
     keyboard.row(
-        InlineKeyboardButton(
+        types.InlineKeyboardButton(
             _('Invert', locale=locale),
             callback_data='{} {} {} {}'.format(
                 'revert' if invert else 'invert',
@@ -331,7 +318,7 @@ async def show_order(
             elif edit:
                 lines.append(f'{i + 1}. {field_names[field]} -')
             buttons.append(
-                InlineKeyboardButton(
+                types.InlineKeyboardButton(
                     f'{i + 1}',
                     callback_data='edit {} {} {} {}'.format(
                         order['_id'], field, location_message_id, int(invert)
@@ -341,7 +328,7 @@ async def show_order(
 
         keyboard.add(*buttons)
         keyboard.row(
-            InlineKeyboardButton(
+            types.InlineKeyboardButton(
                 _('Finish', locale=locale),
                 callback_data='{} {} {} 0'.format(
                     'invert' if invert else 'revert', order['_id'], location_message_id
@@ -355,18 +342,18 @@ async def show_order(
                 lines.append(field_names[field] + ' ' + value)
 
         keyboard.row(
-            InlineKeyboardButton(
+            types.InlineKeyboardButton(
                 _('Similar', locale=locale),
                 callback_data='similar {}'.format(order['_id']),
             ),
-            InlineKeyboardButton(
+            types.InlineKeyboardButton(
                 _('Match', locale=locale), callback_data='match {}'.format(order['_id'])
             ),
         )
 
         if order['user_id'] == user_id:
             keyboard.row(
-                InlineKeyboardButton(
+                types.InlineKeyboardButton(
                     _('Edit', locale=locale),
                     callback_data='{} {} {} 1'.format(
                         'invert' if invert else 'revert',
@@ -374,7 +361,7 @@ async def show_order(
                         location_message_id,
                     ),
                 ),
-                InlineKeyboardButton(
+                types.InlineKeyboardButton(
                     _('Delete', locale=locale),
                     callback_data='delete {} {}'.format(
                         order['_id'], location_message_id
@@ -383,14 +370,14 @@ async def show_order(
             )
         elif order.get('escrow'):
             keyboard.row(
-                InlineKeyboardButton(
+                types.InlineKeyboardButton(
                     _('Escrow', locale=locale),
                     callback_data='escrow {} sum_buy 0'.format(order['_id']),
                 )
             )
 
         keyboard.row(
-            InlineKeyboardButton(
+            types.InlineKeyboardButton(
                 _('Hide', locale=locale),
                 callback_data='hide {}'.format(location_message_id),
             )
@@ -404,9 +391,9 @@ async def show_order(
             chat_id,
             message_id,
             reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN,
+            parse_mode=types.ParseMode.MARKDOWN,
         )
     else:
         await tg.send_message(
-            chat_id, answer, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
+            chat_id, answer, reply_markup=keyboard, parse_mode=types.ParseMode.MARKDOWN
         )

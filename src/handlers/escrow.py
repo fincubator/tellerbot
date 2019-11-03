@@ -14,7 +14,9 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+"""Handlers for escrow exchange."""
 import asyncio
+import typing
 from decimal import Decimal
 from time import time
 
@@ -28,10 +30,10 @@ from aiogram.types import User
 from aiogram.utils import markdown
 from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
-from config import SUPPORT_CHAT_ID
 from dataclasses import replace
 
 from src import states
+from src.config import SUPPORT_CHAT_ID
 from src.database import database
 from src.escrow import get_escrow_instance
 from src.escrow import SUPPORTED_BANKS
@@ -41,13 +43,20 @@ from src.handlers import private_handler
 from src.handlers import show_order
 from src.handlers import start_keyboard
 from src.handlers import tg
-from src.handlers import validate_money
 from src.i18n import _
-from src.money import MoneyValidationError
+from src.money import money
+from src.money import MoneyValueError
 from src.money import normalize
 
 
-async def get_card_number(text, chat_id):
+async def get_card_number(
+    text: str, chat_id: int
+) -> typing.Optional[typing.Tuple[str, str]]:
+    """Parse first and last 4 digits from card number in ``text``.
+
+    If parsing is unsuccessful, send warning to ``chat_id`` and return
+    None. Otherwise return tuple of first and last 4 digits of card number.
+    """
     if len(text) < 8:
         await tg.send_message(chat_id, _('You should send at least 8 digits.'))
         return None
@@ -60,13 +69,21 @@ async def get_card_number(text, chat_id):
 
 
 @dp.async_task
-async def call_later(delay, callback, *args, **kwargs):
+async def call_later(delay: float, callback: typing.Callable, *args, **kwargs):
+    """Call ``callback(*args, **kwargs)`` asynchronously after ``delay`` seconds."""
     await asyncio.sleep(delay)
     return await callback(*args, **kwargs)
 
 
 def escrow_callback_handler(*args, state=any_state, **kwargs):
-    def decorator(handler):
+    """Simplify handling callback queries during escrow exchange.
+
+    Add offer of ``EscrowOffer`` to arguments of decorated callback query handler.
+    """
+
+    def decorator(
+        handler: typing.Callable[[types.CallbackQuery, EscrowOffer], typing.Any]
+    ):
         @dp.callback_query_handler(*args, state=state, **kwargs)
         async def wrapper(call: types.CallbackQuery):
             offer_id = call.data.split()[1]
@@ -83,7 +100,14 @@ def escrow_callback_handler(*args, state=any_state, **kwargs):
 
 
 def escrow_message_handler(*args, **kwargs):
-    def decorator(handler):
+    """Simplify handling messages during escrow exchange.
+
+    Add offer of ``EscrowOffer`` to arguments of decorated private message handler.
+    """
+
+    def decorator(
+        handler: typing.Callable[[types.Message, FSMContext, EscrowOffer], typing.Any]
+    ):
         @private_handler(*args, **kwargs)
         async def wrapper(message: types.Message, state: FSMContext):
             offer = await database.escrow.find_one(
@@ -102,24 +126,25 @@ def escrow_message_handler(*args, **kwargs):
 
 @escrow_message_handler(state=states.Escrow.amount)
 async def set_escrow_sum(message: types.Message, state: FSMContext, offer: EscrowOffer):
+    """Set sum and ask for fee payment agreement."""
     try:
-        escrow_sum = await validate_money(message.text, message.chat.id)
-    except MoneyValidationError as exception:
+        offer_sum = money(message.text)
+    except MoneyValueError as exception:
         await tg.send_message(message.chat.id, str(exception))
         return
 
     order = await database.orders.find_one({'_id': offer.order})
     order_sum = order.get(offer.sum_currency)
-    if order_sum and escrow_sum > order_sum.to_decimal():
+    if order_sum and offer_sum > order_sum.to_decimal():
         await tg.send_message(
             message.chat.id, _("Send number not exceeding order's sum.")
         )
         return
 
-    update_dict = {offer.sum_currency: Decimal128(escrow_sum)}
+    update_dict = {offer.sum_currency: Decimal128(offer_sum)}
     new_currency = 'sell' if offer.sum_currency == 'sum_buy' else 'buy'
     update_dict[f'sum_{new_currency}'] = Decimal128(
-        normalize(escrow_sum * order[f'price_{new_currency}'].to_decimal())
+        normalize(offer_sum * order[f'price_{new_currency}'].to_decimal())
     )
     escrow_sum = update_dict[f'sum_{offer.type}']
     update_dict['sum_fee_up'] = Decimal128(
@@ -148,6 +173,7 @@ async def set_escrow_sum(message: types.Message, state: FSMContext, offer: Escro
 
 
 async def full_card_number_request(chat_id: int, offer: EscrowOffer):
+    """Ask to send full card number."""
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
         InlineKeyboardButton(_('Sent'), callback_data=f'card_sent {offer._id}')
@@ -173,10 +199,14 @@ async def full_card_number_request(chat_id: int, offer: EscrowOffer):
 async def ask_credentials(
     call: types.CallbackQuery, offer: EscrowOffer, update_dict: dict = {}
 ):
+    """Update offer with ``update_dict`` and start asking transfer information.
+
+    Ask to choose bank if user is initiator and there is a fiat
+    currency. Otherwise ask receive address.
+    """
     await call.answer()
-    fiat = 'RUB'
     is_user_init = call.from_user.id == offer.init['id']
-    if is_user_init and fiat in {offer.buy, offer.sell}:
+    if is_user_init and 'RUB' in {offer.buy, offer.sell}:
         keyboard = InlineKeyboardMarkup()
         for bank in SUPPORTED_BANKS:
             keyboard.row(
@@ -211,6 +241,7 @@ async def ask_credentials(
     lambda call: call.data.startswith('accept_fee '), state=states.Escrow.fee
 )
 async def pay_fee(call: types.CallbackQuery, offer: EscrowOffer):
+    """Accept fee and start asking transfer information."""
     await ask_credentials(call, offer)
 
 
@@ -218,6 +249,7 @@ async def pay_fee(call: types.CallbackQuery, offer: EscrowOffer):
     lambda call: call.data.startswith('decline_fee '), state=states.Escrow.fee
 )
 async def decline_fee(call: types.CallbackQuery, offer: EscrowOffer):
+    """Decline fee and start asking transfer information."""
     if (call.from_user.id == offer.init['id']) == (offer.type == 'buy'):
         sum_fee_field = 'sum_fee_up'
     else:
@@ -230,6 +262,11 @@ async def decline_fee(call: types.CallbackQuery, offer: EscrowOffer):
     lambda call: call.data.startswith('bank '), state=states.Escrow.bank
 )
 async def choose_bank(call: types.CallbackQuery, offer: EscrowOffer):
+    """Set chosen bank and continue.
+
+    Because bank is chosen by initiator, ask for receive address if
+    they receive escrow asset.
+    """
     bank = call.data.split()[2]
     if bank not in SUPPORTED_BANKS:
         await call.answer(_('This bank is not supported.'))
@@ -238,6 +275,8 @@ async def choose_bank(call: types.CallbackQuery, offer: EscrowOffer):
     update_dict = {'bank': bank}
     await call.answer()
     if offer.type == 'buy':
+        # FIXME: Ask initiator to send their full card number after
+        #        counteragent confirmed offer
         await full_card_number_request(call.message.chat.id, offer)
     else:
         update_dict['pending_input_from'] = call.from_user.id
@@ -252,6 +291,7 @@ async def choose_bank(call: types.CallbackQuery, offer: EscrowOffer):
 async def full_card_number_message(
     message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
+    """React to sent message while sending full card number to fiat sender."""
     if message.from_user.id == offer.init['id']:
         user = offer.counter
     else:
@@ -268,6 +308,7 @@ async def full_card_number_message(
     lambda call: call.data.startswith('card_sent '), state=states.Escrow.full_card
 )
 async def full_card_number_sent(call: types.CallbackQuery, offer: EscrowOffer):
+    """Confirm that full card number is sent and ask for first and last 4 digits."""
     await offer.update_document({'$set': {'pending_input_from': call.from_user.id}})
     await call.answer()
     await tg.send_message(
@@ -283,6 +324,11 @@ async def full_card_number_sent(call: types.CallbackQuery, offer: EscrowOffer):
 async def set_receive_card_number(
     message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
+    """Create address from first and last 4 digits of card number and ask send address.
+
+    First and last 4 digits of card number are sent by fiat receiver,
+    so their send address is escrow asset address.
+    """
     card_number = await get_card_number(message.text, message.chat.id)
     if not card_number:
         return
@@ -305,6 +351,12 @@ async def set_receive_card_number(
 async def set_receive_address(
     message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
+    """Set escrow asset receiver's address and ask for sender's information.
+
+    If there is a fiat currency, which is indicated by existing
+    ``bank`` field, and user is a fiat sender, ask their name on card.
+    Otherwise ask escrow asset sender's address.
+    """
     if len(message.text) >= 150:
         await tg.send_message(
             message.chat.id,
@@ -347,6 +399,7 @@ async def set_receive_address(
 async def set_send_address(
     message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
+    """Set send address of any party."""
     if len(message.text) >= 150:
         await tg.send_message(
             message.chat.id,
@@ -365,6 +418,7 @@ async def set_send_address(
 
 @escrow_message_handler(state=states.Escrow.name)
 async def set_name(message: types.Message, state: FSMContext, offer: EscrowOffer):
+    """Set fiat sender's name on card and ask for first and last 4 digits."""
     name = message.text.split()
     if len(name) != 3:
         await tg.send_message(
@@ -395,6 +449,7 @@ async def set_name(message: types.Message, state: FSMContext, offer: EscrowOffer
 async def set_send_card_number(
     message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
+    """Set first and last 4 digits of any party."""
     card_number = await get_card_number(message.text, message.chat.id)
     if not card_number:
         return
@@ -409,6 +464,10 @@ async def set_send_card_number(
 async def set_init_send_address(
     address: str, message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
+    """Set ``address`` as sender's address of initiator.
+
+    Send offer to counteragent.
+    """
     await offer.update_document(
         {'$set': {'init.send_address': address}, '$unset': {'pending_input_from': True}}
     )
@@ -451,6 +510,7 @@ async def set_init_send_address(
 
 @escrow_callback_handler(lambda call: call.data.startswith('accept '))
 async def accept_offer(call: types.CallbackQuery, offer: EscrowOffer):
+    """React to counteragent accepting offer by askiing for fee payment agreement."""
     await offer.update_document(
         {'$set': {'pending_input_from': call.message.chat.id, 'react_time': time()}}
     )
@@ -474,6 +534,7 @@ async def accept_offer(call: types.CallbackQuery, offer: EscrowOffer):
 
 @escrow_callback_handler(lambda call: call.data.startswith('decline '))
 async def decline_offer(call: types.CallbackQuery, offer: EscrowOffer):
+    """React to counteragent declining offer."""
     offer.react_time = time()
     await offer.delete_document()
     await tg.send_message(
@@ -487,6 +548,10 @@ async def decline_offer(call: types.CallbackQuery, offer: EscrowOffer):
 async def set_counter_send_address(
     address: str, message: types.Message, state: FSMContext, offer: EscrowOffer
 ):
+    """Set ``address`` as sender's address of counteragent.
+
+    Ask for escrow asset transfer.
+    """
     template = (
         'to {escrow_receive_address} '
         'for {not_escrow_amount} {not_escrow_currency} '
@@ -571,6 +636,12 @@ async def set_counter_send_address(
 
 @escrow_callback_handler(lambda call: call.data.startswith('escrow_cancel '))
 async def cancel_offer(call: types.CallbackQuery, offer: EscrowOffer):
+    """React to offer cancellation.
+
+    While first party is transferring, second party can't cancel offer,
+    because we can't be sure that first party hasn't alredy completed
+    transfer before confirming.
+    """
     if offer.trx_id:
         return await call.answer(_("You can't cancel offer after transfer to escrow."))
     if offer.memo:
@@ -600,15 +671,23 @@ async def cancel_offer(call: types.CallbackQuery, offer: EscrowOffer):
 
 
 async def edit_keyboard(
-    offer: EscrowOffer, chat_id: int, message_id: int, keyboard: InlineKeyboardMarkup
+    offer_id: ObjectId, chat_id: int, message_id: int, keyboard: InlineKeyboardMarkup
 ):
-    offer_document = await database.escrow.find_one({'_id': offer._id})
+    """Edit inline keyboard markup of message.
+
+    :param offer_id: Primary key value of offer document connected with message.
+    :param chat_id: Telegram chat ID of message.
+    :param message_id: Telegram ID of message.
+    :param keyboard: New inline keyboard markup.
+    """
+    offer_document = await database.escrow.find_one({'_id': offer_id})
     if offer_document:
         await tg.edit_message_reply_markup(chat_id, message_id, reply_markup=keyboard)
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('tokens_sent '))
 async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer):
+    """Ask not escrow asset receiver to confirm transfer."""
     if offer.type == 'buy':
         confirm_user = offer.init
         other_user = offer.counter
@@ -639,7 +718,12 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer
         )
     )
     await call_later(
-        60 * 10, edit_keyboard, confirm_user['id'], reply.message_id, keyboard
+        60 * 10,
+        edit_keyboard,
+        offer._id,
+        confirm_user['id'],
+        reply.message_id,
+        keyboard,
     )
     await call.answer()
     await tg.send_message(
@@ -655,6 +739,7 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer
 @escrow_callback_handler(lambda call: call.data.startswith('escrow_complete '))
 @dp.async_task
 async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
+    """Release escrow asset and finish exchange."""
     if offer.type == 'buy':
         recipient_user = offer.counter
         other_user = offer.init
@@ -689,6 +774,7 @@ async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
 
 @escrow_callback_handler(lambda call: call.data.startswith('escrow_validate '))
 async def validate_offer(call: types.CallbackQuery, offer: EscrowOffer):
+    """Ask support for manual verification of exchange."""
     escrow_instance = get_escrow_instance(offer[offer.type])
     await tg.send_message(
         SUPPORT_CHAT_ID,

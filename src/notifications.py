@@ -26,6 +26,7 @@ from src.i18n import _
 
 
 async def run_loop():
+    """Notify order creators about expired orders in infinite loop."""
     while True:
         cursor = database.orders.find(
             {'expiration_time': {'$lte': time()}, 'notify': True}
@@ -40,7 +41,7 @@ async def run_loop():
                 pass
             else:
                 await show_order(order, user['chat'], user['id'])
-                await asyncio.sleep(1)
+                await asyncio.sleep(1)  # Avoid Telegram limit
             finally:
                 await database.orders.update_one(
                     {'_id': order['_id']}, {'$set': {'notify': False}}

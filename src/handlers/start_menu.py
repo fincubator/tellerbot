@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+"""Handlers for start menu."""
 from time import time
 
 from aiogram import types
@@ -23,11 +24,11 @@ from aiogram.types import InlineKeyboardButton
 from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.emoji import emojize
 from babel import Locale
-from config import ORDERS_LIMIT_COUNT
-from config import ORDERS_LIMIT_HOURS
 from pymongo import DESCENDING
 
 from src import states
+from src.config import ORDERS_LIMIT_COUNT
+from src.config import ORDERS_LIMIT_HOURS
 from src.database import database
 from src.handlers import help_message
 from src.handlers import inline_control_buttons
@@ -41,6 +42,10 @@ from src.i18n import i18n
 
 @private_handler(commands=['start'], state=any_state)
 async def handle_start_command(message: types.Message, state: FSMContext):
+    """Handle /start.
+
+    Ask for language if user is new or show menu.
+    """
     user = {'id': message.from_user.id, 'chat': message.chat.id}
     result = await database.users.update_one(user, {'$setOnInsert': user}, upsert=True)
 
@@ -69,6 +74,7 @@ async def handle_start_command(message: types.Message, state: FSMContext):
     lambda msg: msg.text.startswith(emojize(':heavy_plus_sign:')), state=any_state
 )
 async def handle_create(message: types.Message, state: FSMContext):
+    """Start order creation by asking user for currency they want to buy."""
     current_time = time()
     user_orders = await database.orders.count_documents(
         {
@@ -106,6 +112,7 @@ async def handle_create(message: types.Message, state: FSMContext):
     lambda msg: msg.text.startswith(emojize(':closed_book:')), state=any_state
 )
 async def handle_book(message: types.Message, state: FSMContext):
+    """Show order book."""
     query = {
         '$or': [
             {'expiration_time': {'$exists': False}},
@@ -125,6 +132,7 @@ async def handle_book(message: types.Message, state: FSMContext):
     lambda msg: msg.text.startswith(emojize(':bust_in_silhouette:')), state=any_state
 )
 async def handle_my_orders(message: types.Message, state: FSMContext):
+    """Show user's orders."""
     query = {'user_id': message.from_user.id}
     cursor = database.orders.find(query).sort('start_time', DESCENDING)
     quantity = await database.orders.count_documents(query)
@@ -135,6 +143,7 @@ async def handle_my_orders(message: types.Message, state: FSMContext):
 @private_handler(commands=['locale'], state=any_state)
 @private_handler(lambda msg: msg.text.startswith(emojize(':abcd:')), state=any_state)
 async def choose_locale(message: types.Message):
+    """Show list of languages."""
     keyboard = InlineKeyboardMarkup()
     for language in i18n.available_locales:
         keyboard.row(
@@ -153,6 +162,7 @@ async def choose_locale(message: types.Message):
     lambda msg: msg.text.startswith(emojize(':question:')), state=any_state
 )
 async def help_command(message: types.Message):
+    """Handle request to support."""
     await states.asking_support.set()
     await tg.send_message(
         message.chat.id,

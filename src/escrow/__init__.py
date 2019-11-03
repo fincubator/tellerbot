@@ -22,11 +22,13 @@ SUPPORTED_BANKS = ('Alfa-Bank', 'Rocketbank', 'Sberbank', 'Tinkoff')
 
 
 def get_escrow_instance(asset: str):
+    """Find blockchain instance which supports ``asset``."""
     for bc in SUPPORTED_BLOCKCHAINS:
         if asset in bc.assets:
             return bc
 
 
 async def connect_to_blockchains():
+    """Run ``connect()`` method on every blockchain instance."""
     for bc in SUPPORTED_BLOCKCHAINS:
         await bc.connect()

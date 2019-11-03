@@ -14,20 +14,19 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+"""Handlers for showing orders and reacting to query buttons attached to them."""
+import typing
 from decimal import Decimal
 from time import time
-from typing import Any
-from typing import Mapping
 
+import pymongo
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import any_state
-from aiogram.types import InlineKeyboardButton
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.utils.exceptions import MessageNotModified
 from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
-from pymongo import ASCENDING
-from pymongo import DESCENDING
+from motor.core import AgnosticBaseCursor as Cursor
 
 from src import states
 from src.database import database
@@ -37,19 +36,27 @@ from src.handlers import dp
 from src.handlers import orders_list
 from src.handlers import private_handler
 from src.handlers import show_order
-from src.handlers import show_orders
 from src.handlers import tg
-from src.handlers import validate_money
 from src.i18n import _
-from src.money import MoneyValidationError
+from src.money import money
+from src.money import MoneyValueError
 from src.money import normalize
 
 
-def order_handler(handler):
+OrderType = typing.Mapping[str, typing.Any]
+
+
+def order_handler(
+    handler: typing.Callable[[types.CallbackQuery, OrderType], typing.Any]
+):
+    """Simplify handling callback queries attached to order.
+
+    Add order of ``OrderType`` to arguments of ``handler``.
+    """
+
     async def decorator(call: types.CallbackQuery):
         order_id = call.data.split()[1]
         order = await database.orders.find_one({'_id': ObjectId(order_id)})
-
         if not order:
             await call.answer(_('Order is not found.'))
             return
@@ -59,11 +66,52 @@ def order_handler(handler):
     return decorator
 
 
+async def show_orders(
+    call: types.CallbackQuery,
+    cursor: Cursor,
+    start: int,
+    quantity: int,
+    buttons_data: str,
+    invert: bool,
+    user_id: typing.Optional[int] = None,
+):
+    """Send list of orders.
+
+    :param cursor: Cursor of MongoDB query to orders.
+    :param chat_id: Telegram chat ID.
+    :param start: Start index.
+    :param quantity: Quantity of orders in cursor.
+    :param buttons_data: Beginning of callback data of left/right buttons.
+    :param user_id: If cursor is user-specific, Telegram ID of user
+        who created all orders in cursor.
+    :param invert: Invert all prices.
+    """
+    if start >= quantity > 0:
+        await call.answer(_('There are no more orders.'))
+        return
+
+    try:
+        await call.answer()
+        await orders_list(
+            cursor,
+            call.message.chat.id,
+            start,
+            quantity,
+            buttons_data,
+            user_id=user_id,
+            message_id=call.message.message_id,
+            invert=invert,
+        )
+    except MessageNotModified:
+        await call.answer(_('There are no previous orders.'))
+
+
 @dp.callback_query_handler(
     lambda call: call.data.startswith('get_order '), state=any_state
 )
 @order_handler
-async def get_order_button(call: types.CallbackQuery, order: Mapping[str, Any]):
+async def get_order_button(call: types.CallbackQuery, order: OrderType):
+    """Choose order from order book."""
     await call.answer()
     await show_order(order, call.message.chat.id, call.from_user.id, show_id=True)
 
@@ -71,6 +119,10 @@ async def get_order_button(call: types.CallbackQuery, order: Mapping[str, Any]):
 @private_handler(commands=['id'])
 @private_handler(regexp='ID: [a-f0-9]{24}')
 async def get_order_command(message: types.Message):
+    """Get order from ID.
+
+    Order ID is indicated after **/id** or **ID:** in message text.
+    """
     try:
         order_id = message.text.split()[1]
     except IndexError:
@@ -88,7 +140,8 @@ async def get_order_command(message: types.Message):
     lambda call: call.data.startswith(('invert ', 'revert ')), state=any_state
 )
 @order_handler
-async def invert_button(call: types.CallbackQuery, order: Mapping[str, Any]):
+async def invert_button(call: types.CallbackQuery, order: OrderType):
+    """React to invert button query."""
     args = call.data.split()
 
     invert = args[0] == 'invert'
@@ -109,7 +162,12 @@ async def invert_button(call: types.CallbackQuery, order: Mapping[str, Any]):
     )
 
 
-async def aggregate_orders(call, buy, sell, start=0, invert=False):
+async def aggregate_orders(buy: str, sell: str) -> typing.Tuple[Cursor, int]:
+    """Aggregate and query orders with specified currency pair.
+
+    Return cursor with unexpired orders sorted by price and creation
+    time and quantity of documents in it.
+    """
     query = {
         'buy': buy,
         'sell': sell,
@@ -122,7 +180,12 @@ async def aggregate_orders(call, buy, sell, start=0, invert=False):
         [
             {'$match': query},
             {'$addFields': {'price_buy': {'$ifNull': ['$price_buy', '']}}},
-            {'$sort': {'price_buy': ASCENDING, 'start_time': DESCENDING}},
+            {
+                '$sort': {
+                    'price_buy': pymongo.ASCENDING,
+                    'start_time': pymongo.DESCENDING,
+                }
+            },
         ]
     )
     quantity = await database.orders.count_documents(query)
@@ -133,13 +196,14 @@ async def aggregate_orders(call, buy, sell, start=0, invert=False):
     lambda call: call.data.startswith('orders '), state=any_state
 )
 async def orders_button(call: types.CallbackQuery):
+    """React to left/right button query in order book."""
     query = {
         '$or': [
             {'expiration_time': {'$exists': False}},
             {'expiration_time': {'$gt': time()}},
         ]
     }
-    cursor = database.orders.find(query).sort('start_time', DESCENDING)
+    cursor = database.orders.find(query).sort('start_time', pymongo.DESCENDING)
     quantity = await database.orders.count_documents(query)
 
     args = call.data.split()
@@ -154,8 +218,9 @@ async def orders_button(call: types.CallbackQuery):
     lambda call: call.data.startswith('my_orders '), state=any_state
 )
 async def my_orders_button(call: types.CallbackQuery):
+    """React to left/right button query in list of user's orders."""
     query = {'user_id': call.from_user.id}
-    cursor = database.orders.find(query).sort('start_time', DESCENDING)
+    cursor = database.orders.find(query).sort('start_time', pymongo.DESCENDING)
     quantity = await database.orders.count_documents(query)
 
     args = call.data.split()
@@ -168,10 +233,11 @@ async def my_orders_button(call: types.CallbackQuery):
     lambda call: call.data.startswith('matched_orders '), state=any_state
 )
 async def matched_orders_button(call: types.CallbackQuery):
+    """React to left/right button query in list of orders matched by currency pair."""
     args = call.data.split()
     start = max(0, int(args[3]))
     invert = bool(int(args[4]))
-    cursor, quantity = await aggregate_orders(call, args[1], args[2], start, invert)
+    cursor, quantity = await aggregate_orders(args[1], args[2])
     await call.answer()
     await show_orders(
         call,
@@ -188,8 +254,12 @@ async def matched_orders_button(call: types.CallbackQuery):
     lambda call: call.data.startswith('similar '), state=any_state
 )
 @order_handler
-async def similar_button(call: types.CallbackQuery, order: Mapping[str, Any]):
-    cursor, quantity = await aggregate_orders(call, order['buy'], order['sell'])
+async def similar_button(call: types.CallbackQuery, order: OrderType):
+    """React to "Similar" button by sending list of similar orders.
+
+    Similar orders are ones that have the same currency pair.
+    """
+    cursor, quantity = await aggregate_orders(order['buy'], order['sell'])
     await call.answer()
     await orders_list(
         cursor,
@@ -203,8 +273,12 @@ async def similar_button(call: types.CallbackQuery, order: Mapping[str, Any]):
 
 @dp.callback_query_handler(lambda call: call.data.startswith('match '), state=any_state)
 @order_handler
-async def match_button(call: types.CallbackQuery, order: Mapping[str, Any]):
-    cursor, quantity = await aggregate_orders(call, order['sell'], order['buy'])
+async def match_button(call: types.CallbackQuery, order: OrderType):
+    """React to "Match" button by sending list of matched orders.
+
+    Matched orders are ones that have the inverted currency pair.
+    """
+    cursor, quantity = await aggregate_orders(order['sell'], order['buy'])
     await call.answer()
     await orders_list(
         cursor,
@@ -220,7 +294,8 @@ async def match_button(call: types.CallbackQuery, order: Mapping[str, Any]):
     lambda call: call.data.startswith('escrow '), state=any_state
 )
 @order_handler
-async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
+async def escrow_button(call: types.CallbackQuery, order: OrderType):
+    """React to "Escrow" button by starting escrow exchange."""
     args = call.data.split()
     currency_arg = args[2]
     edit = bool(int(args[3]))
@@ -236,9 +311,9 @@ async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
     else:
         return
 
-    keyboard = InlineKeyboardMarkup()
+    keyboard = types.InlineKeyboardMarkup()
     keyboard.row(
-        InlineKeyboardButton(
+        types.InlineKeyboardButton(
             _('Change to {}').format(new_currency),
             callback_data='escrow {} {} 1'.format(order['_id'], new_currency_arg),
         )
@@ -287,7 +362,8 @@ async def escrow_button(call: types.CallbackQuery, order: Mapping[str, Any]):
 
 @dp.callback_query_handler(lambda call: call.data.startswith('edit '), state=any_state)
 @order_handler
-async def edit_button(call: types.CallbackQuery, order: Mapping[str, Any]):
+async def edit_button(call: types.CallbackQuery, order: OrderType):
+    """React to "Edit" button by entering edit mode on order."""
     args = call.data.split()
     field = args[2]
 
@@ -328,6 +404,7 @@ async def edit_button(call: types.CallbackQuery, order: Mapping[str, Any]):
 
 @private_handler(state=states.field_editing)
 async def edit_field(message: types.Message, state: FSMContext):
+    """Ask new value of chosen order's field during editing."""
     user = await database.users.find_one({'id': message.from_user.id})
     edit = user['edit']
     field = edit['field']
@@ -344,8 +421,8 @@ async def edit_field(message: types.Message, state: FSMContext):
 
     elif field == 'sum_buy':
         try:
-            transaction_sum = await validate_money(message.text, message.chat.id)
-        except MoneyValidationError as exception:
+            transaction_sum = money(message.text)
+        except MoneyValueError as exception:
             error = str(exception)
         else:
             order = await database.orders.find_one({'_id': edit['order_id']})
@@ -357,8 +434,8 @@ async def edit_field(message: types.Message, state: FSMContext):
 
     elif field == 'sum_sell':
         try:
-            transaction_sum = await validate_money(message.text, message.chat.id)
-        except MoneyValidationError as exception:
+            transaction_sum = money(message.text)
+        except MoneyValueError as exception:
             error = str(exception)
         else:
             order = await database.orders.find_one({'_id': edit['order_id']})
@@ -370,8 +447,8 @@ async def edit_field(message: types.Message, state: FSMContext):
 
     elif field == 'price':
         try:
-            price = await validate_money(message.text, message.chat.id)
-        except MoneyValidationError as exception:
+            price = money(message.text)
+        except MoneyValueError as exception:
             error = str(exception)
         else:
             order = await database.orders.find_one({'_id': edit['order_id']})
@@ -477,14 +554,15 @@ async def edit_field(message: types.Message, state: FSMContext):
     lambda call: call.data.startswith('delete '), state=any_state
 )
 @order_handler
-async def delete_button(call: types.CallbackQuery, order: Mapping[str, Any]):
+async def delete_button(call: types.CallbackQuery, order: OrderType):
+    """React to "Delete" button by asking user to confirm deletion."""
     args = call.data.split()
     location_message_id = int(args[2])
     show_id = call.message.text.startswith('ID')
 
-    keyboard = InlineKeyboardMarkup()
+    keyboard = types.InlineKeyboardMarkup()
     keyboard.row(
-        InlineKeyboardButton(
+        types.InlineKeyboardButton(
             _("Yes, I'm totally sure"),
             callback_data='confirm_delete {} {}'.format(
                 order['_id'], location_message_id
@@ -492,7 +570,7 @@ async def delete_button(call: types.CallbackQuery, order: Mapping[str, Any]):
         )
     )
     keyboard.row(
-        InlineKeyboardButton(
+        types.InlineKeyboardButton(
             _('No'),
             callback_data='revert {} {} 0 {}'.format(
                 order['_id'], location_message_id, int(show_id)
@@ -512,6 +590,7 @@ async def delete_button(call: types.CallbackQuery, order: Mapping[str, Any]):
     lambda call: call.data.startswith('confirm_delete '), state=any_state
 )
 async def confirm_delete_button(call: types.CallbackQuery):
+    """Delete order after confirmation button query."""
     order_id = call.data.split()[1]
     order = await database.orders.find_one_and_delete(
         {'_id': ObjectId(order_id), 'user_id': call.from_user.id}
@@ -521,10 +600,10 @@ async def confirm_delete_button(call: types.CallbackQuery):
         return
 
     location_message_id = int(call.data.split()[2])
-    keyboard = InlineKeyboardMarkup(
+    keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(
+                types.InlineKeyboardButton(
                     _('Hide'), callback_data='hide {}'.format(location_message_id)
                 )
             ]
@@ -540,6 +619,7 @@ async def confirm_delete_button(call: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda call: call.data.startswith('hide '), state=any_state)
 async def hide_button(call: types.CallbackQuery):
+    """React to "Hide" button by deleting messages with location object and order."""
     await tg.delete_message(call.message.chat.id, call.message.message_id)
     location_message_id = call.data.split()[1]
     if location_message_id != '-1':

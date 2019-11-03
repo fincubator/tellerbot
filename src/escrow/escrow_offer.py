@@ -14,9 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-from typing import Any
-from typing import Mapping
-from typing import Optional
+import typing
 
 from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
@@ -26,41 +24,75 @@ from src.database import database
 
 
 def asdict(instance):
+    """Represent class instance as dictionary excluding None values."""
     return {key: value for key, value in instance.__dict__.items() if value is not None}
 
 
 @dataclass
 class EscrowOffer:
-    _id: ObjectId
-    order: ObjectId
-    buy: str
-    sell: str
-    type: str
-    time: float
-    init: Mapping[str, Any]
-    counter: Mapping[str, Any]
-    pending_input_from: Optional[int] = None
-    sum_currency: Optional[str] = None
-    sum_buy: Optional[Decimal128] = None
-    sum_sell: Optional[Decimal128] = None
-    sum_fee_up: Optional[Decimal128] = None
-    sum_fee_down: Optional[Decimal128] = None
-    react_time: Optional[float] = None
-    transaction_time: Optional[float] = None
-    cancel_time: Optional[float] = None
-    bank: Optional[str] = None
-    memo: Optional[str] = None
-    trx_id: Optional[str] = None
+    """Class used to represent escrow offer.
 
-    def __getitem__(self, key):
+    Attributes correspond to fields in database document.
+    """
+
+    #: Primary key value of offer document.
+    _id: ObjectId
+    #: Primary key value of corresponding order document.
+    order: ObjectId
+    #: Currency which order creator wants to buy.
+    buy: str
+    #: Currency which order creator wants to sell.
+    sell: str
+    #: Type of offer. Field of currency which is held during exchange.
+    type: str
+    #: Unix time stamp of offer creation.
+    time: float
+    #: Object representing initiator of escrow.
+    init: typing.Mapping[str, typing.Any]
+    #: Object representing counteragent of escrow.
+    counter: typing.Mapping[str, typing.Any]
+    #: Telegram ID of user required to send message to bot.
+    pending_input_from: typing.Optional[int] = None
+    #: Temporary field of currency in which user is sending amount.
+    sum_currency: typing.Optional[str] = None
+    #: Amount in ``buy`` currency.
+    sum_buy: typing.Optional[Decimal128] = None
+    #: Amount in ``sell`` currency.
+    sum_sell: typing.Optional[Decimal128] = None
+    #: Amount of held currency with agreed fee added.
+    sum_fee_up: typing.Optional[Decimal128] = None
+    #: Amount of held currency with agreed fee substracted.
+    sum_fee_down: typing.Optional[Decimal128] = None
+    #: Unix time stamp of counteragent first reaction to sent offer.
+    react_time: typing.Optional[float] = None
+    #: Unix time stamp since which transaction should be checked.
+    transaction_time: typing.Optional[float] = None
+    #: Unix time stamp of offer cancellation.
+    cancel_time: typing.Optional[float] = None
+    #: Bank of fiat currency.
+    bank: typing.Optional[str] = None
+    #: Required memo in blockchain transaction.
+    memo: typing.Optional[str] = None
+    #: ID of verified transaction.
+    trx_id: typing.Optional[str] = None
+
+    def __getitem__(self, key: str) -> typing.Any:
+        """Allow to use class as dictionary."""
         return asdict(self)[key]
 
-    async def insert_document(self):
+    async def insert_document(self) -> None:
+        """Convert self to document and insert to database."""
         await database.escrow.insert_one(asdict(self))
 
-    async def update_document(self, update):
+    async def update_document(self, update) -> None:
+        """Update corresponding document in database.
+
+        :param update: Document with update operators or aggregation
+            pipeline sent to MongoDB.
+        """
         await database.escrow.update_one({'_id': self._id}, update)
 
-    async def delete_document(self):
+    async def delete_document(self) -> None:
+        """Archive and delete corresponding document in database."""
         await database.escrow_archive.insert_one(asdict(self))
         await database.escrow.delete_one({'_id': self._id})

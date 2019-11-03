@@ -14,9 +14,12 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+import typing
+
 from aiogram.dispatcher.storage import BaseStorage
-from config import DATABASE_NAME
 from motor.motor_asyncio import AsyncIOMotorClient
+
+from src.config import DATABASE_NAME
 
 
 client = AsyncIOMotorClient()
@@ -26,24 +29,34 @@ STATE_KEY = 'state'
 
 
 class MongoStorage(BaseStorage):
-    async def get_state(self, user, **kwargs):
+    """MongoDB asynchronous storage for FSM using motor."""
+
+    async def get_state(self, user: int, **kwargs) -> typing.Optional[str]:
+        """Get current state of user with Telegram ID ``user``."""
         document = await database.users.find_one({'id': user})
         return document.get(STATE_KEY) if document else None
 
-    async def set_state(self, user, state=None, **kwargs):
+    async def set_state(
+        self, user: int, state: typing.Optional[str] = None, **kwargs
+    ) -> None:
+        """Set new state ``state`` of user with Telegram ID ``user``."""
         if state is None:
-            update = {'$unset': {STATE_KEY: True}}
+            await database.users.update_one({'id': user}, {'$unset': {STATE_KEY: True}})
         else:
-            update = {'$set': {STATE_KEY: state}}
-        await database.users.update_one({'id': user}, update)
+            await database.users.update_one({'id': user}, {'$set': {STATE_KEY: state}})
 
     async def finish(self, user, **kwargs):
+        """Finish conversation with user."""
         await self.set_state(user=user, state=None)
 
-    async def wait_closed(self):
-        pass
+    async def wait_closed(self) -> None:
+        """Do nothing.
+
+        Motor client does not use this method.
+        """
 
     async def close(self):
+        """Disconnect from MongoDB."""
         client.close()
 
 

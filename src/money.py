@@ -14,18 +14,38 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+import decimal
 from decimal import Decimal
-from decimal import ROUND_HALF_UP
+
+from src.i18n import _
 
 HIGH_EXP = Decimal('1e15')
 LOW_EXP = Decimal('1e-8')
 
 
-class MoneyValidationError(Exception):
-    pass
-
-
-def normalize(money, exp=LOW_EXP):
+def normalize(money: Decimal, exp: Decimal = LOW_EXP) -> Decimal:
+    """Round ``money`` to ``exp`` and strip trailing zeroes."""
     if money == money.to_integral_value():
         return money.quantize(Decimal(1))
-    return money.quantize(exp, rounding=ROUND_HALF_UP).normalize()
+    return money.quantize(exp, rounding=decimal.ROUND_HALF_UP).normalize()
+
+
+def money(value) -> Decimal:
+    """Try to return normalized money object constructed from ``value``."""
+    try:
+        money = Decimal(value)
+    except decimal.InvalidOperation:
+        raise MoneyValueError(_('Send decimal number.'))
+    if money <= 0:
+        raise MoneyValueError(_('Send positive number.'))
+    if money >= HIGH_EXP:
+        raise MoneyValueError(_('Send number less than') + f' {HIGH_EXP:,f}')
+
+    normalized = normalize(money)
+    if normalized.is_zero():
+        raise MoneyValueError(_('Send number greater than') + f' {LOW_EXP:.8f}')
+    return normalized
+
+
+class MoneyValueError(Exception):
+    """Inappropriate money argument value."""

@@ -14,17 +14,16 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+"""Default and fallback handlers."""
 import logging
 import traceback
 
+from aiogram import types
 from aiogram.dispatcher.filters.state import any_state
-from aiogram.types import CallbackQuery
-from aiogram.types import Message
-from aiogram.types import ParseMode
 from aiogram.utils import markdown
 from aiogram.utils.exceptions import MessageNotModified
-from config import EXCEPTIONS_CHAT_ID
 
+from src.config import EXCEPTIONS_CHAT_ID
 from src.handlers import dp
 from src.handlers import private_handler
 from src.handlers import start_keyboard
@@ -36,24 +35,36 @@ log = logging.getLogger(__name__)
 
 
 @private_handler(state=any_state)
-async def default_message(message: Message):
+async def default_message(message: types.Message):
+    """React to message which has not passed any previous conditions."""
     await tg.send_message(
         message.chat.id, _('Unknown command.'), reply_markup=start_keyboard()
     )
 
 
 @dp.callback_query_handler(state=any_state)
-async def default_callback_query(call: CallbackQuery):
+async def default_callback_query(call: types.CallbackQuery):
+    """React to query which has not passed any previous conditions.
+
+    If callback query is not answered, button will stuck in loading as
+    if the bot stopped working until it times out. So unknown buttons
+    are better be answered accordingly.
+    """
     await call.answer(_('Unknown button.'))
 
 
 @dp.errors_handler(exception=MessageNotModified)
-async def message_not_modified_handler(update, exception):
+async def message_not_modified_handler(update: types.Update, exception: Exception):
+    """Ignore exception raised when edited test is the same as current."""
     return True
 
 
 @dp.errors_handler()
-async def errors_handler(update, exception):
+async def errors_handler(update: types.Update, exception: Exception):
+    """Handle exceptions when calling handlers.
+
+    Send error notification to special chat and warn user about the error.
+    """
     log.error('Error handling request {}'.format(update.update_id), exc_info=True)
 
     chat_id = None
@@ -77,7 +88,7 @@ async def errors_handler(update, exception):
                 chat_id,
                 markdown.escape_md(traceback.format_exc(limit=-3)),
             ),
-            parse_mode=ParseMode.MARKDOWN,
+            parse_mode=types.ParseMode.MARKDOWN,
         )
         await tg.send_message(
             chat_id,

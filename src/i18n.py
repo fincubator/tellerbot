@@ -14,10 +14,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+import typing
 from pathlib import Path
-from typing import Any
-from typing import Optional
-from typing import Tuple
 
 from aiogram.contrib.middlewares.i18n import I18nMiddleware
 from aiogram.types import User
@@ -27,9 +25,17 @@ from src.database import database
 
 
 class I18nMiddlewareManual(I18nMiddleware):
+    """I18n middleware which gets user locale from database."""
+
     async def get_user_locale(
-        self, action: Optional[str] = None, args: Optional[Tuple[Any]] = None
-    ) -> Optional[str]:
+        self, action: str, args: typing.Tuple[typing.Any]
+    ) -> typing.Optional[str]:
+        """Get user locale by querying collection of users in database.
+
+        Return value of ``locale`` field in user's corresponding
+        document if it exists, otherwise return user's Telegram
+        language if possible.
+        """
         if action not in ('pre_process_message', 'pre_process_callback_query'):
             return None
 
@@ -44,5 +50,4 @@ class I18nMiddlewareManual(I18nMiddleware):
         return None
 
 
-i18n = I18nMiddlewareManual('bot', Path(__file__).parents[1] / 'locale')
-_ = i18n.gettext
+_ = i18n = I18nMiddlewareManual('bot', Path(__file__).parents[1] / 'locale')
