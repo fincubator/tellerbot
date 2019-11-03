@@ -1,8 +1,14 @@
 # Contribution guidelines
 Thank you for considering contributing to this project! The following are guidelines you need to follow.
 
-## Coding style
-Make sure your coding style is mostly compliant with PEP 8 and consistent with project's general coding style.
+## Code style
+To make sure your code style is consistent with project's code style, use [pre-commit](https://pre-commit.com/) which will automatically run formatters and linting tools before any commit:
+```bash
+pip install -r requirements-dev.txt
+pre-commit install
+git commit
+```
+If any staged file is reformatted, you need to stage it again. If linting errors are found, you need to fix them before staging again.
 
 ## GPG commit signature verification
 To ensure your work comes from a trusted source, you are required to sign your commits with a GPG key that you generate yourself. You can read [this article from GitHub](https://help.github.com/articles/signing-commits/) as a guide.
