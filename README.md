@@ -1,6 +1,11 @@
 ![](https://i.imgur.com/cPUUcTw.jpg)
 
 # TellerBot
+[![Documentation Status](https://readthedocs.org/projects/tellerbot/badge/?version=latest)](https://tellerbot.readthedocs.io/en/latest/?badge=latest)
+[![GitHub license](https://img.shields.io/github/license/preico/tellerbot)](https://github.com/PreICO/tellerbot/blob/escrow/COPYING)
+[![Telegram](https://img.shields.io/badge/Telegram-tellerchat-blue?logo=telegram)](https://t.me/tellerchat)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 [@TellerBot](https://t.me/TellerBot) is an asynchronous Telegram Bot written in Python to help you meet people that you can swap money with.
 
 
