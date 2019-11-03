@@ -31,6 +31,7 @@ from src.i18n import i18n
 if isinstance(config.TOKEN, str):
     tg = Bot(config.TOKEN, loop=asyncio.get_event_loop())
     dp = Dispatcher(tg, storage=storage)
+    i18n.reload()
     dp.middleware.setup(i18n)
 
     logging.basicConfig(

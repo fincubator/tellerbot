@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+import os
 import typing
 from pathlib import Path
 
@@ -26,6 +27,17 @@ from src.database import database
 
 class I18nMiddlewareManual(I18nMiddleware):
     """I18n middleware which gets user locale from database."""
+
+    def __init__(self, domain, path=None, default='en'):
+        """Initialize I18nMiddleware without finding locales."""
+        super(I18nMiddleware, self).__init__()
+
+        if path is None:
+            path = os.path.join(os.getcwd(), 'locales')
+
+        self.domain = domain
+        self.path = path
+        self.default = default
 
     async def get_user_locale(
         self, action: str, args: typing.Tuple[typing.Any]
