@@ -23,7 +23,7 @@ from src.config import DATABASE_NAME
 
 
 client = AsyncIOMotorClient()
-database = client[DATABASE_NAME]
+database = client[DATABASE_NAME if isinstance(DATABASE_NAME, str) else 'tellerbot']
 
 STATE_KEY = 'state'
 

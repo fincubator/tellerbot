@@ -28,14 +28,18 @@ from src.database import storage
 from src.i18n import i18n
 
 
-tg = Bot(token=config.TOKEN, loop=asyncio.get_event_loop())
-dp = Dispatcher(tg, storage=storage)
-dp.middleware.setup(i18n)
+if isinstance(config.TOKEN, str):
+    tg = Bot(config.TOKEN, loop=asyncio.get_event_loop())
+    dp = Dispatcher(tg, storage=storage)
+    dp.middleware.setup(i18n)
 
-logging.basicConfig(
-    filename=config.LOG_FILENAME, filemode='a', level=config.LOGGER_LEVEL
-)
-dp.middleware.setup(LoggingMiddleware())
+    logging.basicConfig(
+        filename=config.LOG_FILENAME, filemode='a', level=config.LOGGER_LEVEL
+    )
+    dp.middleware.setup(LoggingMiddleware())
+else:
+    tg = Bot('', validate_token=False)
+    dp = Dispatcher(tg)
 
 
 def private_handler(*args, **kwargs):
