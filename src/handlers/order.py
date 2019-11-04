@@ -17,6 +17,7 @@
 """Handlers for showing orders and reacting to query buttons attached to them."""
 import typing
 from decimal import Decimal
+from functools import wraps
 from time import time
 
 import pymongo
@@ -54,6 +55,7 @@ def order_handler(
     Add order of ``OrderType`` to arguments of ``handler``.
     """
 
+    @wraps(handler)
     async def decorator(call: types.CallbackQuery):
         order_id = call.data.split()[1]
         order = await database.orders.find_one({'_id': ObjectId(order_id)})

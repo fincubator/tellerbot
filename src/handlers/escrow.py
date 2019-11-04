@@ -18,6 +18,7 @@
 import asyncio
 import typing
 from decimal import Decimal
+from functools import wraps
 from time import time
 
 from aiogram import types
@@ -84,6 +85,7 @@ def escrow_callback_handler(*args, state=any_state, **kwargs):
     def decorator(
         handler: typing.Callable[[types.CallbackQuery, EscrowOffer], typing.Any]
     ):
+        @wraps(handler)
         @dp.callback_query_handler(*args, state=state, **kwargs)
         async def wrapper(call: types.CallbackQuery):
             offer_id = call.data.split()[1]
@@ -108,6 +110,7 @@ def escrow_message_handler(*args, **kwargs):
     def decorator(
         handler: typing.Callable[[types.Message, FSMContext, EscrowOffer], typing.Any]
     ):
+        @wraps(handler)
         @private_handler(*args, **kwargs)
         async def wrapper(message: types.Message, state: FSMContext):
             offer = await database.escrow.find_one(
