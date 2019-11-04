@@ -1,5 +1,5 @@
-aiogram==2.0.1
-emoji==0.5.1
-golos-python==1.0.3
-motor==2.0.0
-pymongo==3.7.2
+aiogram
+emoji
+golos-python
+motor
+pymongo
