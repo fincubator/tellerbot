@@ -32,25 +32,38 @@ from src.handlers import tg
 from src.i18n import _
 
 
+class InsuranceLimits(typing.NamedTuple):
+    """Maximum amount of insured asset."""
+
+    #: Limit on sum of a single offer.
+    single: Decimal
+    #: Limit on overall sum of offers.
+    total: Decimal
+
+
 class BaseBlockchain(ABC):
-    """Abstract class to represent blockchain node client for escrow exchange.
+    """Abstract class to represent blockchain node client for escrow exchange."""
 
-    Attributes:
-        assets    Frozen set of assets supported by blockchain.
-        address   Address used by bot.
-        explorer  Template of URL to transaction in blockchain explorer. Should
-            contain ``{}`` which gets replaced with transaction id.
-
-    """
-
+    #: Frozen set of assets supported by blockchain.
     assets: typing.FrozenSet[str] = frozenset()
+    #: Address used by bot.
     address: str
+    #: Template of URL to transaction in blockchain explorer. Should
+    #: contain ``{}`` which gets replaced with transaction id.
     explorer: str = '{}'
+
     _queue: typing.List[typing.Mapping[str, typing.Any]] = []
 
     @abstractmethod
     async def connect(self) -> None:
         """Establish connection with blockchain node."""
+
+    @abstractmethod
+    async def get_limits(self, asset: str) -> InsuranceLimits:
+        """Get maximum amounts of ``asset`` which will be insured during escrow exchange.
+
+        Escrow offer starts only if sum of it doesn't exceed these limits.
+        """
 
     @abstractmethod
     async def transfer(self, to: str, amount: Decimal, asset: str) -> str:

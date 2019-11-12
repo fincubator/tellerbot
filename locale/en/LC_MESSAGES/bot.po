@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-10-29 03:16+0300\n"
+"POT-Creation-Date: 2019-11-12 21:22+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.6.0\n"
+"Generated-By: Babel 2.7.0\n"
 
 #: src/escrow/blockchain/__init__.py
 msgid "Transaction has passed. I'll notify should you get {}."
@@ -103,22 +103,6 @@ msgid "Skip"
 msgstr ""
 
 #: src/handlers/__init__.py
-msgid "Send decimal number."
-msgstr ""
-
-#: src/handlers/__init__.py
-msgid "Send positive number."
-msgstr ""
-
-#: src/handlers/__init__.py
-msgid "Send number less than"
-msgstr ""
-
-#: src/handlers/__init__.py
-msgid "Send number greater than"
-msgstr ""
-
-#: src/handlers/__init__.py
 msgid "There are no orders."
 msgstr ""
 
@@ -128,14 +112,6 @@ msgstr ""
 
 #: src/handlers/__init__.py
 msgid "Page {} of {}"
-msgstr ""
-
-#: src/handlers/__init__.py
-msgid "There are no more orders."
-msgstr ""
-
-#: src/handlers/__init__.py
-msgid "There are no previous orders."
 msgstr ""
 
 #: src/handlers/__init__.py
@@ -257,6 +233,10 @@ msgid "Send cashless payment system."
 msgstr ""
 
 #: src/handlers/creation.py
+msgid "Send location of a preferred meeting point for cash payment."
+msgstr ""
+
+#: src/handlers/creation.py
 msgid "Location is not found."
 msgstr ""
 
@@ -266,10 +246,6 @@ msgstr ""
 
 #: src/handlers/creation.py
 msgid "Choose one of these locations:"
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Send location of a preferred meeting point for cash payment."
 msgstr ""
 
 #: src/handlers/creation.py src/handlers/order.py
@@ -315,6 +291,27 @@ msgid "Send number not exceeding order's sum."
 msgstr ""
 
 #: src/handlers/escrow.py
+msgid "Continue"
+msgstr ""
+
+#: src/handlers/escrow.py src/handlers/start_menu.py
+msgid "Cancel"
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid ""
+"Escrow asset sum exceeds maximum amount to be insured. If you continue, "
+"only {} {} will be protected and refunded in case of unexpected events "
+"during the exchange."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid ""
+"You can send a smaller number, continue with partial insurance or cancel "
+"offer."
+msgstr ""
+
+#: src/handlers/escrow.py
 msgid "Do you agree to pay a fee of 5%?"
 msgstr ""
 
@@ -332,6 +329,10 @@ msgstr ""
 
 #: src/handlers/escrow.py src/handlers/order.py
 msgid "No"
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "Escrow was cancelled."
 msgstr ""
 
 #: src/handlers/escrow.py
@@ -384,10 +385,6 @@ msgstr ""
 msgid "using {}"
 msgstr ""
 
-#: src/handlers/escrow.py src/handlers/start_menu.py
-msgid "Cancel"
-msgstr ""
-
 #: src/handlers/escrow.py
 msgid "Offer sent."
 msgstr ""
@@ -421,10 +418,6 @@ msgid "You can't cancel this offer until transaction will be verified."
 msgstr ""
 
 #: src/handlers/escrow.py
-msgid "Escrow was cancelled."
-msgstr ""
-
-#: src/handlers/escrow.py
 msgid "Did you get {} from {}?"
 msgstr ""
 
@@ -450,6 +443,14 @@ msgstr ""
 
 #: src/handlers/order.py
 msgid "Order is not found."
+msgstr ""
+
+#: src/handlers/order.py
+msgid "There are no more orders."
+msgstr ""
+
+#: src/handlers/order.py
+msgid "There are no previous orders."
 msgstr ""
 
 #: src/handlers/order.py
@@ -530,6 +531,22 @@ msgstr ""
 
 #: src/handlers/support.py
 msgid "Reply is sent."
+msgstr ""
+
+#: src/money.py
+msgid "Send decimal number."
+msgstr ""
+
+#: src/money.py
+msgid "Send positive number."
+msgstr ""
+
+#: src/money.py
+msgid "Send number less than"
+msgstr ""
+
+#: src/money.py
+msgid "Send number greater than"
 msgstr ""
 
 #: src/notifications.py

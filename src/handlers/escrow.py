@@ -127,6 +127,25 @@ def escrow_message_handler(*args, **kwargs):
     return decorator
 
 
+async def get_insurance(offer: EscrowOffer) -> Decimal:
+    """Get insurance of escrow asset in ``offer`` taking limits into account."""
+    offer_sum = offer[f'sum_{offer.type}']
+    asset = offer[offer.type]
+    limits = get_escrow_instance(asset).get_limits(asset)
+    if not limits:
+        return offer_sum
+    insured = min(offer_sum, limits.single)
+    cursor = database.escrow.aggregate(
+        [{'$group': {'_id': 0, 'insured_total': {'$sum': '$insured'}}}]
+    )
+    if await cursor.fetch_next:
+        insured_total = cursor.next_object()['insured_total'].to_decimal()
+        total_difference = limits.total - insured_total - insured
+        if total_difference < 0:
+            insured += total_difference
+    return normalize(insured)
+
+
 @escrow_message_handler(state=states.Escrow.amount)
 async def set_escrow_sum(message: types.Message, state: FSMContext, offer: EscrowOffer):
     """Set sum and ask for fee payment agreement."""
@@ -156,13 +175,45 @@ async def set_escrow_sum(message: types.Message, state: FSMContext, offer: Escro
     update_dict['sum_fee_down'] = Decimal128(
         normalize(escrow_sum.to_decimal() * Decimal('0.95'))
     )
+    offer = replace(offer, **update_dict)  # type: ignore
+
+    if offer.sum_currency == offer.type:
+        insured = await get_insurance(offer)
+        update_dict['insured'] = Decimal128(insured)
+        if offer_sum > insured:
+            keyboard = InlineKeyboardMarkup()
+            keyboard.add(
+                InlineKeyboardButton(
+                    _('Continue'), callback_data=f'accept_insurance {offer._id}'
+                ),
+                InlineKeyboardButton(
+                    _('Cancel'), callback_data=f'init_cancel {offer._id}'
+                ),
+            )
+            answer = _(
+                'Escrow asset sum exceeds maximum amount to be insured. If you '
+                'continue, only {} {} will be protected and refunded in '
+                'case of unexpected events during the exchange.'
+            )
+            answer = answer.format(insured, offer[offer.type])
+            answer += '\n' + _(
+                'You can send a smaller number, continue with partial '
+                'insurance or cancel offer.'
+            )
+            await tg.send_message(message.chat.id, answer, reply_markup=keyboard)
+    else:
+        await ask_fee(message.from_user.id, message.chat.id, offer)
 
     await offer.update_document({'$set': update_dict, '$unset': {'sum_currency': True}})
+
+
+async def ask_fee(user_id: int, chat_id: int, offer: EscrowOffer):
+    """Ask fee of any party."""
     answer = _('Do you agree to pay a fee of 5%?') + ' '
-    if offer.type == 'buy':
+    if (user_id == offer.init['id']) == (offer.type == 'buy'):
         answer += _("(You'll pay {} {})")
         sum_fee_field = 'sum_fee_up'
-    elif offer.type == 'sell':
+    else:
         answer += _("(You'll get {} {})")
         sum_fee_field = 'sum_fee_down'
     keyboard = InlineKeyboardMarkup()
@@ -170,9 +221,32 @@ async def set_escrow_sum(message: types.Message, state: FSMContext, offer: Escro
         InlineKeyboardButton(_('Yes'), callback_data=f'accept_fee {offer._id}'),
         InlineKeyboardButton(_('No'), callback_data=f'decline_fee {offer._id}'),
     )
-    answer = answer.format(update_dict[sum_fee_field], offer[offer.type])
-    await tg.send_message(message.chat.id, answer, reply_markup=keyboard)
+    answer = answer.format(offer[sum_fee_field], offer[offer.type])
+    await tg.send_message(chat_id, answer, reply_markup=keyboard)
     await states.Escrow.fee.set()
+
+
+@escrow_callback_handler(
+    lambda call: call.data.startswith('accept_insurance '), state=states.Escrow.amount
+)
+async def accept_insurance(
+    call: types.CallbackQuery, state: FSMContext, offer: EscrowOffer
+):
+    """Ask for fee payment agreement after accepting partial insurance."""
+    await ask_fee(call.from_user.id, call.message.chat.id, offer)
+
+
+@escrow_callback_handler(
+    lambda call: call.data.startswith('init_cancel '), state=states.Escrow.amount
+)
+async def init_cancel(call: types.CallbackQuery, state: FSMContext, offer: EscrowOffer):
+    """Cancel offer on initiator's request."""
+    await offer.delete_document()
+    await call.answer()
+    await tg.send_message(
+        call.message.chat.id, _('Escrow was cancelled.'), reply_markup=start_keyboard()
+    )
+    await state.finish()
 
 
 async def full_card_number_request(chat_id: int, offer: EscrowOffer):
@@ -200,7 +274,9 @@ async def full_card_number_request(chat_id: int, offer: EscrowOffer):
 
 
 async def ask_credentials(
-    call: types.CallbackQuery, offer: EscrowOffer, update_dict: dict = {}
+    call: types.CallbackQuery,
+    offer: EscrowOffer,
+    update_dict: typing.Dict[str, typing.Any] = {},
 ):
     """Update offer with ``update_dict`` and start asking transfer information.
 
@@ -471,9 +547,6 @@ async def set_init_send_address(
 
     Send offer to counteragent.
     """
-    await offer.update_document(
-        {'$set': {'init.send_address': address}, '$unset': {'pending_input_from': True}}
-    )
     order = await database.orders.find_one({'_id': offer.order})
     await show_order(
         order,
@@ -482,6 +555,7 @@ async def set_init_send_address(
         show_id=True,
         locale=offer.counter['locale'],
     )
+    update_dict = {'init.send_address': address}
     locale = offer.counter['locale']
     buy_keyboard = InlineKeyboardMarkup()
     buy_keyboard.add(
@@ -500,6 +574,19 @@ async def set_init_send_address(
     if offer.bank:
         answer += ' ' + _('using {}').format(offer.bank)
     answer += '.'
+    if offer.type == 'sell':
+        insured = await get_insurance(offer)
+        update_dict['insured'] = Decimal128(insured)
+        if offer[f'sum_{offer.type}'] > insured:
+            answer += '\n' + _(
+                'Escrow asset sum exceeds maximum amount to be insured. If you '
+                'continue, only {} {} will be protected and refunded in '
+                'case of unexpected events during the exchange.'
+            )
+            answer = answer.format(insured, offer[offer.type])
+    await offer.update_document(
+        {'$set': update_dict, '$unset': {'pending_input_from': True}}
+    )
     await tg.send_message(offer.counter['id'], answer, reply_markup=buy_keyboard)
     sell_keyboard = InlineKeyboardMarkup()
     sell_keyboard.add(
@@ -513,26 +600,12 @@ async def set_init_send_address(
 
 @escrow_callback_handler(lambda call: call.data.startswith('accept '))
 async def accept_offer(call: types.CallbackQuery, offer: EscrowOffer):
-    """React to counteragent accepting offer by askiing for fee payment agreement."""
+    """React to counteragent accepting offer by asking for fee payment agreement."""
     await offer.update_document(
         {'$set': {'pending_input_from': call.message.chat.id, 'react_time': time()}}
     )
-    answer = _('Do you agree to pay a fee of 5%?') + ' '
-    if offer.type == 'buy':
-        answer += _("(You'll get {} {})")
-        sum_fee_field = 'sum_fee_down'
-    elif offer.type == 'sell':
-        answer += _("(You'll pay {} {})")
-        sum_fee_field = 'sum_fee_up'
-    answer = answer.format(offer[sum_fee_field], offer[offer.type])
-    buy_keyboard = InlineKeyboardMarkup()
-    buy_keyboard.add(
-        InlineKeyboardButton(_('Yes'), callback_data=f'accept_fee {offer._id}'),
-        InlineKeyboardButton(_('No'), callback_data=f'decline_fee {offer._id}'),
-    )
     await call.answer()
-    await tg.send_message(call.message.chat.id, answer, reply_markup=buy_keyboard)
-    await states.Escrow.fee.set()
+    await ask_fee(call.from_user.id, call.message.chat.id, offer)
 
 
 @escrow_callback_handler(lambda call: call.data.startswith('decline '))
@@ -642,7 +715,7 @@ async def cancel_offer(call: types.CallbackQuery, offer: EscrowOffer):
     """React to offer cancellation.
 
     While first party is transferring, second party can't cancel offer,
-    because we can't be sure that first party hasn't alredy completed
+    because we can't be sure that first party hasn't already completed
     transfer before confirming.
     """
     if offer.trx_id:

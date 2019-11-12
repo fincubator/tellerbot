@@ -33,6 +33,7 @@ from golos.ws_client import error_handler
 from src.database import database
 from src.escrow.blockchain import BaseBlockchain
 from src.escrow.blockchain import BlockchainConnectionError
+from src.escrow.blockchain import InsuranceLimits
 
 
 NODES = (
@@ -107,6 +108,10 @@ class GolosBlockchain(BaseBlockchain):
                     return
         self._queue.extend(queue)
         await self._start_streaming()
+
+    async def get_limits(self, asset: str):
+        limits = {'GOLOS': InsuranceLimits(Decimal('10000'), Decimal('100000'))}
+        return limits.get(asset)
 
     async def transfer(self, to: str, amount: Decimal, asset: str):
         with open('wif.json') as wif_file:
