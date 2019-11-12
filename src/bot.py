@@ -35,11 +35,11 @@ if isinstance(config.TOKEN, str):
     dp.middleware.setup(i18n)
 
     logging.basicConfig(
-        filename=config.LOG_FILENAME, filemode='a', level=config.LOGGER_LEVEL
+        filename=config.LOG_FILENAME, filemode="a", level=config.LOGGER_LEVEL
     )
     dp.middleware.setup(LoggingMiddleware())
 else:
-    tg = Bot('', validate_token=False)
+    tg = Bot("", validate_token=False)
     dp = Dispatcher(tg)
 
 

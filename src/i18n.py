@@ -28,12 +28,12 @@ from src.database import database
 class I18nMiddlewareManual(I18nMiddleware):
     """I18n middleware which gets user locale from database."""
 
-    def __init__(self, domain, path=None, default='en'):
+    def __init__(self, domain, path=None, default="en"):
         """Initialize I18nMiddleware without finding locales."""
         super(I18nMiddleware, self).__init__()
 
         if path is None:
-            path = os.path.join(os.getcwd(), 'locales')
+            path = os.path.join(os.getcwd(), "locales")
 
         self.domain = domain
         self.path = path
@@ -48,13 +48,13 @@ class I18nMiddlewareManual(I18nMiddleware):
         document if it exists, otherwise return user's Telegram
         language if possible.
         """
-        if action not in ('pre_process_message', 'pre_process_callback_query'):
+        if action not in ("pre_process_message", "pre_process_callback_query"):
             return None
 
         user: User = User.get_current()
-        document = await database.users.find_one({'id': user.id})
+        document = await database.users.find_one({"id": user.id})
         if document:
-            return document.get('locale')
+            return document.get("locale")
 
         locale: Locale = user.locale
         if locale:
@@ -62,4 +62,4 @@ class I18nMiddlewareManual(I18nMiddleware):
         return None
 
 
-_ = i18n = I18nMiddlewareManual('bot', Path(__file__).parents[1] / 'locale')
+_ = i18n = I18nMiddlewareManual("bot", Path(__file__).parents[1] / "locale")

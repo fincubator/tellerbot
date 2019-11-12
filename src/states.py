@@ -76,6 +76,6 @@ class Escrow(StatesGroup):
 
 
 #: Ask support a question.
-asking_support = State('asking_support')
+asking_support = State("asking_support")
 #: Send new value of chosen order's field during editing.
-field_editing = State('field_editing')
+field_editing = State("field_editing")

@@ -30,7 +30,7 @@ from src.states import asking_support
 
 
 @dp.callback_query_handler(
-    lambda call: call.data.startswith('unhelp'), state=asking_support
+    lambda call: call.data.startswith("unhelp"), state=asking_support
 )
 async def unhelp_button(call: types.CallbackQuery, state: FSMContext):
     """Cancel request to support."""
@@ -38,7 +38,7 @@ async def unhelp_button(call: types.CallbackQuery, state: FSMContext):
     await call.answer()
     await tg.send_message(
         call.message.chat.id,
-        _('Your request is cancelled.'),
+        _("Your request is cancelled."),
         reply_markup=start_keyboard(),
     )
 
@@ -49,14 +49,14 @@ async def send_message_to_support(message: types.Message):
     Envelope emoji at the beginning is the mark of support ticket.
     """
     if message.from_user.username:
-        username = '@' + message.from_user.username
+        username = "@" + message.from_user.username
     else:
         username = markdown.link(message.from_user.full_name, message.from_user.url)
 
     await tg.send_message(
         SUPPORT_CHAT_ID,
-        emojize(f':envelope:')
-        + f' #chat_{message.chat.id} {message.message_id}\n{username}:\n'
+        emojize(f":envelope:")
+        + f" #chat_{message.chat.id} {message.message_id}\n{username}:\n"
         + message.text,
     )
     await tg.send_message(
@@ -75,7 +75,7 @@ async def contact_support(message: types.Message, state: FSMContext):
 
 @private_handler(
     lambda msg: msg.reply_to_message is not None
-    and msg.reply_to_message.text.startswith(emojize(':speech_balloon:'))
+    and msg.reply_to_message.text.startswith(emojize(":speech_balloon:"))
 )
 async def handle_reply(message: types.Message):
     """Answer support's reply to ticket."""
@@ -87,7 +87,7 @@ async def handle_reply(message: types.Message):
 @dp.message_handler(
     lambda msg: msg.chat.id == SUPPORT_CHAT_ID
     and msg.reply_to_message is not None
-    and msg.reply_to_message.text.startswith(emojize(':envelope: '))
+    and msg.reply_to_message.text.startswith(emojize(":envelope: "))
 )
 async def answer_support_ticket(message: types.Message):
     """
@@ -99,12 +99,12 @@ async def answer_support_ticket(message: types.Message):
     me = await tg.me
     if message.reply_to_message.from_user.id == me.id:
         args = message.reply_to_message.text.splitlines()[0].split()
-        chat_id = int(args[1].split('_')[1])
+        chat_id = int(args[1].split("_")[1])
         reply_to_message_id = int(args[2])
 
         await tg.send_message(
             chat_id,
-            emojize(':speech_balloon:') + message.text,
+            emojize(":speech_balloon:") + message.text,
             reply_to_message_id=reply_to_message_id,
         )
-        await tg.send_message(message.chat.id, _('Reply is sent.'))
+        await tg.send_message(message.chat.id, _("Reply is sent."))

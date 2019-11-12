@@ -37,19 +37,19 @@ from src.escrow.blockchain import InsuranceLimits
 
 
 NODES = (
-    'wss://api.golos.blckchnd.com/ws',
-    'wss://golosd.privex.io',
-    'wss://golos.solox.world/ws',
-    'wss://golos.lexa.host/ws',
+    "wss://api.golos.blckchnd.com/ws",
+    "wss://golosd.privex.io",
+    "wss://golos.solox.world/ws",
+    "wss://golos.lexa.host/ws",
 )
 
 
 class GolosBlockchain(BaseBlockchain):
     """Golos node client implementation for escrow exchange."""
 
-    assets = frozenset({'GOLOS', 'GBG'})
-    address = 'tellerbot'
-    explorer = 'https://golos.cf/tx/?={}'
+    assets = frozenset({"GOLOS", "GBG"})
+    address = "tellerbot"
+    explorer = "https://golos.cf/tx/?={}"
 
     async def connect(self):
         loop = get_running_loop()
@@ -57,50 +57,50 @@ class GolosBlockchain(BaseBlockchain):
         try:
             self._golos = await loop.run_in_executor(None, connect_to_node)
             self._stream = await loop.run_in_executor(None, connect_to_node)
-            self._stream.rpc.api_total['set_block_applied_callback'] = 'database_api'
+            self._stream.rpc.api_total["set_block_applied_callback"] = "database_api"
         except RetriesExceeded as exception:
             raise BlockchainConnectionError(exception)
 
         queue = []
         cursor = database.escrow.find(
-            {'memo': {'$exists': True}, 'trx_id': {'$exists': False}}
+            {"memo": {"$exists": True}, "trx_id": {"$exists": False}}
         )
         min_time = None
         async for offer in cursor:
-            if offer['type'] == 'buy':
-                address = offer['init']['send_address']
-                amount = offer['sum_buy'].to_decimal()
+            if offer["type"] == "buy":
+                address = offer["init"]["send_address"]
+                amount = offer["sum_buy"].to_decimal()
             else:
-                address = offer['counter']['send_address']
-                amount = offer['sum_sell'].to_decimal()
+                address = offer["counter"]["send_address"]
+                amount = offer["sum_sell"].to_decimal()
             queue.append(
                 {
-                    'offer_id': offer['_id'],
-                    'from_address': address,
-                    'amount_with_fee': offer['sum_fee_up'].to_decimal(),
-                    'amount_without_fee': amount,
-                    'asset': offer[offer['type']],
-                    'memo': offer['memo'],
-                    'transaction_time': offer['transaction_time'],
+                    "offer_id": offer["_id"],
+                    "from_address": address,
+                    "amount_with_fee": offer["sum_fee_up"].to_decimal(),
+                    "amount_without_fee": amount,
+                    "asset": offer[offer["type"]],
+                    "memo": offer["memo"],
+                    "transaction_time": offer["transaction_time"],
                 }
             )
-            if min_time is None or offer['transaction_time'] < min_time:
-                min_time = offer['transaction_time']
+            if min_time is None or offer["transaction_time"] < min_time:
+                min_time = offer["transaction_time"]
         if not queue:
             return
         func = functools.partial(
             self._golos.get_account_history,
             self.address,
-            op_limit='transfer',
+            op_limit="transfer",
             age=int(time() - min_time),
         )
         history = await get_running_loop().run_in_executor(None, func)
         for op in history:
-            req = await self._check_operation(op, op['block'], queue)
+            req = await self._check_operation(op, op["block"], queue)
             if not req:
                 continue
             is_confirmed = await self._confirmation_callback(
-                req['offer_id'], op, op['trx_id'], op['block']
+                req["offer_id"], op, op["trx_id"], op["block"]
             )
             if is_confirmed:
                 queue.remove(req)
@@ -110,21 +110,21 @@ class GolosBlockchain(BaseBlockchain):
         await self._start_streaming()
 
     async def get_limits(self, asset: str):
-        limits = {'GOLOS': InsuranceLimits(Decimal('10000'), Decimal('100000'))}
+        limits = {"GOLOS": InsuranceLimits(Decimal("10000"), Decimal("100000"))}
         return limits.get(asset)
 
     async def transfer(self, to: str, amount: Decimal, asset: str):
-        with open('wif.json') as wif_file:
+        with open("wif.json") as wif_file:
             transaction = await get_running_loop().run_in_executor(
                 None,
                 self._golos.transfer,
                 to,
                 amount,
                 self.address,
-                json.load(wif_file)['golos'],
+                json.load(wif_file)["golos"],
                 asset,
             )
-        return self.trx_url(transaction['id'])
+        return self.trx_url(transaction["id"])
 
     async def is_block_confirmed(self, block_num, op):
         loop = get_running_loop()
@@ -133,17 +133,17 @@ class GolosBlockchain(BaseBlockchain):
                 None, self._golos.get_dynamic_global_properties
             )
             if properties:
-                head_block_num = properties['last_irreversible_block_num']
+                head_block_num = properties["last_irreversible_block_num"]
                 if block_num <= head_block_num:
                     break
             await sleep(3)
         op = {
-            'block': block_num,
-            'type_op': 'transfer',
-            'to': op['to'],
-            'from': op['from'],
-            'amount': op['amount'],
-            'memo': op['memo'],
+            "block": block_num,
+            "type_op": "transfer",
+            "to": op["to"],
+            "from": op["from"],
+            "amount": op["amount"],
+            "memo": op["memo"],
         }
         try:
             await loop.run_in_executor(None, self._golos.find_op_transaction, op)
@@ -158,14 +158,14 @@ class GolosBlockchain(BaseBlockchain):
     async def _start_streaming(self):
         loop = get_running_loop()
         block = await loop.run_in_executor(
-            None, self._stream.rpc.call, 'set_block_applied_callback', [0]
+            None, self._stream.rpc.call, "set_block_applied_callback", [0]
         )
         while True:
-            for trx in block['transactions']:
-                for op_type, op in trx['operations']:
-                    if op_type != 'transfer':
+            for trx in block["transactions"]:
+                for op_type, op in trx["operations"]:
+                    if op_type != "transfer":
                         continue
-                    block_num = int(block['previous'][:8], 16) + 1
+                    block_num = int(block["previous"][:8], 16) + 1
                     req = await self._check_operation(op, block_num)
                     if not req:
                         continue
@@ -173,7 +173,7 @@ class GolosBlockchain(BaseBlockchain):
                         None, self._golos.get_transaction_id, trx
                     )
                     is_confirmed = await self._confirmation_callback(
-                        req['offer_id'], op, trx_id, block_num
+                        req["offer_id"], op, trx_id, block_num
                     )
                     if is_confirmed:
                         self._queue.remove(req)
@@ -182,9 +182,9 @@ class GolosBlockchain(BaseBlockchain):
                             return
             response = await loop.run_in_executor(None, self._stream.rpc.ws.recv)
             response_json = json.loads(response)
-            if 'error' in response_json:
+            if "error" in response_json:
                 return error_handler(response_json)
-            block = response_json['result']
+            block = response_json["result"]
 
     async def _check_operation(
         self,
@@ -194,29 +194,29 @@ class GolosBlockchain(BaseBlockchain):
     ):
         if queue is None:
             queue = self._queue
-        op_amount, asset = op['amount'].split()
+        op_amount, asset = op["amount"].split()
         amount = Decimal(op_amount)
         for req in queue:
-            if 'transaction_time' in req and 'timestamp' in op:
-                date = datetime.strptime(op['timestamp'], '%Y-%m-%dT%H:%M:%S')
-                if timegm(date.timetuple()) < req['transaction_time']:
+            if "transaction_time" in req and "timestamp" in op:
+                date = datetime.strptime(op["timestamp"], "%Y-%m-%dT%H:%M:%S")
+                if timegm(date.timetuple()) < req["transaction_time"]:
                     continue
-            if op['to'] != self.address or op['from'] != req['from_address']:
+            if op["to"] != self.address or op["from"] != req["from_address"]:
                 continue
             refund_reasons = set()
-            if asset != req['asset']:
-                refund_reasons.add('asset')
-            if amount not in (req['amount_with_fee'], req['amount_without_fee']):
-                refund_reasons.add('amount')
-            if op['memo'] != req['memo']:
-                refund_reasons.add('memo')
+            if asset != req["asset"]:
+                refund_reasons.add("asset")
+            if amount not in (req["amount_with_fee"], req["amount_without_fee"]):
+                refund_reasons.add("amount")
+            if op["memo"] != req["memo"]:
+                refund_reasons.add("memo")
             if not refund_reasons:
                 return req
             await self._refund_callback(
                 frozenset(refund_reasons),
-                req['offer_id'],
+                req["offer_id"],
                 op,
-                op['from'],
+                op["from"],
                 amount,
                 asset,
                 block_num,

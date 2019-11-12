@@ -90,9 +90,9 @@ class EscrowOffer:
         :param update: Document with update operators or aggregation
             pipeline sent to MongoDB.
         """
-        await database.escrow.update_one({'_id': self._id}, update)
+        await database.escrow.update_one({"_id": self._id}, update)
 
     async def delete_document(self) -> None:
         """Archive and delete corresponding document in database."""
         await database.escrow_archive.insert_one(asdict(self))
-        await database.escrow.delete_one({'_id': self._id})
+        await database.escrow.delete_one({"_id": self._id})

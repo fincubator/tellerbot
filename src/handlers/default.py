@@ -38,7 +38,7 @@ log = logging.getLogger(__name__)
 async def default_message(message: types.Message):
     """React to message which has not passed any previous conditions."""
     await tg.send_message(
-        message.chat.id, _('Unknown command.'), reply_markup=start_keyboard()
+        message.chat.id, _("Unknown command."), reply_markup=start_keyboard()
     )
 
 
@@ -50,7 +50,7 @@ async def default_callback_query(call: types.CallbackQuery):
     if the bot stopped working until it times out. So unknown buttons
     are better be answered accordingly.
     """
-    await call.answer(_('Unknown button.'))
+    await call.answer(_("Unknown button."))
 
 
 @dp.errors_handler(exception=MessageNotModified)
@@ -65,22 +65,22 @@ async def errors_handler(update: types.Update, exception: Exception):
 
     Send error notification to special chat and warn user about the error.
     """
-    log.error('Error handling request {}'.format(update.update_id), exc_info=True)
+    log.error("Error handling request {}".format(update.update_id), exc_info=True)
 
     chat_id = None
     if update.message:
-        update_type = 'message'
+        update_type = "message"
         from_user = update.message.from_user
         chat_id = update.message.chat.id
     if update.callback_query:
-        update_type = 'callback query'
+        update_type = "callback query"
         from_user = update.callback_query.from_user
         chat_id = update.callback_query.message.chat.id
 
     if chat_id is not None:
         await tg.send_message(
             EXCEPTIONS_CHAT_ID,
-            'Error handling {} {} from {} ({}) in chat {}\n{}'.format(
+            "Error handling {} {} from {} ({}) in chat {}\n{}".format(
                 update_type,
                 update.update_id,
                 markdown.link(from_user.mention, from_user.url),
@@ -93,7 +93,7 @@ async def errors_handler(update: types.Update, exception: Exception):
         await tg.send_message(
             chat_id,
             _(
-                'There was an unexpected error when handling your request. '
+                "There was an unexpected error when handling your request. "
                 "We're already notified and will fix it as soon as possible!"
             ),
             reply_markup=start_keyboard(),

@@ -50,7 +50,7 @@ class BaseBlockchain(ABC):
     address: str
     #: Template of URL to transaction in blockchain explorer. Should
     #: contain ``{}`` which gets replaced with transaction id.
-    explorer: str = '{}'
+    explorer: str = "{}"
 
     _queue: typing.List[typing.Mapping[str, typing.Any]] = []
 
@@ -114,12 +114,12 @@ class BaseBlockchain(ABC):
         """Add transaction in ``self._queue`` to be checked."""
         self._queue.append(
             {
-                'offer_id': offer_id,
-                'from_address': from_address,
-                'amount_with_fee': amount_with_fee,
-                'amount_without_fee': amount_without_fee,
-                'asset': asset,
-                'memo': memo,
+                "offer_id": offer_id,
+                "from_address": from_address,
+                "amount_with_fee": amount_with_fee,
+                "amount_without_fee": amount_without_fee,
+                "asset": asset,
+                "memo": memo,
             }
         )
         # Start streaming if not already streaming
@@ -133,7 +133,7 @@ class BaseBlockchain(ABC):
         :return: True if transaction was found and False otherwise.
         """
         for queue_member in self._queue:
-            if queue_member['offer_id'] == offer_id:
+            if queue_member["offer_id"] == offer_id:
                 self._queue.remove(queue_member)
                 return True
         return False
@@ -157,51 +157,51 @@ class BaseBlockchain(ABC):
         :param block_num: Number of block to confirm.
         :return: True if transaction was confirmed and False otherwise.
         """
-        offer = await database.escrow.find_one({'_id': offer_id})
+        offer = await database.escrow.find_one({"_id": offer_id})
         if not offer:
             return False
 
-        if offer['type'] == 'buy':
-            new_currency = 'sell'
-            escrow_user = offer['init']
-            other_user = offer['counter']
-        elif offer['type'] == 'sell':
-            new_currency = 'buy'
-            escrow_user = offer['counter']
-            other_user = offer['init']
+        if offer["type"] == "buy":
+            new_currency = "sell"
+            escrow_user = offer["init"]
+            other_user = offer["counter"]
+        elif offer["type"] == "sell":
+            new_currency = "buy"
+            escrow_user = offer["counter"]
+            other_user = offer["init"]
 
         answer = _(
             "Transaction has passed. I'll notify should you get {}.",
-            locale=escrow_user['locale'],
+            locale=escrow_user["locale"],
         )
         answer = answer.format(offer[new_currency])
-        await tg.send_message(escrow_user['id'], answer)
+        await tg.send_message(escrow_user["id"], answer)
         is_confirmed = await create_task(self.is_block_confirmed(block_num, op))
         if is_confirmed:
             await database.escrow.update_one(
-                {'_id': offer['_id']}, {'$set': {'trx_id': trx_id}}
+                {"_id": offer["_id"]}, {"$set": {"trx_id": trx_id}}
             )
             keyboard = InlineKeyboardMarkup()
             keyboard.add(
                 InlineKeyboardButton(
-                    _('Sent', locale=other_user['locale']),
-                    callback_data='tokens_sent {}'.format(offer['_id']),
+                    _("Sent", locale=other_user["locale"]),
+                    callback_data="tokens_sent {}".format(offer["_id"]),
                 )
             )
             answer = markdown.link(
-                _('Transaction is confirmed.', locale=other_user['locale']),
+                _("Transaction is confirmed.", locale=other_user["locale"]),
                 self.trx_url(trx_id),
             )
-            answer += '\n' + markdown.escape_md(
-                _('Send {} {} to address {}', locale=other_user['locale']).format(
-                    offer[f'sum_{new_currency}'],
+            answer += "\n" + markdown.escape_md(
+                _("Send {} {} to address {}", locale=other_user["locale"]).format(
+                    offer[f"sum_{new_currency}"],
                     offer[new_currency],
-                    escrow_user['receive_address'],
+                    escrow_user["receive_address"],
                 )
             )
-            answer += '.'
+            answer += "."
             await tg.send_message(
-                other_user['id'],
+                other_user["id"],
                 answer,
                 reply_markup=keyboard,
                 parse_mode=ParseMode.MARKDOWN,
@@ -209,11 +209,11 @@ class BaseBlockchain(ABC):
             return True
 
         await database.escrow.update_one(
-            {'_id': offer['_id']}, {'$set': {'transaction_time': time()}}
+            {"_id": offer["_id"]}, {"$set": {"transaction_time": time()}}
         )
-        answer = _('Transaction is not confirmed.', locale=escrow_user['locale'])
-        answer += ' ' + _('Please try again.', locale=escrow_user['locale'])
-        await tg.send_message(escrow_user['id'], answer)
+        answer = _("Transaction is not confirmed.", locale=escrow_user["locale"])
+        answer += " " + _("Please try again.", locale=escrow_user["locale"])
+        await tg.send_message(escrow_user["id"], answer)
         return False
 
     async def _refund_callback(
@@ -236,42 +236,42 @@ class BaseBlockchain(ABC):
         :param amount: Amount of transferred asset.
         :param asset: Transferred asset.
         """
-        offer = await database.escrow.find_one({'_id': offer_id})
+        offer = await database.escrow.find_one({"_id": offer_id})
         if not offer:
             return
 
-        user = offer['init'] if offer['type'] == 'buy' else offer['counter']
-        answer = _('There are mistakes in your transfer:', locale=user['locale'])
+        user = offer["init"] if offer["type"] == "buy" else offer["counter"]
+        answer = _("There are mistakes in your transfer:", locale=user["locale"])
 
         for reason in reasons:
-            if reason == 'asset':
-                point = _('wrong asset', locale=user['locale'])
-            elif reason == 'amount':
-                point = _('wrong amount', locale=user['locale'])
-            elif reason == 'memo':
-                point = _('wrong memo', locale=user['locale'])
+            if reason == "asset":
+                point = _("wrong asset", locale=user["locale"])
+            elif reason == "amount":
+                point = _("wrong amount", locale=user["locale"])
+            elif reason == "memo":
+                point = _("wrong memo", locale=user["locale"])
             else:
                 continue
-            answer += '\n• ' + point
+            answer += "\n• " + point
 
-        answer += '\n\n' + _(
-            'Transaction will be refunded after confirmation.', locale=user['locale']
+        answer += "\n\n" + _(
+            "Transaction will be refunded after confirmation.", locale=user["locale"]
         )
-        await tg.send_message(user['id'], answer, parse_mode=ParseMode.MARKDOWN)
+        await tg.send_message(user["id"], answer, parse_mode=ParseMode.MARKDOWN)
         is_confirmed = await create_task(self.is_block_confirmed(block_num, op))
         await database.escrow.update_one(
-            {'_id': offer['_id']}, {'$set': {'transaction_time': time()}}
+            {"_id": offer["_id"]}, {"$set": {"transaction_time": time()}}
         )
         if is_confirmed:
             trx_id = await self.transfer(from_address, amount, asset)
             answer = markdown.link(
-                _('Transaction is refunded.', locale=user['locale']),
+                _("Transaction is refunded.", locale=user["locale"]),
                 self.trx_url(trx_id),
             )
         else:
-            answer = _('Transaction is not confirmed.', locale=user['locale'])
-        answer += ' ' + _('Please try again.', locale=user['locale'])
-        await tg.send_message(user['id'], answer, parse_mode=ParseMode.MARKDOWN)
+            answer = _("Transaction is not confirmed.", locale=user["locale"])
+        answer += " " + _("Please try again.", locale=user["locale"])
+        await tg.send_message(user["id"], answer, parse_mode=ParseMode.MARKDOWN)
 
 
 class BlockchainConnectionError(Exception):

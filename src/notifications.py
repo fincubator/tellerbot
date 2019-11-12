@@ -29,20 +29,20 @@ async def run_loop():
     """Notify order creators about expired orders in infinite loop."""
     while True:
         cursor = database.orders.find(
-            {'expiration_time': {'$lte': time()}, 'notify': True}
+            {"expiration_time": {"$lte": time()}, "notify": True}
         )
         async for order in cursor:
-            user = await database.users.find_one({'id': order['user_id']})
-            message = _('Your order has expired.', locale=user['locale'])
-            message += '\nID: {}'.format(order['_id'])
+            user = await database.users.find_one({"id": order["user_id"]})
+            message = _("Your order has expired.", locale=user["locale"])
+            message += "\nID: {}".format(order["_id"])
             try:
-                await tg.send_message(user['chat'], message)
+                await tg.send_message(user["chat"], message)
             except TelegramAPIError:
                 pass
             else:
-                await show_order(order, user['chat'], user['id'])
+                await show_order(order, user["chat"], user["id"])
                 await asyncio.sleep(1)  # Avoid Telegram limit
             finally:
                 await database.orders.update_one(
-                    {'_id': order['_id']}, {'$set': {'notify': False}}
+                    {"_id": order["_id"]}, {"$set": {"notify": False}}
                 )

@@ -18,7 +18,7 @@ from src.escrow.blockchain.golos_blockchain import GolosBlockchain
 
 
 SUPPORTED_BLOCKCHAINS = (GolosBlockchain(),)
-SUPPORTED_BANKS = ('Alfa-Bank', 'Rocketbank', 'Sberbank', 'Tinkoff')
+SUPPORTED_BANKS = ("Alfa-Bank", "Rocketbank", "Sberbank", "Tinkoff")
 
 
 def get_escrow_instance(asset: str):

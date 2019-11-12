@@ -27,13 +27,13 @@ from src.i18n import i18n
 
 
 @dp.callback_query_handler(
-    lambda call: call.data.startswith('locale '), state=any_state
+    lambda call: call.data.startswith("locale "), state=any_state
 )
 async def locale_button(call: CallbackQuery):
     """Choose language from list."""
     locale = call.data.split()[1]
     await database.users.update_one(
-        {'id': call.from_user.id}, {'$set': {'locale': locale}}
+        {"id": call.from_user.id}, {"$set": {"locale": locale}}
     )
 
     i18n.ctx_locale.set(locale)

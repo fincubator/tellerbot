@@ -23,9 +23,9 @@ from src.config import DATABASE_NAME
 
 
 client = AsyncIOMotorClient()
-database = client[DATABASE_NAME if isinstance(DATABASE_NAME, str) else 'tellerbot']
+database = client[DATABASE_NAME if isinstance(DATABASE_NAME, str) else "tellerbot"]
 
-STATE_KEY = 'state'
+STATE_KEY = "state"
 
 
 class MongoStorage(BaseStorage):
@@ -33,7 +33,7 @@ class MongoStorage(BaseStorage):
 
     async def get_state(self, user: int, **kwargs) -> typing.Optional[str]:
         """Get current state of user with Telegram ID ``user``."""
-        document = await database.users.find_one({'id': user})
+        document = await database.users.find_one({"id": user})
         return document.get(STATE_KEY) if document else None
 
     async def set_state(
@@ -41,9 +41,9 @@ class MongoStorage(BaseStorage):
     ) -> None:
         """Set new state ``state`` of user with Telegram ID ``user``."""
         if state is None:
-            await database.users.update_one({'id': user}, {'$unset': {STATE_KEY: True}})
+            await database.users.update_one({"id": user}, {"$unset": {STATE_KEY: True}})
         else:
-            await database.users.update_one({'id': user}, {'$set': {STATE_KEY: state}})
+            await database.users.update_one({"id": user}, {"$set": {STATE_KEY: state}})
 
     async def finish(self, user, **kwargs):
         """Finish conversation with user."""

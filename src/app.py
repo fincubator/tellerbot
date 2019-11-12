@@ -32,7 +32,7 @@ async def on_startup(webhook_path, *args):
     Set webhook and run background tasks.
     """
     await tg.delete_webhook()
-    await tg.set_webhook('https://' + config.SERVER_HOST + webhook_path)
+    await tg.set_webhook("https://" + config.SERVER_HOST + webhook_path)
     asyncio.create_task(notifications.run_loop())
     asyncio.create_task(connect_to_blockchains())
 
@@ -43,13 +43,13 @@ def main():
     Bot's main entry point.
     """
     url_token = secrets.token_urlsafe()
-    webhook_path = config.WEBHOOK_PATH + '/' + url_token
+    webhook_path = config.WEBHOOK_PATH + "/" + url_token
 
     executor.start_webhook(
         dispatcher=dp,
         webhook_path=webhook_path,
         on_startup=lambda *args: on_startup(webhook_path, *args),
-        host='127.0.0.1',
+        host="127.0.0.1",
         port=config.SERVER_PORT,
     )
     print()  # Executor stopped with ^C
