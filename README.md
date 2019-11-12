@@ -2,7 +2,7 @@
 
 # TellerBot
 [![Documentation Status](https://readthedocs.org/projects/tellerbot/badge/?version=latest)](https://tellerbot.readthedocs.io/en/latest/?badge=latest)
-[![GitHub license](https://img.shields.io/github/license/preico/tellerbot)](https://github.com/PreICO/tellerbot/blob/escrow/COPYING)
+[![GitHub license](https://img.shields.io/github/license/fincubator/tellerbot)](https://github.com/PreICO/tellerbot/blob/escrow/COPYING)
 [![Telegram](https://img.shields.io/badge/Telegram-tellerchat-blue?logo=telegram)](https://t.me/tellerchat)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
@@ -23,7 +23,7 @@
 3. Install Python version no less than 3.8
 4. Clone the repository:
 ```bash
-git clone https://github.com/PreICO/tellerbot
+git clone https://github.com/fincubator/tellerbot
 cd tellerbot
 ```
 5. Install requirements:
@@ -42,10 +42,10 @@ python tellerbot
 ```
 
 ## Contributing
-You can help by working on [opened issues](https://github.com/preico/tellerbot/issues), fixing bugs, creating new features, improving documentation or translating bot messages to your language.
+You can help by working on [opened issues](https://github.com/fincubator/tellerbot/issues), fixing bugs, creating new features, improving documentation or translating bot messages to your language.
 
-Before contributing, please read [CONTRIBUTING.md](https://github.com/PreICO/tellerbot/blob/master/CONTRIBUTING.md) first.
+Before contributing, please read [CONTRIBUTING.md](https://github.com/fincubator/tellerbot/blob/master/CONTRIBUTING.md) first.
 
 
 ## License
-TellerBot is released under the GNU Affero General Public License v3.0. See [COPYING](https://github.com/PreICO/tellerbot/blob/master/COPYING) for the full licensing conditions.
+TellerBot is released under the GNU Affero General Public License v3.0. See [COPYING](https://github.com/fincubator/tellerbot/blob/master/COPYING) for the full licensing conditions.
