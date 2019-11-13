@@ -27,8 +27,8 @@ from aiogram.types import ParseMode
 from aiogram.utils import markdown
 from bson.objectid import ObjectId
 
+from src.bot import tg
 from src.database import database
-from src.handlers import tg
 from src.i18n import _
 
 

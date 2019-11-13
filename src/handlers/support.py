@@ -20,11 +20,11 @@ from aiogram.dispatcher import FSMContext
 from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 
+from src.bot import dp
 from src.config import SUPPORT_CHAT_ID
-from src.handlers import dp
-from src.handlers import private_handler
-from src.handlers import start_keyboard
-from src.handlers import tg
+from src.handlers.base import private_handler
+from src.handlers.base import start_keyboard
+from src.handlers.base import tg
 from src.i18n import _
 from src.states import asking_support
 

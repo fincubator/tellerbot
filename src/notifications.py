@@ -21,7 +21,7 @@ from aiogram.utils.exceptions import TelegramAPIError
 
 from src.bot import tg
 from src.database import database
-from src.handlers import show_order
+from src.handlers.base import show_order
 from src.i18n import _
 
 

@@ -20,10 +20,11 @@ import secrets
 from aiogram.utils import executor
 
 from src import config
+from src import handlers  # noqa: F401
 from src import notifications
+from src.bot import dp
+from src.bot import tg
 from src.escrow import connect_to_blockchains
-from src.registered_handlers import dp
-from src.registered_handlers import tg
 
 
 async def on_startup(webhook_path, *args):

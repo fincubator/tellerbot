@@ -30,14 +30,14 @@ from bson.objectid import ObjectId
 from motor.core import AgnosticBaseCursor as Cursor
 
 from src import states
+from src.bot import dp
+from src.bot import tg
 from src.database import database
 from src.database import STATE_KEY
 from src.escrow.escrow_offer import EscrowOffer
-from src.handlers import dp
-from src.handlers import orders_list
-from src.handlers import private_handler
-from src.handlers import show_order
-from src.handlers import tg
+from src.handlers.base import orders_list
+from src.handlers.base import private_handler
+from src.handlers.base import show_order
 from src.i18n import _
 from src.money import money
 from src.money import MoneyValueError

@@ -39,16 +39,16 @@ from aiogram.types import InlineKeyboardMarkup
 from bson.decimal128 import Decimal128
 from pymongo import ReturnDocument
 
+from src.bot import dp
+from src.bot import tg
 from src.database import database
 from src.escrow import get_escrow_instance
-from src.handlers import dp
-from src.handlers import inline_control_buttons
-from src.handlers import private_handler
-from src.handlers import show_order
-from src.handlers import start_keyboard
-from src.handlers import state_handler
-from src.handlers import state_handlers
-from src.handlers import tg
+from src.handlers.base import inline_control_buttons
+from src.handlers.base import private_handler
+from src.handlers.base import show_order
+from src.handlers.base import start_keyboard
+from src.handlers.base import state_handler
+from src.handlers.base import state_handlers
 from src.i18n import _
 from src.i18n import i18n
 from src.money import money

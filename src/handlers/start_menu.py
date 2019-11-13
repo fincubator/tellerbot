@@ -27,15 +27,15 @@ from babel import Locale
 from pymongo import DESCENDING
 
 from src import states
+from src.bot import tg
 from src.config import ORDERS_LIMIT_COUNT
 from src.config import ORDERS_LIMIT_HOURS
 from src.database import database
-from src.handlers import help_message
-from src.handlers import inline_control_buttons
-from src.handlers import orders_list
-from src.handlers import private_handler
-from src.handlers import start_keyboard
-from src.handlers import tg
+from src.handlers.base import help_message
+from src.handlers.base import inline_control_buttons
+from src.handlers.base import orders_list
+from src.handlers.base import private_handler
+from src.handlers.base import start_keyboard
 from src.i18n import _
 from src.i18n import i18n
 

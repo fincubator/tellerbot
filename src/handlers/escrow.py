@@ -34,16 +34,16 @@ from bson.objectid import ObjectId
 from dataclasses import replace
 
 from src import states
+from src.bot import dp
+from src.bot import tg
 from src.config import SUPPORT_CHAT_ID
 from src.database import database
 from src.escrow import get_escrow_instance
 from src.escrow import SUPPORTED_BANKS
 from src.escrow.escrow_offer import EscrowOffer
-from src.handlers import dp
-from src.handlers import private_handler
-from src.handlers import show_order
-from src.handlers import start_keyboard
-from src.handlers import tg
+from src.handlers.base import private_handler
+from src.handlers.base import show_order
+from src.handlers.base import start_keyboard
 from src.i18n import _
 from src.money import money
 from src.money import MoneyValueError

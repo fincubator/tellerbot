@@ -18,11 +18,11 @@
 from aiogram.dispatcher.filters.state import any_state
 from aiogram.types import CallbackQuery
 
+from src.bot import dp
+from src.bot import tg
 from src.database import database
-from src.handlers import dp
-from src.handlers import help_message
-from src.handlers import start_keyboard
-from src.handlers import tg
+from src.handlers.base import help_message
+from src.handlers.base import start_keyboard
 from src.i18n import i18n
 
 
