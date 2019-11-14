@@ -30,6 +30,7 @@ from golos.exceptions import RetriesExceeded
 from golos.exceptions import TransactionNotFound
 from golos.ws_client import error_handler
 
+from src import config
 from src.database import database
 from src.escrow.blockchain import BaseBlockchain
 from src.escrow.blockchain import BlockchainConnectionError
@@ -114,7 +115,7 @@ class GolosBlockchain(BaseBlockchain):
         return limits.get(asset)
 
     async def transfer(self, to: str, amount: Decimal, asset: str):
-        with open("wif.json") as wif_file:
+        with open(config.WIF_FILENAME) as wif_file:
             transaction = await get_running_loop().run_in_executor(
                 None,
                 self._golos.transfer,

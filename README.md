@@ -18,27 +18,27 @@
 
 
 ## Installation and launch
-1. Create a new Telegram bot by talking to [@BotFather](https://t.me/BotFather) and get its API Token.
-2. Install and start MongoDB server
-3. Install Python version no less than 3.8
-4. Clone the repository:
+1. Clone the repository:
 ```bash
 git clone https://github.com/fincubator/tellerbot
 cd tellerbot
 ```
-5. Install requirements:
+2. Install Python version no less than 3.8.
+3. Install requirements:
 ```bash
 pip install -r requirements.txt
 ```
-6. Create config file from template:
+4. Create config file from template:
 ```bash
-cp config.py.sample src/config.py
+cp config.ini.example config.ini
 ```
-7. Personalize settings by modifying ```config.py``` with your preferable text editor.
-8. Launch TellerBot:
+5. Personalize settings by modifying ```config.ini``` with your preferable text editor.
+6. Create a new Telegram bot by talking to [@BotFather](https://t.me/BotFather) and get its API token.
+7. Create a file containing Telegram bot's API token with filename specified in ```token_filename``` from ```config.ini```.
+8. Install and start MongoDB server.
+9. Launch TellerBot:
 ```bash
-cd ..
-python tellerbot
+python .
 ```
 
 ## Contributing

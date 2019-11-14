@@ -19,6 +19,7 @@ import secrets
 
 from aiogram.utils import executor
 
+from src import bot
 from src import config
 from src import handlers  # noqa: F401
 from src import notifications
@@ -46,6 +47,7 @@ def main():
     url_token = secrets.token_urlsafe()
     webhook_path = config.WEBHOOK_PATH + "/" + url_token
 
+    bot.setup()
     executor.start_webhook(
         dispatcher=dp,
         webhook_path=webhook_path,

@@ -24,13 +24,21 @@ from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
 
 from src import config
-from src.database import storage
+from src.database import MongoStorage
 from src.i18n import i18n
 
 
-if isinstance(config.TOKEN, str):
-    tg = Bot(config.TOKEN, loop=asyncio.get_event_loop())
-    dp = Dispatcher(tg, storage=storage)
+tg = Bot(None, loop=asyncio.get_event_loop(), validate_token=False)
+dp = Dispatcher(tg)
+
+
+def setup():
+    """Set API token from config to bot and setup dispatcher."""
+    with open(config.TOKEN_FILE, "r") as token_file:
+        tg._ctx_token.set(token_file.read().strip())
+
+    dp.storage = MongoStorage()
+
     i18n.reload()
     dp.middleware.setup(i18n)
 
@@ -38,9 +46,6 @@ if isinstance(config.TOKEN, str):
         filename=config.LOG_FILENAME, filemode="a", level=config.LOGGER_LEVEL
     )
     dp.middleware.setup(LoggingMiddleware())
-else:
-    tg = Bot("", validate_token=False)
-    dp = Dispatcher(tg)
 
 
 def private_handler(*args, **kwargs):

@@ -58,6 +58,3 @@ class MongoStorage(BaseStorage):
     async def close(self):
         """Disconnect from MongoDB."""
         client.close()
-
-
-storage = MongoStorage()

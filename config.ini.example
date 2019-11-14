@@ -1,0 +1,22 @@
+[Connection]
+token_filename = /run/secrets/tbtoken
+server_host = example.com
+server_port = 5000
+webhook_path = /tellerbot/webhook
+database_name = tellerbot
+
+[Logging]
+logger_level = INFO
+log_filename = /var/log/tellerbot.log
+
+[Chat IDs]
+support = -123456789
+exceptions = -1234567890123
+
+[Orders]
+count = 10
+limit_hours = 24
+limit_count = 10
+
+[Blockchain]
+wif_filename = /run/secrets/wif.json
