@@ -26,17 +26,15 @@ from aiogram.utils.exceptions import MessageNotModified
 from src.bot import dp
 from src.bot import tg
 from src.config import EXCEPTIONS_CHAT_ID
-from src.handlers import creation
-from src.handlers import escrow
-from src.handlers import language
-from src.handlers import order
-from src.handlers import start_menu
-from src.handlers import support
+from src.handlers import start_menu  # noqa: F401, noreorder
+from src.handlers import creation  # noqa: F401
+from src.handlers import escrow  # noqa: F401
+from src.handlers import language  # noqa: F401
+from src.handlers import order  # noqa: F401
+from src.handlers import support  # noqa: F401
 from src.handlers.base import private_handler
 from src.handlers.base import start_keyboard
 from src.i18n import _
-
-__all__ = ["creation", "escrow", "language", "order", "start_menu", "support"]
 
 log = logging.getLogger(__name__)
 
