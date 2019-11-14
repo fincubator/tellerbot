@@ -4,18 +4,18 @@ src.handlers package
 Submodules
 ----------
 
-src.handlers.creation module
-----------------------------
+src.handlers.base module
+------------------------
 
-.. automodule:: src.handlers.creation
+.. automodule:: src.handlers.base
    :members:
    :undoc-members:
    :show-inheritance:
 
-src.handlers.default module
----------------------------
+src.handlers.creation module
+----------------------------
 
-.. automodule:: src.handlers.default
+.. automodule:: src.handlers.creation
    :members:
    :undoc-members:
    :show-inheritance:

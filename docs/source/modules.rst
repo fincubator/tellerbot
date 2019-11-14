@@ -1,5 +1,5 @@
-src
-===
+tellerbot
+=========
 
 .. toctree::
    :maxdepth: 4

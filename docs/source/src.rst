@@ -60,14 +60,6 @@ src.notifications module
    :undoc-members:
    :show-inheritance:
 
-src.registered\_handlers module
--------------------------------
-
-.. automodule:: src.registered_handlers
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 src.states module
 -----------------
 
