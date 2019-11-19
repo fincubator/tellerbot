@@ -1,25 +1,54 @@
-from configparser import ConfigParser
-from pathlib import Path
+# Copyright (C) 2019  alfred richardsn
+#
+# This file is part of TellerBot.
+#
+# TellerBot is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+from os import getenv
 
-ROOT_DIR = Path(__file__).parent.parent.resolve()
 
-parser = ConfigParser()
-parser.read(ROOT_DIR / "config.ini")
+def getenv_int(key, default=None):
+    """Convert the value of the environment variable key to an integer."""
+    env = getenv(key)
+    try:
+        return int(env)
+    except (TypeError, ValueError):
+        return default
 
-TOKEN_FILE = parser.get("Connection", "token_filename")
-SERVER_HOST = parser.get("Connection", "server_host")
-SERVER_PORT = parser.getint("Connection", "server_port")
-WEBHOOK_PATH = parser.get("Connection", "webhook_path")
-DATABASE_NAME = parser.get("Connection", "database_name")
 
-LOGGER_LEVEL = parser.get("Logging", "logger_level")
-LOG_FILENAME = parser.get("Logging", "log_filename")
+def getenv_bool(key, default=None):
+    """Convert the value of the environment variable key to a boolean."""
+    env = getenv(key)
+    return env == "true" if env in ("true", "false") else default
 
-SUPPORT_CHAT_ID = parser.getint("Chat IDs", "support")
-EXCEPTIONS_CHAT_ID = parser.getint("Chat IDs", "exceptions")
 
-ORDERS_COUNT = parser.getint("Orders", "count")
-ORDERS_LIMIT_HOURS = parser.getint("Orders", "limit_hours")
-ORDERS_LIMIT_COUNT = parser.getint("Orders", "limit_count")
+TOKEN_FILENAME = getenv("TOKEN_FILENAME")
+INTERNAL_HOST = getenv("INTERNAL_HOST", "localhost")
+SERVER_HOST = getenv("SERVER_HOST")
+SERVER_PORT = getenv_int("SERVER_PORT")
+WEBHOOK_PATH = getenv("WEBHOOK_PATH")
+DATABASE_NAME = getenv("DATABASE_NAME", "tellerbot")
+DATABASE_HOST = getenv("DATABASE_HOST", "localhost")
 
-WIF_FILENAME = parser.get("Blockchain", "wif_filename")
+LOGGER_LEVEL = getenv("LOGGER_LEVEL")
+LOG_FILENAME = getenv("LOG_FILENAME")
+
+SUPPORT_CHAT_ID = getenv_int("SUPPORT_CHAT_ID")
+EXCEPTIONS_CHAT_ID = getenv_int("EXCEPTIONS_CHAT_ID")
+
+ORDERS_COUNT = getenv_int("ORDERS_COUNT")
+ORDERS_LIMIT_HOURS = getenv_int("ORDERS_LIMIT_HOURS")
+ORDERS_LIMIT_COUNT = getenv_int("ORDERS_LIMIT_COUNT")
+
+ESCROW_ENABLED = getenv_bool("WIF_FILENAME")
+WIF_FILENAME = getenv("WIF_FILENAME")

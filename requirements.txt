@@ -3,3 +3,4 @@ emoji
 golos-python
 motor
 pymongo
+requests

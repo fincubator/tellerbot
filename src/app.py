@@ -52,7 +52,7 @@ def main():
         dispatcher=dp,
         webhook_path=webhook_path,
         on_startup=lambda *args: on_startup(webhook_path, *args),
-        host="127.0.0.1",
+        host=config.INTERNAL_HOST,
         port=config.SERVER_PORT,
     )
     print()  # Executor stopped with ^C

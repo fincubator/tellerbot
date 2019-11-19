@@ -14,10 +14,17 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
-from src.escrow.blockchain.golos_blockchain import GolosBlockchain
+from src import config
 
 
-SUPPORTED_BLOCKCHAINS = (GolosBlockchain(),)
+if config.ESCROW_ENABLED:
+    from src.escrow.blockchain.golos_blockchain import GolosBlockchain
+
+    SUPPORTED_BLOCKCHAINS = [GolosBlockchain()]
+else:
+    SUPPORTED_BLOCKCHAINS = []
+
+
 SUPPORTED_BANKS = ("Alfa-Bank", "Rocketbank", "Sberbank", "Tinkoff")
 
 

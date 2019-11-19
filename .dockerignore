@@ -1,0 +1,51 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+docker-compose.yml
+.dockerignore
+
+# Markdown files
+**/*.md
+
+# Development files
+.pre-commit-config.yml
+requirements-dev.txt
+setup.cfg
+
+# GitHub
+.github/
+
+# Examples
+*.example
+
+# Logs
+**/*.log
+
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+**/*.pyc
+
+# Unit test / coverage reports
+tests/
+.pytest_cache/
+
+# Translations
+**/*.mo
+**/*.pot
+
+# Sphinx documentation
+docs/
+
+# Environments
+.env
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# IDEA folder
+.idea/

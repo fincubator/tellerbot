@@ -18,6 +18,26 @@
 
 
 ## Installation and launch
+### Using Docker (recommended)
+1. Clone the repository:
+```bash
+git clone https://github.com/fincubator/tellerbot
+cd tellerbot
+```
+2. Create environment file from example:
+```bash
+cp .env.example .env
+```
+3. Personalize settings by modifying ```.env``` with your preferable text editor.
+4. Create a new Telegram bot by talking to [@BotFather](https://t.me/BotFather) and get its API token.
+5. Create a file containing Telegram bot's API token with filename specified in ```TOKEN_FILENAME``` from ```.env```.
+6. Install [Docker Compose](https://docs.docker.com/compose/install/).
+7. Start container:
+```bash
+docker-compose up
+```
+
+### Manual
 1. Clone the repository:
 ```bash
 git clone https://github.com/fincubator/tellerbot
@@ -28,15 +48,19 @@ cd tellerbot
 ```bash
 pip install -r requirements.txt
 ```
-4. Create config file from template:
+4. Create environment file from example:
 ```bash
-cp config.ini.example config.ini
+cp .env.example .env
 ```
-5. Personalize settings by modifying ```config.ini``` with your preferable text editor.
+5. Personalize settings by modifying ```.env``` with your preferable text editor. Remove ```INTERNAL_HOST``` and ```DATABASE_HOST``` if you want bot and database running on localhost.
 6. Create a new Telegram bot by talking to [@BotFather](https://t.me/BotFather) and get its API token.
-7. Create a file containing Telegram bot's API token with filename specified in ```token_filename``` from ```config.ini```.
+7. Create a file containing Telegram bot's API token with filename specified in ```TOKEN_FILENAME``` from ```.env```.
 8. Install and start MongoDB server.
-9. Launch TellerBot:
+9. Set environment variables:
+```bash
+export $(grep -v '^#' .env | xargs)
+```
+10. Launch TellerBot:
 ```bash
 python .
 ```

@@ -115,6 +115,9 @@ class GolosBlockchain(BaseBlockchain):
         return limits.get(asset)
 
     async def transfer(self, to: str, amount: Decimal, asset: str):
+        if not config.WIF_FILENAME:
+            raise Exception("WIF_FILENAME is not set")
+
         with open(config.WIF_FILENAME) as wif_file:
             transaction = await get_running_loop().run_in_executor(
                 None,

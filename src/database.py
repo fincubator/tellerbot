@@ -19,11 +19,11 @@ import typing
 from aiogram.dispatcher.storage import BaseStorage
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from src.config import DATABASE_NAME
+from src import config
 
 
-client = AsyncIOMotorClient()
-database = client[DATABASE_NAME if isinstance(DATABASE_NAME, str) else "tellerbot"]
+client = AsyncIOMotorClient(config.DATABASE_HOST)
+database = client[config.DATABASE_NAME]
 
 STATE_KEY = "state"
 

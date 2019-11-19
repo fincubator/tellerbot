@@ -34,7 +34,7 @@ dp = Dispatcher(tg)
 
 def setup():
     """Set API token from config to bot and setup dispatcher."""
-    with open(config.TOKEN_FILE, "r") as token_file:
+    with open(config.TOKEN_FILENAME, "r") as token_file:
         tg._ctx_token.set(token_file.read().strip())
 
     dp.storage = MongoStorage()
@@ -42,9 +42,7 @@ def setup():
     i18n.reload()
     dp.middleware.setup(i18n)
 
-    logging.basicConfig(
-        filename=config.LOG_FILENAME, filemode="a", level=config.LOGGER_LEVEL
-    )
+    logging.basicConfig(level=config.LOGGER_LEVEL)
     dp.middleware.setup(LoggingMiddleware())
 
 
