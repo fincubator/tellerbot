@@ -33,12 +33,12 @@ def getenv_bool(key, default=None):
 
 
 TOKEN_FILENAME = getenv("TOKEN_FILENAME")
-INTERNAL_HOST = getenv("INTERNAL_HOST", "localhost")
+INTERNAL_HOST = getenv("INTERNAL_HOST", "127.0.0.1")
 SERVER_HOST = getenv("SERVER_HOST")
 SERVER_PORT = getenv_int("SERVER_PORT")
 WEBHOOK_PATH = getenv("WEBHOOK_PATH")
 DATABASE_NAME = getenv("DATABASE_NAME", "tellerbot")
-DATABASE_HOST = getenv("DATABASE_HOST", "localhost")
+DATABASE_HOST = getenv("DATABASE_HOST", "127.0.0.1")
 
 LOGGER_LEVEL = getenv("LOGGER_LEVEL")
 LOG_FILENAME = getenv("LOG_FILENAME")
@@ -50,5 +50,5 @@ ORDERS_COUNT = getenv_int("ORDERS_COUNT")
 ORDERS_LIMIT_HOURS = getenv_int("ORDERS_LIMIT_HOURS")
 ORDERS_LIMIT_COUNT = getenv_int("ORDERS_LIMIT_COUNT")
 
-ESCROW_ENABLED = getenv_bool("WIF_FILENAME")
+ESCROW_ENABLED = getenv_bool("ESCROW_ENABLED")
 WIF_FILENAME = getenv("WIF_FILENAME")
