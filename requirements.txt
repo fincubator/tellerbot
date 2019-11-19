@@ -1,6 +1,6 @@
-aiogram
-emoji
-golos-python
-motor
-pymongo
-requests
+aiogram==2.4
+emoji==0.13.3
+golos-python==1.0.3
+motor==2.0.0
+pymongo==3.7.2
+requests==2.22.0
