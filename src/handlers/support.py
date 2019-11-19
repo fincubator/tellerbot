@@ -20,8 +20,8 @@ from aiogram.dispatcher import FSMContext
 from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 
+from src import config
 from src.bot import dp
-from src.config import SUPPORT_CHAT_ID
 from src.handlers.base import private_handler
 from src.handlers.base import start_keyboard
 from src.handlers.base import tg
@@ -54,7 +54,7 @@ async def send_message_to_support(message: types.Message):
         username = markdown.link(message.from_user.full_name, message.from_user.url)
 
     await tg.send_message(
-        SUPPORT_CHAT_ID,
+        config.SUPPORT_CHAT_ID,
         emojize(f":envelope:")
         + f" #chat_{message.chat.id} {message.message_id}\n{username}:\n"
         + message.text,
@@ -85,13 +85,12 @@ async def handle_reply(message: types.Message):
 
 
 @dp.message_handler(
-    lambda msg: msg.chat.id == SUPPORT_CHAT_ID
+    lambda msg: msg.chat.id == config.SUPPORT_CHAT_ID
     and msg.reply_to_message is not None
     and msg.reply_to_message.text.startswith(emojize(":envelope: "))
 )
 async def answer_support_ticket(message: types.Message):
-    """
-    Answer support ticket.
+    """Answer support ticket.
 
     Speech balloon emoji at the beginning is the mark of support's
     reply to ticket.
@@ -108,3 +107,19 @@ async def answer_support_ticket(message: types.Message):
             reply_to_message_id=reply_to_message_id,
         )
         await tg.send_message(message.chat.id, _("Reply is sent."))
+
+
+@dp.message_handler(
+    lambda msg: msg.chat.id == config.SUPPORT_CHAT_ID, commands=["toggle_escrow"]
+)
+async def toggle_escrow(message: types.Message):
+    """Toggle escrow availability.
+
+    This command makes creation of new escrow offers unavailable if
+    escrow is enabled, and makes it available if it's disabled.
+    """
+    config.ESCROW_ENABLED = not config.ESCROW_ENABLED
+    if config.ESCROW_ENABLED:
+        await tg.send_message(message.chat.id, _("Escrow was enabled."))
+    else:
+        await tg.send_message(message.chat.id, _("Escrow was disabled."))
