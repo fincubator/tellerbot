@@ -300,7 +300,7 @@ async def match_button(call: types.CallbackQuery, order: OrderType):
 async def escrow_button(call: types.CallbackQuery, order: OrderType):
     """React to "Escrow" button by starting escrow exchange."""
     if not config.ESCROW_ENABLED:
-        call.answer(
+        await call.answer(
             _("Escrow is temporarily unavailable. Sorry for the inconvenience.")
         )
         return
