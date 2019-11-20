@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-12 21:22+0300\n"
+"POT-Creation-Date: 2019-11-20 05:52+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -67,6 +67,22 @@ msgid "Transaction is refunded."
 msgstr "Транзакция возмещена."
 
 #: src/handlers/__init__.py
+msgid "Unknown command."
+msgstr "Неизвестная команда."
+
+#: src/handlers/__init__.py
+msgid "Unknown button."
+msgstr "Неизвестная кнопка."
+
+#: src/handlers/__init__.py
+msgid ""
+"There was an unexpected error when handling your request. We're already "
+"notified and will fix it as soon as possible!"
+msgstr ""
+"Возникла неожиданная ошибка во время обработки вашего обращения. Мы уже "
+"оповещены и исправим её как можно скорее!"
+
+#: src/handlers/base.py
 msgid ""
 "Hello, I'm TellerBot. I can help you meet with people that you can swap "
 "money with.\n"
@@ -78,103 +94,103 @@ msgstr ""
 "\n"
 "Выберите один из вариантов на вашей клавиатуре."
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Create order"
 msgstr "Создать заказ"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "My orders"
 msgstr "Мои заказы"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Order book"
 msgstr "Список заказов"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Language"
 msgstr "Язык"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Support"
 msgstr "Поддержка"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Back"
 msgstr "Назад"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Skip"
 msgstr "Пропустить"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "There are no orders."
 msgstr "Нет заказов."
 
-#: src/handlers/__init__.py src/handlers/creation.py
+#: src/handlers/base.py src/handlers/creation.py
 msgid "Invert"
 msgstr "Инвертировать"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Page {} of {}"
 msgstr "Страница {} из {}"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Amount of buying:"
 msgstr "Сумма покупки:"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Amount of selling:"
 msgstr "Сумма продажи:"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Price:"
 msgstr "Цена:"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Payment system:"
 msgstr "Система оплаты:"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Duration:"
 msgstr "Продолжительность:"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Comments:"
 msgstr "Комментарии:"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "sells {} for {}"
 msgstr "продаёт {} за {}"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "buys {} for {}"
 msgstr "покупает {} за {}"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Finish"
 msgstr "Завершить"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Similar"
 msgstr "Похожие"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Match"
 msgstr "Подобрать"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Edit"
 msgstr "Редактировать"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Delete"
 msgstr "Удалить"
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Escrow"
 msgstr "Эскроу"
 
-#: src/handlers/__init__.py src/handlers/order.py
+#: src/handlers/base.py src/handlers/order.py
 msgid "Hide"
 msgstr "Скрыть"
 
@@ -263,22 +279,6 @@ msgstr "Добавьте какие-либо дополнительные ком
 #: src/handlers/creation.py
 msgid "Order is set."
 msgstr "Заказ установлен."
-
-#: src/handlers/default.py
-msgid "Unknown command."
-msgstr "Неизвестная команда."
-
-#: src/handlers/default.py
-msgid "Unknown button."
-msgstr "Неизвестная кнопка."
-
-#: src/handlers/default.py
-msgid ""
-"There was an unexpected error when handling your request. We're already "
-"notified and will fix it as soon as possible!"
-msgstr ""
-"Возникла неожиданная ошибка во время обработки вашего обращения. Мы уже "
-"оповещены и исправим её как можно скорее!"
 
 #: src/handlers/escrow.py
 msgid "You should send at least 8 digits."
@@ -473,6 +473,10 @@ msgid "Send order's ID as an argument."
 msgstr "Отправьте ID заказа как аргумент."
 
 #: src/handlers/order.py
+msgid "Escrow is temporarily unavailable. Sorry for the inconvenience."
+msgstr "Эскроу временно недоступен. Извините за неудобства."
+
+#: src/handlers/order.py
 msgid "Change to {}"
 msgstr "Поменять на {}"
 
@@ -547,6 +551,14 @@ msgstr "Ваше сообщение переслано. Мы ответим ва
 #: src/handlers/support.py
 msgid "Reply is sent."
 msgstr "Ответ отправлен."
+
+#: src/handlers/support.py
+msgid "Escrow was enabled."
+msgstr "Эскроу включен."
+
+#: src/handlers/support.py
+msgid "Escrow was disabled."
+msgstr "Эскроу выключен."
 
 #: src/money.py
 msgid "Send decimal number."

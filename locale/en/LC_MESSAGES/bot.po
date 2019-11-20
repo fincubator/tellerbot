@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-12 21:22+0300\n"
+"POT-Creation-Date: 2019-11-20 05:52+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -67,6 +67,20 @@ msgid "Transaction is refunded."
 msgstr ""
 
 #: src/handlers/__init__.py
+msgid "Unknown command."
+msgstr ""
+
+#: src/handlers/__init__.py
+msgid "Unknown button."
+msgstr ""
+
+#: src/handlers/__init__.py
+msgid ""
+"There was an unexpected error when handling your request. We're already "
+"notified and will fix it as soon as possible!"
+msgstr ""
+
+#: src/handlers/base.py
 msgid ""
 "Hello, I'm TellerBot. I can help you meet with people that you can swap "
 "money with.\n"
@@ -74,103 +88,103 @@ msgid ""
 "Choose one of the options on your keyboard."
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Create order"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "My orders"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Order book"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Language"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Support"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Back"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Skip"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "There are no orders."
 msgstr ""
 
-#: src/handlers/__init__.py src/handlers/creation.py
+#: src/handlers/base.py src/handlers/creation.py
 msgid "Invert"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Page {} of {}"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Amount of buying:"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Amount of selling:"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Price:"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Payment system:"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Duration:"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Comments:"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "sells {} for {}"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "buys {} for {}"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Finish"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Similar"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Match"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Edit"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Delete"
 msgstr ""
 
-#: src/handlers/__init__.py
+#: src/handlers/base.py
 msgid "Escrow"
 msgstr ""
 
-#: src/handlers/__init__.py src/handlers/order.py
+#: src/handlers/base.py src/handlers/order.py
 msgid "Hide"
 msgstr ""
 
@@ -258,20 +272,6 @@ msgstr ""
 
 #: src/handlers/creation.py
 msgid "Order is set."
-msgstr ""
-
-#: src/handlers/default.py
-msgid "Unknown command."
-msgstr ""
-
-#: src/handlers/default.py
-msgid "Unknown button."
-msgstr ""
-
-#: src/handlers/default.py
-msgid ""
-"There was an unexpected error when handling your request. We're already "
-"notified and will fix it as soon as possible!"
 msgstr ""
 
 #: src/handlers/escrow.py
@@ -458,6 +458,10 @@ msgid "Send order's ID as an argument."
 msgstr ""
 
 #: src/handlers/order.py
+msgid "Escrow is temporarily unavailable. Sorry for the inconvenience."
+msgstr ""
+
+#: src/handlers/order.py
 msgid "Change to {}"
 msgstr ""
 
@@ -531,6 +535,14 @@ msgstr ""
 
 #: src/handlers/support.py
 msgid "Reply is sent."
+msgstr ""
+
+#: src/handlers/support.py
+msgid "Escrow was enabled."
+msgstr ""
+
+#: src/handlers/support.py
+msgid "Escrow was disabled."
 msgstr ""
 
 #: src/money.py
