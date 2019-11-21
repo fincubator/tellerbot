@@ -130,7 +130,7 @@ async def get_insurance(offer: EscrowOffer) -> Decimal:
     """Get insurance of escrow asset in ``offer`` taking limits into account."""
     offer_sum = offer[f"sum_{offer.type}"]
     asset = offer[offer.type]
-    limits = get_escrow_instance(asset).get_limits(asset)
+    limits = await get_escrow_instance(asset).get_limits(asset)
     if not limits:
         return offer_sum
     insured = min(offer_sum, limits.single)
