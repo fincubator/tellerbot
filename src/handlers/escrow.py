@@ -271,7 +271,8 @@ async def full_card_number_request(chat_id: int, offer: EscrowOffer):
         reply_markup=keyboard,
         parse_mode=ParseMode.MARKDOWN,
     )
-    await states.Escrow.full_card.set()
+    state = FSMContext(dp.storage, chat_id, chat_id)
+    await state.set_state(states.Escrow.full_card.state)
 
 
 async def ask_credentials(
@@ -306,6 +307,7 @@ async def ask_credentials(
                 _("I asked {} to send you their full card number.").format(
                     markdown.link(init["mention"], User(id=init["id"]).url)
                 ),
+                parse_mode=ParseMode.MARKDOWN,
             )
         return
 
@@ -405,6 +407,7 @@ async def full_card_number_sent(call: types.CallbackQuery, offer: EscrowOffer):
             _("I continued the exchange with {}.").format(
                 markdown.link(counter["mention"], User(id=counter["id"]).url)
             ),
+            parse_mode=ParseMode.MARKDOWN,
         )
         await offer.update_document({"$set": {"pending_input_from": counter["id"]}})
         counter_state = FSMContext(dp.storage, counter["id"], counter["id"])
