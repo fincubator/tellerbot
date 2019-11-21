@@ -78,7 +78,7 @@ class BaseBlockchain(ABC):
     async def is_block_confirmed(
         self, block_num: int, op: typing.Mapping[str, typing.Any]
     ) -> bool:
-        """Check if block #``block_num`` has ``op`` after confirmation.
+        """Check if block # ``block_num`` has ``op`` after confirmation.
 
         Check block on blockchain-specific conditions to consider it confirmed.
 
