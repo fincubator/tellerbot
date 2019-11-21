@@ -274,9 +274,7 @@ async def full_card_number_request(chat_id: int, offer: EscrowOffer):
 
 
 async def ask_credentials(
-    call: types.CallbackQuery,
-    offer: EscrowOffer,
-    update_dict: typing.Dict[str, typing.Any] = {},
+    call: types.CallbackQuery, offer: EscrowOffer,
 ):
     """Update offer with ``update_dict`` and start asking transfer information.
 
@@ -285,34 +283,36 @@ async def ask_credentials(
     """
     await call.answer()
     is_user_init = call.from_user.id == offer.init["id"]
-    if is_user_init and "RUB" in {offer.buy, offer.sell}:
-        keyboard = InlineKeyboardMarkup()
-        for bank in SUPPORTED_BANKS:
-            keyboard.row(
-                InlineKeyboardButton(bank, callback_data=f"bank {offer._id} {bank}")
+    has_fiat_currency = "RUB" in {offer.buy, offer.sell}
+    if has_fiat_currency:
+        if is_user_init:
+            keyboard = InlineKeyboardMarkup()
+            for bank in SUPPORTED_BANKS:
+                keyboard.row(
+                    InlineKeyboardButton(bank, callback_data=f"bank {offer._id} {bank}")
+                )
+            await tg.send_message(
+                call.message.chat.id, _("Choose bank."), reply_markup=keyboard
             )
-        await tg.send_message(
-            call.message.chat.id, _("Choose bank."), reply_markup=keyboard
-        )
-        await states.Escrow.bank.set()
-        if update_dict:
-            await offer.update_document({"$set": update_dict})
+            await states.Escrow.bank.set()
+        elif offer.type == "sell":
+            await full_card_number_request(call.message.chat.id, offer)
+        else:
+            init = offer.init
+            await full_card_number_request(init["id"], offer)
+            await tg.send_message(
+                call.message.chat.id,
+                _("I asked {} to send you their full card number.").format(
+                    markdown.link(init["mention"], User(id=init["id"]).url)
+                ),
+            )
         return
 
-    if is_user_init:
-        receive_currency = offer.sell
-    elif offer.type == "sell":
-        if update_dict:
-            await offer.update_document({"$set": update_dict})
-        await full_card_number_request(call.message.chat.id, offer)
-        return
-    else:
-        receive_currency = offer.buy
     await tg.send_message(
-        call.message.chat.id, _("Send your {} address.").format(receive_currency)
+        call.message.chat.id,
+        _("Send your {} address.").format(offer.sell if is_user_init else offer.buy),
     )
-    update_dict["pending_input_from"] = call.from_user.id
-    await offer.update_document({"$set": update_dict})
+    await offer.update_document({"$set": {"pending_input_from": call.from_user.id}})
     await states.Escrow.receive_address.set()
 
 
@@ -333,8 +333,8 @@ async def decline_fee(call: types.CallbackQuery, offer: EscrowOffer):
         sum_fee_field = "sum_fee_up"
     else:
         sum_fee_field = "sum_fee_down"
-    update_dict = {sum_fee_field: offer[f"sum_{offer.type}"]}
-    await ask_credentials(call, offer, update_dict)
+    await offer.update_document({"$set": {sum_fee_field: offer[f"sum_{offer.type}"]}})
+    await ask_credentials(call, offer)
 
 
 @escrow_callback_handler(
@@ -353,16 +353,11 @@ async def choose_bank(call: types.CallbackQuery, offer: EscrowOffer):
 
     update_dict = {"bank": bank}
     await call.answer()
-    if offer.type == "buy":
-        # FIXME: Ask initiator to send their full card number after
-        #        counteragent confirmed offer
-        await full_card_number_request(call.message.chat.id, offer)
-    else:
-        update_dict["pending_input_from"] = call.from_user.id
-        await tg.send_message(
-            call.message.chat.id, _("Send your {} address.").format(offer.sell)
-        )
-        await states.Escrow.receive_address.set()
+    update_dict["pending_input_from"] = call.from_user.id
+    await tg.send_message(
+        call.message.chat.id, _("Send your {} address.").format(offer.sell)
+    )
+    await states.Escrow.receive_address.set()
     await offer.update_document({"$set": update_dict})
 
 
@@ -390,13 +385,29 @@ async def full_card_number_sent(call: types.CallbackQuery, offer: EscrowOffer):
     """Confirm that full card number is sent and ask for first and last 4 digits."""
     await offer.update_document({"$set": {"pending_input_from": call.from_user.id}})
     await call.answer()
-    await tg.send_message(
-        call.message.chat.id,
-        _("Send first and last 4 digits of your {} card number.").format(
-            offer.sell if offer.type == "buy" else offer.buy
-        ),
-    )
-    await states.Escrow.receive_card_number.set()
+    if call.from_user.id == offer.init["id"]:
+        counter = offer.counter
+        await tg.send_message(
+            counter["id"], _("Send your {} address.").format(offer.buy)
+        )
+        await tg.send_message(
+            call.message.chat.id,
+            _("I continued the exchange with {}.").format(
+                markdown.link(counter["mention"], User(id=counter["id"]).url)
+            ),
+        )
+        await offer.update_document({"$set": {"pending_input_from": counter["id"]}})
+        counter_state = FSMContext(dp.storage, counter["id"], counter["id"])
+        await counter_state.set_state(states.Escrow.receive_address.state)
+        await states.Escrow.receive_card_number.set()
+    else:
+        await tg.send_message(
+            call.message.chat.id,
+            _("Send first and last 4 digits of your {} card number.").format(
+                offer.sell if offer.type == "buy" else offer.buy
+            ),
+        )
+        await states.Escrow.receive_card_number.set()
 
 
 @escrow_message_handler(state=states.Escrow.receive_card_number)
