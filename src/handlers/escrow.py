@@ -42,7 +42,6 @@ from src.escrow import get_escrow_instance
 from src.escrow import SUPPORTED_BANKS
 from src.escrow.escrow_offer import EscrowOffer
 from src.handlers.base import private_handler
-from src.handlers.base import show_order
 from src.handlers.base import start_keyboard
 from src.i18n import _
 from src.money import money
@@ -558,17 +557,13 @@ async def set_init_send_address(
 
     Send offer to counteragent.
     """
-    order = await database.orders.find_one({"_id": offer.order})
-    await show_order(
-        order,
-        offer.counter["id"],
-        offer.counter["id"],
-        show_id=True,
-        locale=offer.counter["locale"],
-    )
-    update_dict = {"init.send_address": address}
     locale = offer.counter["locale"]
     buy_keyboard = InlineKeyboardMarkup()
+    buy_keyboard.row(
+        InlineKeyboardButton(
+            _("Show order", locale=locale), callback_data=f"get_order {offer.order}"
+        )
+    )
     buy_keyboard.add(
         InlineKeyboardButton(
             _("Accept", locale=locale), callback_data=f"accept {offer._id}"
@@ -585,6 +580,7 @@ async def set_init_send_address(
     if offer.bank:
         answer += " " + _("using {}").format(offer.bank)
     answer += "."
+    update_dict = {"init.send_address": address}
     if offer.type == "sell":
         insured = await get_insurance(offer)
         update_dict["insured"] = Decimal128(insured)
