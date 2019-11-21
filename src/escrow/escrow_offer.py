@@ -63,6 +63,8 @@ class EscrowOffer:
     sum_fee_up: typing.Optional[Decimal128] = None
     #: Amount of held currency with agreed fee substracted.
     sum_fee_down: typing.Optional[Decimal128] = None
+    #: Amount of insured currency.
+    insured: typing.Optional[Decimal128] = None
     #: Unix time stamp of counteragent first reaction to sent offer.
     react_time: typing.Optional[float] = None
     #: Unix time stamp since which transaction should be checked.

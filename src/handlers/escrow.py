@@ -128,7 +128,7 @@ def escrow_message_handler(*args, **kwargs):
 
 async def get_insurance(offer: EscrowOffer) -> Decimal:
     """Get insurance of escrow asset in ``offer`` taking limits into account."""
-    offer_sum = offer[f"sum_{offer.type}"]
+    offer_sum = offer[f"sum_{offer.type}"].to_decimal()
     asset = offer[offer.type]
     limits = await get_escrow_instance(asset).get_limits(asset)
     if not limits:
@@ -138,7 +138,9 @@ async def get_insurance(offer: EscrowOffer) -> Decimal:
         [{"$group": {"_id": 0, "insured_total": {"$sum": "$insured"}}}]
     )
     if await cursor.fetch_next:
-        insured_total = cursor.next_object()["insured_total"].to_decimal()
+        insured_total = cursor.next_object()["insured_total"]
+        if insured_total != 0:
+            insured_total = insured_total.to_decimal()
         total_difference = limits.total - insured_total - insured
         if total_difference < 0:
             insured += total_difference
@@ -593,7 +595,7 @@ async def set_init_send_address(
     if offer.type == "sell":
         insured = await get_insurance(offer)
         update_dict["insured"] = Decimal128(insured)
-        if offer[f"sum_{offer.type}"] > insured:
+        if offer[f"sum_{offer.type}"].to_decimal() > insured:
             answer += "\n" + _(
                 "Escrow asset sum exceeds maximum amount to be insured. If you "
                 "continue, only {} {} will be protected and refunded in "
