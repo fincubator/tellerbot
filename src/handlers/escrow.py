@@ -353,11 +353,20 @@ async def choose_bank(call: types.CallbackQuery, offer: EscrowOffer):
     update_dict = {"bank": bank}
     await call.answer()
     update_dict["pending_input_from"] = call.from_user.id
-    await tg.send_message(
-        call.message.chat.id, _("Send your {} address.").format(offer.sell)
-    )
-    await states.Escrow.receive_address.set()
     await offer.update_document({"$set": update_dict})
+    if offer.sell == "RUB":
+        await tg.send_message(
+            call.message.chat.id,
+            _("Send first and last 4 digits of your {} card number.").format(
+                offer.sell
+            ),
+        )
+        await states.Escrow.receive_card_number.set()
+    else:
+        await tg.send_message(
+            call.message.chat.id, _("Send your {} address.").format(offer.sell)
+        )
+        await states.Escrow.receive_address.set()
 
 
 @escrow_message_handler(state=states.Escrow.full_card)
