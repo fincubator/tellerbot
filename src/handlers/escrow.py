@@ -685,7 +685,9 @@ async def set_counter_send_address(
     await offer.update_document(
         {"$set": update, "$unset": {"pending_input_from": True}}
     )
-    offer = replace(offer, **update)
+    counter = dict(offer.counter)
+    counter.update({"send_address": address})
+    offer = replace(offer, counter=counter)
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
         InlineKeyboardButton(
@@ -701,7 +703,7 @@ async def set_counter_send_address(
         offer["sum_fee_up"].to_decimal(),
         offer[f"sum_{offer.type}"].to_decimal(),
         offer[offer.type],
-        offer.memo,
+        memo,
     )
     answer = _("Send {} {} to address {}", locale=escrow_user["locale"]).format(
         offer.sum_fee_up, offer[offer.type], escrow_address
