@@ -22,7 +22,11 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from src import config
 
 
-client = AsyncIOMotorClient(config.DATABASE_HOST)
+client = AsyncIOMotorClient(
+    config.DATABASE_HOST,
+    username=config.DATABASE_USERNAME,
+    password=config.DATABASE_PASSWORD,
+)
 database = client[config.DATABASE_NAME]
 
 STATE_KEY = "state"

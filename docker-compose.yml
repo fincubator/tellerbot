@@ -17,6 +17,9 @@ services:
   database:
     image: mongo:4.2.1
     container_name: ${DATABASE_HOST}
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${DATABASE_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${DATABASE_PASSWORD}
     command: mongod --quiet
     ports:
       - 27017
