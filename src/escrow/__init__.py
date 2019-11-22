@@ -25,7 +25,7 @@ else:
     SUPPORTED_BLOCKCHAINS = []
 
 
-SUPPORTED_BANKS = ("Alfa-Bank", "Rocketbank", "Sberbank", "Tinkoff")
+SUPPORTED_BANKS = ("Alfa-Bank", "Rocketbank", "Sberbank", "Tinkoff", "VTB")
 
 
 def get_escrow_instance(asset: str):
