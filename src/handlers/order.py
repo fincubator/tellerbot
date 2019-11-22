@@ -120,18 +120,14 @@ async def get_order_button(call: types.CallbackQuery, order: OrderType):
 
 
 @private_handler(commands=["id"])
-@private_handler(regexp="ID: [a-f0-9]{24}")
+@private_handler(regexp="(ID: )?[a-f0-9]{24}")
 async def get_order_command(message: types.Message):
     """Get order from ID.
 
     Order ID is indicated after **/id** or **ID:** in message text.
     """
-    try:
-        order_id = message.text.split()[1]
-    except IndexError:
-        await tg.send_message(message.chat.id, _("Send order's ID as an argument."))
-        return
-
+    args = message.text.split()
+    order_id = args[1] if len(args) > 1 else args[0]
     order = await database.orders.find_one({"_id": ObjectId(order_id)})
     if not order:
         await tg.send_message(message.chat.id, _("Order is not found."))
