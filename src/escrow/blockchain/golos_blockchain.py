@@ -114,7 +114,7 @@ class GolosBlockchain(BaseBlockchain):
         limits = {"GOLOS": InsuranceLimits(Decimal("10000"), Decimal("100000"))}
         return limits.get(asset)
 
-    async def transfer(self, to: str, amount: Decimal, asset: str):
+    async def transfer(self, to: str, amount: Decimal, asset: str, memo: str = ""):
         with open(Config.WIF_FILENAME) as wif_file:
             transaction = await get_running_loop().run_in_executor(
                 None,
@@ -124,6 +124,7 @@ class GolosBlockchain(BaseBlockchain):
                 self.address,
                 json.load(wif_file)["golos"],
                 asset,
+                memo,
             )
         return self.trx_url(transaction["id"])
 

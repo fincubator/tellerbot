@@ -66,7 +66,9 @@ class BaseBlockchain(ABC):
         """
 
     @abstractmethod
-    async def transfer(self, to: str, amount: Decimal, asset: str) -> str:
+    async def transfer(
+        self, to: str, amount: Decimal, asset: str, memo: str = ""
+    ) -> str:
         """Transfer ``asset`` from ``self.address``.
 
         :param to: Address assets are transferred to.
@@ -245,7 +247,7 @@ class BaseBlockchain(ABC):
 
         user = offer["init"] if offer["type"] == "buy" else offer["counter"]
         answer = _("There are mistakes in your transfer:", locale=user["locale"])
-
+        points = []
         for reason in reasons:
             if reason == "asset":
                 point = _("wrong asset", locale=user["locale"])
@@ -255,6 +257,7 @@ class BaseBlockchain(ABC):
                 point = _("wrong memo", locale=user["locale"])
             else:
                 continue
+            points.append(point)
             answer += "\n• " + point
 
         answer += "\n\n" + _(
@@ -266,7 +269,12 @@ class BaseBlockchain(ABC):
             {"_id": offer["_id"]}, {"$set": {"transaction_time": time()}}
         )
         if is_confirmed:
-            trx_url = await self.transfer(from_address, amount, asset)
+            trx_url = await self.transfer(
+                from_address,
+                amount,
+                asset,
+                memo="reason of refund: " + ", ".join(points),
+            )
             answer = markdown.link(
                 _("Transaction is refunded.", locale=user["locale"]), trx_url
             )
