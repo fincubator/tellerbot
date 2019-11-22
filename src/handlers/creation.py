@@ -42,7 +42,6 @@ from pymongo import ReturnDocument
 from src.bot import dp
 from src.bot import tg
 from src.database import database
-from src.escrow import get_escrow_instance
 from src.handlers.base import inline_control_buttons
 from src.handlers.base import private_handler
 from src.handlers.base import show_order
@@ -598,11 +597,6 @@ async def set_order(order: MutableMapping[str, Any], chat_id: int):
         order["price_buy"] = Decimal128(
             normalize(order["sum_buy"].to_decimal() / order["sum_sell"].to_decimal())
         )
-    if "price_sell" in order:
-        if get_escrow_instance(order["buy"]) is not None:
-            order["escrow"] = "buy"
-        elif get_escrow_instance(order["sell"]) is not None:
-            order["escrow"] = "sell"
 
     inserted_order = await database.orders.insert_one(order)
     order["_id"] = inserted_order.inserted_id

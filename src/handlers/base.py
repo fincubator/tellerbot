@@ -26,6 +26,7 @@ from aiogram.utils.emoji import emojize
 from pymongo.cursor import Cursor
 
 from src.config import Config
+from src.escrow import get_escrow_instance
 
 from src.bot import (  # noqa: F401, noreorder
     dp,
@@ -368,13 +369,17 @@ async def show_order(
                     ),
                 ),
             )
-        elif order.get("escrow"):
-            keyboard.row(
-                types.InlineKeyboardButton(
-                    _("Escrow", locale=locale),
-                    callback_data="escrow {} sum_buy 0".format(order["_id"]),
+        elif "price_sell" in order:
+            if (
+                get_escrow_instance(order["buy"]) is not None
+                or get_escrow_instance(order["sell"]) is not None
+            ):
+                keyboard.row(
+                    types.InlineKeyboardButton(
+                        _("Escrow", locale=locale),
+                        callback_data="escrow {} sum_buy 0".format(order["_id"]),
+                    )
                 )
-            )
 
         keyboard.row(
             types.InlineKeyboardButton(

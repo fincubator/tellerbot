@@ -35,6 +35,7 @@ from src.bot import tg
 from src.config import Config
 from src.database import database
 from src.database import STATE_KEY
+from src.escrow import get_escrow_instance
 from src.escrow.escrow_offer import EscrowOffer
 from src.handlers.base import orders_list
 from src.handlers.base import private_handler
@@ -342,7 +343,7 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
                 "order": order["_id"],
                 "buy": order["buy"],
                 "sell": order["sell"],
-                "type": order["escrow"],
+                "type": "buy" if get_escrow_instance(order["buy"]) else "sell",
                 "time": time(),
                 "sum_currency": currency_arg,
                 "init": {
