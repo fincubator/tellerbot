@@ -110,6 +110,7 @@ class BaseBlockchain(ABC):
         amount_without_fee: Decimal,
         asset: str,
         memo: str,
+        transaction_time: float,
     ):
         """Add transaction in ``self._queue`` to be checked."""
         self._queue.append(
@@ -120,6 +121,7 @@ class BaseBlockchain(ABC):
                 "amount_without_fee": amount_without_fee,
                 "asset": asset,
                 "memo": memo,
+                "transaction_time": transaction_time,
             }
         )
         # Start streaming if not already streaming

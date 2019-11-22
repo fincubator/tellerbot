@@ -32,25 +32,40 @@ def getenv_bool(key, default=None):
     return env == "true" if env in ("true", "false") else default
 
 
-TOKEN_FILENAME = getenv("TOKEN_FILENAME")
-INTERNAL_HOST = getenv("INTERNAL_HOST", "127.0.0.1")
-SERVER_HOST = getenv("SERVER_HOST")
-SERVER_PORT = getenv_int("SERVER_PORT")
-WEBHOOK_PATH = getenv("WEBHOOK_PATH")
-DATABASE_NAME = getenv("DATABASE_NAME", "tellerbot")
-DATABASE_HOST = getenv("DATABASE_HOST", "127.0.0.1")
-DATABASE_USERNAME = getenv("DATABASE_USERNAME")
-DATABASE_PASSWORD_FILENAME = getenv("DATABASE_PASSWORD_FILENAME")
+class Config:
+    """Data holder for configuration values."""
 
-LOGGER_LEVEL = getenv("LOGGER_LEVEL")
-LOG_FILENAME = getenv("LOG_FILENAME")
+    TOKEN_FILENAME: str
+    INTERNAL_HOST: str = "127.0.0.1"
+    SERVER_HOST: str
+    SERVER_PORT: int
+    WEBHOOK_PATH: str
+    DATABASE_NAME: str = "tellerbot"
+    DATABASE_HOST: str = "127.0.0.1"
+    DATABASE_USERNAME: str
+    DATABASE_PASSWORD_FILENAME: str
 
-SUPPORT_CHAT_ID = getenv_int("SUPPORT_CHAT_ID")
-EXCEPTIONS_CHAT_ID = getenv_int("EXCEPTIONS_CHAT_ID")
+    LOGGER_LEVEL: str
+    LOG_FILENAME: str
 
-ORDERS_COUNT = getenv_int("ORDERS_COUNT")
-ORDERS_LIMIT_HOURS = getenv_int("ORDERS_LIMIT_HOURS")
-ORDERS_LIMIT_COUNT = getenv_int("ORDERS_LIMIT_COUNT")
+    SUPPORT_CHAT_ID: int
+    EXCEPTIONS_CHAT_ID: int
 
-ESCROW_ENABLED = getenv_bool("ESCROW_ENABLED")
-WIF_FILENAME = getenv("WIF_FILENAME")
+    ORDERS_COUNT: int
+    ORDERS_LIMIT_HOURS: int
+    ORDERS_LIMIT_COUNT: int
+
+    ESCROW_ENABLED: bool
+    WIF_FILENAME: str
+    OP_CHECK_TIMEOUT_HOURS: int
+
+
+for name, annotation in Config.__annotations__.items():
+    if annotation == int:
+        value = getenv_int(name)
+    elif annotation == bool:
+        value = getenv_bool(name)
+    else:
+        value = getenv(name)
+    if value:
+        setattr(Config, name, value)

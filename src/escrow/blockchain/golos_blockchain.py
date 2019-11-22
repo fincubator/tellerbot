@@ -30,7 +30,7 @@ from golos.exceptions import RetriesExceeded
 from golos.exceptions import TransactionNotFound
 from golos.ws_client import error_handler
 
-from src import config
+from src.config import Config
 from src.database import database
 from src.escrow.blockchain import BaseBlockchain
 from src.escrow.blockchain import BlockchainConnectionError
@@ -115,10 +115,7 @@ class GolosBlockchain(BaseBlockchain):
         return limits.get(asset)
 
     async def transfer(self, to: str, amount: Decimal, asset: str):
-        if not config.WIF_FILENAME:
-            raise Exception("WIF_FILENAME is not set")
-
-        with open(config.WIF_FILENAME) as wif_file:
+        with open(Config.WIF_FILENAME) as wif_file:
             transaction = await get_running_loop().run_in_executor(
                 None,
                 self._golos.transfer,
@@ -201,7 +198,7 @@ class GolosBlockchain(BaseBlockchain):
         op_amount, asset = op["amount"].split()
         amount = Decimal(op_amount)
         for req in queue:
-            if "transaction_time" in req and "timestamp" in op:
+            if "timestamp" in op:
                 date = datetime.strptime(op["timestamp"], "%Y-%m-%dT%H:%M:%S")
                 if timegm(date.timetuple()) < req["transaction_time"]:
                     continue

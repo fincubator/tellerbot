@@ -23,7 +23,7 @@ from aiogram import types
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
 
-from src import config
+from src.config import Config
 from src.database import MongoStorage
 from src.i18n import i18n
 
@@ -33,8 +33,8 @@ dp = Dispatcher(tg)
 
 
 def setup():
-    """Set API token from config to bot and setup dispatcher."""
-    with open(config.TOKEN_FILENAME, "r") as token_file:
+    """Set API token from Config to bot and setup dispatcher."""
+    with open(Config.TOKEN_FILENAME, "r") as token_file:
         tg._ctx_token.set(token_file.read().strip())
 
     dp.storage = MongoStorage()
@@ -42,7 +42,7 @@ def setup():
     i18n.reload()
     dp.middleware.setup(i18n)
 
-    logging.basicConfig(level=config.LOGGER_LEVEL)
+    logging.basicConfig(level=Config.LOGGER_LEVEL)
     dp.middleware.setup(LoggingMiddleware())
 
 

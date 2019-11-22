@@ -25,7 +25,7 @@ from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 from pymongo.cursor import Cursor
 
-from src import config
+from src.config import Config
 
 from src.bot import (  # noqa: F401, noreorder
     dp,
@@ -97,19 +97,19 @@ async def orders_list(
     :param message_id: Telegram ID of message to edit.
     :param invert: Invert all prices.
     """
-    keyboard = types.InlineKeyboardMarkup(row_width=min(config.ORDERS_COUNT // 2, 8))
+    keyboard = types.InlineKeyboardMarkup(row_width=min(Config.ORDERS_COUNT // 2, 8))
 
     inline_orders_buttons = (
         types.InlineKeyboardButton(
             emojize(":arrow_left:"),
             callback_data="{} {} {}".format(
-                buttons_data, start - config.ORDERS_COUNT, int(invert)
+                buttons_data, start - Config.ORDERS_COUNT, int(invert)
             ),
         ),
         types.InlineKeyboardButton(
             emojize(":arrow_right:"),
             callback_data="{} {} {}".format(
-                buttons_data, start + config.ORDERS_COUNT, int(invert)
+                buttons_data, start + Config.ORDERS_COUNT, int(invert)
             ),
         ),
     )
@@ -123,7 +123,7 @@ async def orders_list(
             await tg.edit_message_text(text, chat_id, message_id, reply_markup=keyboard)
         return
 
-    all_orders = await cursor.to_list(length=start + config.ORDERS_COUNT)
+    all_orders = await cursor.to_list(length=start + Config.ORDERS_COUNT)
     orders = all_orders[start:]
 
     lines = []
@@ -179,7 +179,7 @@ async def orders_list(
         types.InlineKeyboardButton(
             _("Invert"),
             callback_data="{} {} {}".format(
-                buttons_data, start - config.ORDERS_COUNT, int(not invert)
+                buttons_data, start - Config.ORDERS_COUNT, int(not invert)
             ),
         )
     )
@@ -189,8 +189,8 @@ async def orders_list(
     text = (
         "\\["
         + _("Page {} of {}").format(
-            math.ceil(start / config.ORDERS_COUNT) + 1,
-            math.ceil(quantity / config.ORDERS_COUNT),
+            math.ceil(start / Config.ORDERS_COUNT) + 1,
+            math.ceil(quantity / Config.ORDERS_COUNT),
         )
         + "]\n"
         + "\n".join(lines)

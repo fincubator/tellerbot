@@ -28,8 +28,7 @@ from pymongo import DESCENDING
 
 from src import states
 from src.bot import tg
-from src.config import ORDERS_LIMIT_COUNT
-from src.config import ORDERS_LIMIT_HOURS
+from src.config import Config
 from src.database import database
 from src.handlers.base import help_message
 from src.handlers.base import inline_control_buttons
@@ -79,14 +78,14 @@ async def handle_create(message: types.Message, state: FSMContext):
     user_orders = await database.orders.count_documents(
         {
             "user_id": message.from_user.id,
-            "start_time": {"$gt": current_time - ORDERS_LIMIT_HOURS * 3600},
+            "start_time": {"$gt": current_time - Config.ORDERS_LIMIT_HOURS * 3600},
         }
     )
-    if user_orders >= ORDERS_LIMIT_COUNT:
+    if user_orders >= Config.ORDERS_LIMIT_COUNT:
         await tg.send_message(
             message.chat.id,
             _("You can't create more than {} orders in {} hours.").format(
-                ORDERS_LIMIT_COUNT, ORDERS_LIMIT_HOURS
+                Config.ORDERS_LIMIT_COUNT, Config.ORDERS_LIMIT_HOURS
             ),
         )
         return

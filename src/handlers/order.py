@@ -29,10 +29,10 @@ from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
 from motor.core import AgnosticBaseCursor as Cursor
 
-from src import config
 from src import states
 from src.bot import dp
 from src.bot import tg
+from src.config import Config
 from src.database import database
 from src.database import STATE_KEY
 from src.escrow.escrow_offer import EscrowOffer
@@ -299,7 +299,7 @@ async def match_button(call: types.CallbackQuery, order: OrderType):
 @order_handler
 async def escrow_button(call: types.CallbackQuery, order: OrderType):
     """React to "Escrow" button by starting escrow exchange."""
-    if not config.ESCROW_ENABLED:
+    if not Config.ESCROW_ENABLED:
         await call.answer(
             _("Escrow is temporarily unavailable. Sorry for the inconvenience.")
         )

@@ -20,11 +20,11 @@ import secrets
 from aiogram.utils import executor
 
 from src import bot
-from src import config
 from src import handlers  # noqa: F401
 from src import notifications
 from src.bot import dp
 from src.bot import tg
+from src.config import Config
 from src.escrow import connect_to_blockchains
 
 
@@ -34,7 +34,7 @@ async def on_startup(webhook_path, *args):
     Set webhook and run background tasks.
     """
     await tg.delete_webhook()
-    await tg.set_webhook("https://" + config.SERVER_HOST + webhook_path)
+    await tg.set_webhook("https://" + Config.SERVER_HOST + webhook_path)
     asyncio.create_task(notifications.run_loop())
     asyncio.create_task(connect_to_blockchains())
 
@@ -45,15 +45,15 @@ def main():
     Bot's main entry point.
     """
     url_token = secrets.token_urlsafe()
-    webhook_path = config.WEBHOOK_PATH + "/" + url_token
+    webhook_path = Config.WEBHOOK_PATH + "/" + url_token
 
     bot.setup()
     executor.start_webhook(
         dispatcher=dp,
         webhook_path=webhook_path,
         on_startup=lambda *args: on_startup(webhook_path, *args),
-        host=config.INTERNAL_HOST,
-        port=config.SERVER_PORT,
+        host=Config.INTERNAL_HOST,
+        port=Config.SERVER_PORT,
     )
     print()  # Executor stopped with ^C
 

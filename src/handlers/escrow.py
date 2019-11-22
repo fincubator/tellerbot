@@ -36,7 +36,7 @@ from dataclasses import replace
 from src import states
 from src.bot import dp
 from src.bot import tg
-from src.config import SUPPORT_CHAT_ID
+from src.config import Config
 from src.database import database
 from src.escrow import get_escrow_instance
 from src.escrow import SUPPORTED_BANKS
@@ -876,7 +876,7 @@ async def validate_offer(call: types.CallbackQuery, offer: EscrowOffer):
     """Ask support for manual verification of exchange."""
     escrow_instance = get_escrow_instance(offer[offer.type])
     await tg.send_message(
-        SUPPORT_CHAT_ID,
+        Config.SUPPORT_CHAT_ID,
         "Unconfirmed escrow.\nTransaction: {}\nMemo: {}".format(
             escrow_instance.trx_url(offer.trx_id), markdown.code(offer.memo),
         ),
