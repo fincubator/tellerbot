@@ -682,6 +682,7 @@ async def set_counter_send_address(
         from_address = address
         send_reply = False
 
+    transaction_time = time()
     await get_escrow_instance(offer[offer.type]).check_transaction(
         offer._id,
         from_address,
@@ -689,6 +690,7 @@ async def set_counter_send_address(
         offer[f"sum_{offer.type}"].to_decimal(),
         offer[offer.type],
         memo,
+        transaction_time,
     )
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
@@ -723,7 +725,7 @@ async def set_counter_send_address(
         )
     update = {
         "counter.send_address": address,
-        "transaction_time": time(),
+        "transaction_time": transaction_time,
         "memo": memo,
     }
     await offer.update_document(
