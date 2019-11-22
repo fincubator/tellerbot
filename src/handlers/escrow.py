@@ -666,6 +666,7 @@ async def set_counter_send_address(
             }
         )
         escrow_user = offer.init
+        from_address = offer.init["send_address"]
         send_reply = True
     elif offer.type == "sell":
         memo = template.format(
@@ -678,19 +679,17 @@ async def set_counter_send_address(
             }
         )
         escrow_user = offer.counter
+        from_address = address
         send_reply = False
 
-    update = {
-        "counter.send_address": address,
-        "transaction_time": time(),
-        "memo": memo,
-    }
-    await offer.update_document(
-        {"$set": update, "$unset": {"pending_input_from": True}}
+    await get_escrow_instance(offer[offer.type]).check_transaction(
+        offer._id,
+        from_address,
+        offer["sum_fee_up"].to_decimal(),
+        offer[f"sum_{offer.type}"].to_decimal(),
+        offer[offer.type],
+        memo,
     )
-    counter = dict(offer.counter)
-    counter.update({"send_address": address})
-    offer = replace(offer, counter=counter)
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
         InlineKeyboardButton(
@@ -699,15 +698,6 @@ async def set_counter_send_address(
         )
     )
     escrow_address = markdown.bold(get_escrow_instance(offer[offer.type]).address)
-    await state.finish()
-    await get_escrow_instance(offer[offer.type]).check_transaction(
-        offer._id,
-        escrow_user["send_address"],
-        offer["sum_fee_up"].to_decimal(),
-        offer[f"sum_{offer.type}"].to_decimal(),
-        offer[offer.type],
-        memo,
-    )
     answer = _("Send {} {} to address {}", locale=escrow_user["locale"]).format(
         offer.sum_fee_up, offer[offer.type], escrow_address
     )
@@ -731,6 +721,15 @@ async def set_counter_send_address(
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN,
         )
+    update = {
+        "counter.send_address": address,
+        "transaction_time": time(),
+        "memo": memo,
+    }
+    await offer.update_document(
+        {"$set": update, "$unset": {"pending_input_from": True}}
+    )
+    await state.finish()
 
 
 @escrow_callback_handler(lambda call: call.data.startswith("escrow_cancel "))
