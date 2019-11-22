@@ -608,7 +608,12 @@ async def set_init_send_address(
     await offer.update_document(
         {"$set": update_dict, "$unset": {"pending_input_from": True}}
     )
-    await tg.send_message(offer.counter["id"], answer, reply_markup=buy_keyboard)
+    await tg.send_message(
+        offer.counter["id"],
+        answer,
+        reply_markup=buy_keyboard,
+        parse_mode=ParseMode.MARKDOWN,
+    )
     sell_keyboard = InlineKeyboardMarkup()
     sell_keyboard.add(
         InlineKeyboardButton(_("Cancel"), callback_data=f"escrow_cancel {offer._id}")
@@ -881,6 +886,7 @@ async def validate_offer(call: types.CallbackQuery, offer: EscrowOffer):
         "Unconfirmed escrow.\nTransaction: {}\nMemo: {}".format(
             escrow_instance.trx_url(offer.trx_id), markdown.code(offer.memo),
         ),
+        parse_mode=ParseMode.MARKDOWN,
     )
     await offer.delete_document()
     await call.answer()
