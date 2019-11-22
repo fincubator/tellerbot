@@ -72,6 +72,7 @@ class BaseBlockchain(ABC):
         :param to: Address assets are transferred to.
         :param amount: Amount of transferred asset.
         :param asset: Transferred asset.
+        :return: URL to transaction in blockchain explorer.
         """
 
     @abstractmethod
@@ -265,10 +266,9 @@ class BaseBlockchain(ABC):
             {"_id": offer["_id"]}, {"$set": {"transaction_time": time()}}
         )
         if is_confirmed:
-            trx_id = await self.transfer(from_address, amount, asset)
+            trx_url = await self.transfer(from_address, amount, asset)
             answer = markdown.link(
-                _("Transaction is refunded.", locale=user["locale"]),
-                self.trx_url(trx_id),
+                _("Transaction is refunded.", locale=user["locale"]), trx_url
             )
         else:
             answer = _("Transaction is not confirmed.", locale=user["locale"])
