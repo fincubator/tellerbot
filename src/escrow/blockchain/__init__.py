@@ -21,12 +21,15 @@ from asyncio import create_task  # type: ignore
 from decimal import Decimal
 from time import time
 
+from aiogram.dispatcher import FSMContext
 from aiogram.types import InlineKeyboardButton
 from aiogram.types import InlineKeyboardMarkup
 from aiogram.types import ParseMode
 from aiogram.utils import markdown
 from bson.objectid import ObjectId
 
+from src import states
+from src.bot import dp
 from src.bot import tg
 from src.database import database
 from src.i18n import _
@@ -211,6 +214,8 @@ class BaseBlockchain(ABC):
                 reply_markup=keyboard,
                 parse_mode=ParseMode.MARKDOWN,
             )
+            state = FSMContext(dp.storage, other_user["id"], other_user["id"])
+            await state.set_state(states.Escrow.final_confirmation.state)
             return True
 
         await database.escrow.update_one(
