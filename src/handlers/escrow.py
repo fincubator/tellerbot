@@ -801,11 +801,11 @@ async def final_offer_confirmation(
     if offer.type == "buy":
         confirm_user = offer.init
         other_user = offer.counter
-        new_currency = "sell"
+        currency = offer.sell
     elif offer.type == "sell":
         confirm_user = offer.counter
         other_user = offer.init
-        new_currency = "buy"
+        currency = offer.buy
 
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
@@ -817,7 +817,7 @@ async def final_offer_confirmation(
     reply = await tg.send_message(
         confirm_user["id"],
         _("Did you get {} from {}?", locale=confirm_user["locale"]).format(
-            offer[new_currency], other_user["send_address"]
+            currency, other_user["send_address"]
         ),
         reply_markup=keyboard,
     )
@@ -886,14 +886,28 @@ async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
 @escrow_callback_handler(lambda call: call.data.startswith("escrow_validate "))
 async def validate_offer(call: types.CallbackQuery, offer: EscrowOffer):
     """Ask support for manual verification of exchange."""
+    if offer.type == "buy":
+        sender = offer.counter
+        receiver = offer.init
+        currency = offer.sell
+    elif offer.type == "sell":
+        sender = offer.init
+        receiver = offer.counter
+        currency = offer.buy
+
     escrow_instance = get_escrow_instance(offer[offer.type])
-    await tg.send_message(
-        Config.SUPPORT_CHAT_ID,
-        "Unconfirmed escrow.\nTransaction: {}\nMemo: {}".format(
-            escrow_instance.trx_url(offer.trx_id), markdown.code(offer.memo),
-        ),
-        parse_mode=ParseMode.MARKDOWN,
+    answer = "{0}\n{1} sender: {2}{3}\n{1} receiver: {4}{5}\nBank: {6}\nMemo: {7}"
+    answer = answer.format(
+        markdown.link("Unconfirmed escrow.", escrow_instance.trx_url(offer.trx_id)),
+        currency,
+        markdown.link(sender["mention"], User(id=sender["id"]).url),
+        " ({})".format(sender["name"]) if "name" in sender else "",
+        markdown.link(receiver["mention"], User(id=receiver["id"]).url),
+        " ({})".format(receiver["name"]) if "name" in receiver else "",
+        offer.bank,
+        markdown.code(offer.memo),
     )
+    await tg.send_message(Config.SUPPORT_CHAT_ID, answer, parse_mode=ParseMode.MARKDOWN)
     await offer.delete_document()
     await call.answer()
     await tg.send_message(
