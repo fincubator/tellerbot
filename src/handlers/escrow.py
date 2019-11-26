@@ -297,17 +297,19 @@ async def ask_credentials(
                 call.message.chat.id, _("Choose bank."), reply_markup=keyboard
             )
             await states.Escrow.bank.set()
-        elif offer.type == "sell":
-            await full_card_number_request(call.message.chat.id, offer)
         else:
-            init = offer.init
-            await full_card_number_request(init["id"], offer)
+            if offer.type == "buy":
+                request_user = offer.init
+                answer_user = offer.counter
+            else:
+                request_user = offer.counter
+                answer_user = offer.init
+            await full_card_number_request(request_user["id"], offer)
+            answer = _("I asked {} to send you their full card number.").format(
+                markdown.link(request_user["mention"], User(id=request_user["id"]).url)
+            )
             await tg.send_message(
-                call.message.chat.id,
-                _("I asked {} to send you their full card number.").format(
-                    markdown.link(init["mention"], User(id=init["id"]).url)
-                ),
-                parse_mode=ParseMode.MARKDOWN,
+                answer_user["id"], answer, parse_mode=ParseMode.MARKDOWN,
             )
         return
 
