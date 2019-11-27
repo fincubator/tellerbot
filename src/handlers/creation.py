@@ -18,7 +18,7 @@
 
 Handlers decorated with ``state_handler`` are called by
 ``change_state`` when user skips (where it is possible) or goes back to
-corresponding step using back/next inline buttons. Handlers decorated
+corresponding step using back/skip inline buttons. Handlers decorated
 with ``private_handler`` are called when user sends value.
 """
 from datetime import datetime
@@ -58,13 +58,19 @@ from src.states import OrderCreation
 
 @dp.callback_query_handler(lambda call: call.data.startswith("state "), state=any_state)
 async def change_state(call: types.CallbackQuery, state: FSMContext):
-    """React to back/next button query."""
-    direction = call.data.split()[1]
-    state_name: str = await state.get_state()
+    """React to back/skip button query."""
+    args = call.data.split()
+    query_state_name = args[1]
+    direction = args[2]
+
+    state_name = await state.get_state()
+    if state_name != query_state_name:
+        return await call.answer(_("You're using the wrong button."))
+
     if state_name in OrderCreation.all_states_names:
         if direction == "back":
             new_state = await OrderCreation.previous()
-        elif direction == "next":
+        elif direction == "skip":
             new_state = await OrderCreation.next()
         handler = state_handlers.get(new_state)
         if handler:
@@ -75,8 +81,8 @@ async def change_state(call: types.CallbackQuery, state: FSMContext):
 
     if direction == "back":
         answer = _("Couldn't go back.")
-    elif direction == "next":
-        answer = _("Couldn't go next.")
+    elif direction == "skip":
+        answer = _("Couldn't skip.")
     return await call.answer(answer)
 
 
@@ -108,7 +114,7 @@ async def create_order_handler(call: types.CallbackQuery):
         call.message.chat.id,
         call.message.message_id,
         reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=inline_control_buttons(no_back=True)
+            inline_keyboard=await inline_control_buttons(back=False)
         ),
     )
 
@@ -139,7 +145,7 @@ async def choose_buy(message: types.Message, state: FSMContext):
         message.chat.id,
         _("What currency do you want to sell?"),
         reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=inline_control_buttons(no_next=True)
+            inline_keyboard=await inline_control_buttons(skip=False)
         ),
     )
 
@@ -151,7 +157,9 @@ async def choose_buy_handler(call: types.CallbackQuery):
         _("What currency do you want to sell?"),
         call.message.chat.id,
         call.message.message_id,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons()),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=await inline_control_buttons()
+        ),
     )
 
 
@@ -179,10 +187,9 @@ async def choose_sell(message: types.Message, state: FSMContext):
         return_document=ReturnDocument.AFTER,
     )
 
-    buttons = inline_control_buttons()
-    buttons.insert(0, [InlineKeyboardButton(_("Invert"), callback_data="price buy")])
-
     await OrderCreation.price.set()
+    buttons = await inline_control_buttons()
+    buttons.insert(0, [InlineKeyboardButton(_("Invert"), callback_data="price buy")])
     await tg.send_message(
         message.chat.id,
         _("At what price (in {}/{}) do you want to buy?").format(
@@ -207,7 +214,7 @@ async def price_ask(
         )
         callback_command = "sell"
 
-    buttons = inline_control_buttons()
+    buttons = await inline_control_buttons()
     callback_data = f"price {callback_command}"
     buttons.insert(
         0, [InlineKeyboardButton(_("Invert"), callback_data=callback_data)],
@@ -276,15 +283,16 @@ async def choose_price(message: types.Message, state: FSMContext):
         return_document=ReturnDocument.AFTER,
     )
 
+    await OrderCreation.amount.set()
+
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
         InlineKeyboardButton(order["buy"], callback_data="sum buy"),
         InlineKeyboardButton(order["sell"], callback_data="sum sell"),
     )
-    for row in inline_control_buttons():
+    for row in await inline_control_buttons():
         keyboard.row(*row)
 
-    await OrderCreation.amount.set()
     await tg.send_message(
         message.chat.id, _("Choose currency of order sum."), reply_markup=keyboard
     )
@@ -306,7 +314,7 @@ async def sum_handler(call: types.CallbackQuery):
         InlineKeyboardButton(order["buy"], callback_data="sum buy"),
         InlineKeyboardButton(order["sell"], callback_data="sum sell"),
     )
-    for row in inline_control_buttons():
+    for row in await inline_control_buttons():
         keyboard.row(*row)
 
     await tg.edit_message_text(
@@ -372,7 +380,7 @@ async def choose_sum(message: types.Message, state: FSMContext):
             message.chat.id,
             _("Send order sum in {}.").format(order[update_dict["sum_currency"]]),
             reply_markup=InlineKeyboardMarkup(
-                inline_keyboard=inline_control_buttons(no_back=True)
+                inline_keyboard=await inline_control_buttons(back=False)
             ),
         )
         return
@@ -382,7 +390,9 @@ async def choose_sum(message: types.Message, state: FSMContext):
     await tg.send_message(
         message.chat.id,
         _("Send cashless payment system."),
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons()),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=await inline_control_buttons()
+        ),
     )
 
 
@@ -402,7 +412,9 @@ async def payment_system_handler(call: types.CallbackQuery):
         _("Send cashless payment system."),
         call.message.chat.id,
         call.message.message_id,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons()),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=await inline_control_buttons()
+        ),
     )
 
 
@@ -427,7 +439,9 @@ async def choose_payment_system(message: types.Message, state: FSMContext):
     await tg.send_message(
         message.chat.id,
         _("Send location of a preferred meeting point for cash payment."),
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons()),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=await inline_control_buttons()
+        ),
     )
 
 
@@ -438,7 +452,9 @@ async def location_handler(call: types.CallbackQuery):
         _("Send location of a preferred meeting point for cash payment."),
         call.message.chat.id,
         call.message.message_id,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons()),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=await inline_control_buttons()
+        ),
     )
 
 
@@ -497,7 +513,9 @@ async def text_location(message: types.Message, state: FSMContext):
         await tg.send_message(
             message.chat.id,
             _("Send duration of order in days."),
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons()),
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=await inline_control_buttons()
+            ),
         )
         return
 
@@ -545,7 +563,9 @@ async def choose_location(message: types.Message, state: FSMContext):
     await tg.send_message(
         message.chat.id,
         _("Send duration of order in days."),
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons()),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=await inline_control_buttons()
+        ),
     )
 
 
@@ -556,7 +576,9 @@ async def duration_handler(call: types.CallbackQuery):
         _("Send duration of order in days."),
         call.message.chat.id,
         call.message.message_id,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons()),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=await inline_control_buttons()
+        ),
     )
 
 
@@ -580,7 +602,9 @@ async def choose_duration(message: types.Message, state: FSMContext):
     await tg.send_message(
         message.chat.id,
         _("Add any additional comments."),
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons()),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=await inline_control_buttons()
+        ),
     )
 
 
@@ -611,7 +635,9 @@ async def comment_handler(call: types.CallbackQuery):
         _("Add any additional comments."),
         call.message.chat.id,
         call.message.message_id,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_control_buttons()),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=await inline_control_buttons()
+        ),
     )
 
 

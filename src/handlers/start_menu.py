@@ -101,7 +101,7 @@ async def handle_create(message: types.Message, state: FSMContext):
         message.chat.id,
         _("What currency do you want to buy?"),
         reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=inline_control_buttons(no_back=True, no_next=True)
+            inline_keyboard=await inline_control_buttons(back=False, skip=False)
         ),
     )
 

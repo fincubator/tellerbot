@@ -61,17 +61,26 @@ def start_keyboard() -> types.ReplyKeyboardMarkup:
     return keyboard
 
 
-def inline_control_buttons(
-    no_back: bool = False, no_next: bool = False
+async def inline_control_buttons(
+    back: bool = True, skip: bool = True
 ) -> typing.List[types.InlineKeyboardButton]:
     """Create inline button row with translated labels to control current state."""
     buttons = []
-    row = []
-    if not no_back:
-        row.append(types.InlineKeyboardButton(_("Back"), callback_data="state back"))
-    if not no_next:
-        row.append(types.InlineKeyboardButton(_("Skip"), callback_data="state next"))
-    if row:
+    if back or skip:
+        row = []
+        state_name = await dp.current_state().get_state()
+        if back:
+            row.append(
+                types.InlineKeyboardButton(
+                    _("Back"), callback_data=f"state {state_name} back"
+                )
+            )
+        if skip:
+            row.append(
+                types.InlineKeyboardButton(
+                    _("Skip"), callback_data=f"state {state_name} skip"
+                )
+            )
         buttons.append(row)
     return buttons
 
