@@ -24,6 +24,7 @@ import pymongo
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import any_state
+from aiogram.utils.exceptions import MessageCantBeDeleted
 from aiogram.utils.exceptions import MessageNotModified
 from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
@@ -548,10 +549,13 @@ async def edit_field(message: types.Message, state: FSMContext):
         await database.users.update_one(
             {"id": message.from_user.id}, {"$unset": {"edit": True, STATE_KEY: True}}
         )
-        await tg.delete_message(message.chat.id, message.message_id)
-        await tg.delete_message(message.chat.id, edit["message_id"])
+        await message.delete()
+        try:
+            await tg.delete_message(message.chat.id, edit["message_id"])
+        except MessageCantBeDeleted:
+            return
     elif error:
-        await tg.delete_message(message.chat.id, message.message_id)
+        await message.delete()
         await tg.edit_message_text(error, message.chat.id, edit["message_id"])
 
 
@@ -625,7 +629,11 @@ async def confirm_delete_button(call: types.CallbackQuery):
 @dp.callback_query_handler(lambda call: call.data.startswith("hide "), state=any_state)
 async def hide_button(call: types.CallbackQuery):
     """React to "Hide" button by deleting messages with location object and order."""
-    await tg.delete_message(call.message.chat.id, call.message.message_id)
+    try:
+        await call.message.delete()
+    except MessageCantBeDeleted:
+        await call.answer(_("Couldn't hide order."))
+        return
     location_message_id = call.data.split()[1]
     if location_message_id != "-1":
         await tg.delete_message(call.message.chat.id, location_message_id)
