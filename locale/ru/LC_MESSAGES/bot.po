@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-21 11:04+0300\n"
+"POT-Creation-Date: 2019-11-29 14:50+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -195,12 +195,16 @@ msgid "Hide"
 msgstr "Скрыть"
 
 #: src/handlers/creation.py
+msgid "You're using the wrong button."
+msgstr "Вы используете неправильную кнопку."
+
+#: src/handlers/creation.py
 msgid "Couldn't go back."
 msgstr "Не удалось пойти назад."
 
 #: src/handlers/creation.py
-msgid "Couldn't go next."
-msgstr "Не удалось пойти вперёд."
+msgid "Couldn't skip."
+msgstr "Не удалось пропустить."
 
 #: src/handlers/creation.py
 msgid "You are not creating order."
@@ -367,16 +371,16 @@ msgid "This bank is not supported."
 msgstr "Этот банк не поддерживается."
 
 #: src/handlers/escrow.py
+msgid "Send first and last 4 digits of your {} card number."
+msgstr "Отправьте первые и последние 4 цифры номера вашей карты {}."
+
+#: src/handlers/escrow.py
 msgid "You should send it to {}, not me!"
 msgstr "Вы должны отправить это {}, а не мне!"
 
 #: src/handlers/escrow.py
 msgid "I continued the exchange with {}."
 msgstr "Я продолжил обмен с {}."
-
-#: src/handlers/escrow.py
-msgid "Send first and last 4 digits of your {} card number."
-msgstr "Отправьте первые и последние 4 цифры номера вашей карты {}."
 
 #: src/handlers/escrow.py
 msgid ""
@@ -389,6 +393,10 @@ msgstr ""
 #: src/handlers/escrow.py
 msgid "You should send {} words separated by spaces."
 msgstr "Вы должны отправить {} слов, разделённых пробелами."
+
+#: src/handlers/escrow.py
+msgid "Show order"
+msgstr "Показать заказ"
 
 #: src/handlers/escrow.py
 msgid "Accept"
@@ -477,10 +485,6 @@ msgid "There are no previous orders."
 msgstr "Нет предыдущих заказов."
 
 #: src/handlers/order.py
-msgid "Send order's ID as an argument."
-msgstr "Отправьте ID заказа как аргумент."
-
-#: src/handlers/order.py
 msgid "Escrow is temporarily unavailable. Sorry for the inconvenience."
 msgstr "Эскроу временно недоступен. Извините за неудобства."
 
@@ -531,6 +535,10 @@ msgstr "Не удалось удалить заказ."
 #: src/handlers/order.py
 msgid "Order is deleted."
 msgstr "Заказ удалён."
+
+#: src/handlers/order.py
+msgid "Couldn't hide order."
+msgstr "Не удалось скрыть заказ."
 
 #: src/handlers/start_menu.py
 msgid "Please, choose your language."

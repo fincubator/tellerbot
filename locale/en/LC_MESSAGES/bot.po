@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-21 11:04+0300\n"
+"POT-Creation-Date: 2019-11-29 14:50+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -189,11 +189,15 @@ msgid "Hide"
 msgstr ""
 
 #: src/handlers/creation.py
+msgid "You're using the wrong button."
+msgstr ""
+
+#: src/handlers/creation.py
 msgid "Couldn't go back."
 msgstr ""
 
 #: src/handlers/creation.py
-msgid "Couldn't go next."
+msgid "Couldn't skip."
 msgstr ""
 
 #: src/handlers/creation.py
@@ -356,15 +360,15 @@ msgid "This bank is not supported."
 msgstr ""
 
 #: src/handlers/escrow.py
+msgid "Send first and last 4 digits of your {} card number."
+msgstr ""
+
+#: src/handlers/escrow.py
 msgid "You should send it to {}, not me!"
 msgstr ""
 
 #: src/handlers/escrow.py
 msgid "I continued the exchange with {}."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Send first and last 4 digits of your {} card number."
 msgstr ""
 
 #: src/handlers/escrow.py
@@ -375,6 +379,10 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "You should send {} words separated by spaces."
+msgstr ""
+
+#: src/handlers/escrow.py
+msgid "Show order"
 msgstr ""
 
 #: src/handlers/escrow.py
@@ -462,10 +470,6 @@ msgid "There are no previous orders."
 msgstr ""
 
 #: src/handlers/order.py
-msgid "Send order's ID as an argument."
-msgstr ""
-
-#: src/handlers/order.py
 msgid "Escrow is temporarily unavailable. Sorry for the inconvenience."
 msgstr ""
 
@@ -515,6 +519,10 @@ msgstr ""
 
 #: src/handlers/order.py
 msgid "Order is deleted."
+msgstr ""
+
+#: src/handlers/order.py
+msgid "Couldn't hide order."
 msgstr ""
 
 #: src/handlers/start_menu.py
