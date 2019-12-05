@@ -268,7 +268,10 @@ async def show_order(
     header = ""
     if show_id:
         header += "ID: {}\n".format(markdown.code(order["_id"]))
-    header += markdown.link(order["mention"], types.User(id=order["user_id"]).url) + " "
+    header += "{} ({}) ".format(
+        markdown.link(order["mention"], types.User(id=order["user_id"]).url),
+        markdown.code(order["user_id"]),
+    )
     if invert:
         header += _("sells {} for {}", locale=locale).format(
             order["sell"], order["buy"]
