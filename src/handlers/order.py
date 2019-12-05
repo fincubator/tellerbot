@@ -638,16 +638,15 @@ async def hide_button(call: types.CallbackQuery):
         await tg.delete_message(call.message.chat.id, location_message_id)
 
 
-@private_handler(commands=["s"], state=any_state)
-async def choose_currencies(message: types.Message, state: FSMContext):
+@private_handler(commands=["p", "pair"], state=any_state)
+async def search_currencies(message: types.Message, state: FSMContext):
     """
     Search orders by currencies.
 
-    When a user enter /s.
-    {str1} {str2} |str1 is sell value, str2 is buy value.
-      *    {str2} |sell accepts any value, buy is str2.
-    {str1}   *    |*^^^^*
-    {str1}        |str is sell value, but accepts any value.
+    For instance:
+    /s BTC RUB will find all BTC->RUB orders,
+    /s BTC * will find all BTC->{Everything} orders,
+    /s BTC will find all (BTC->{*} || {*}->BTC) orders.
     """
     query = {
         "$and": [
@@ -675,7 +674,6 @@ async def choose_currencies(message: types.Message, state: FSMContext):
             return
         else:
             query["$and"] += [{"$or": [{"sell": source[1]}, {"buy": source[1]}]}]
-            print(query)
 
     cursor = database.orders.find(query).sort("start_time", pymongo.DESCENDING)
     quantity = await database.orders.count_documents(query)
@@ -685,35 +683,36 @@ async def choose_currencies(message: types.Message, state: FSMContext):
     )
 
 
-@private_handler(commands=["creator"], state=any_state)
+@private_handler(commands=["c", "creator"], state=any_state)
 async def search_by_creator(message: types.Message, state: FSMContext):
     """
     User enter /creator {username}.
 
     The function returns orders of the given person.
+    If user enter /creator {number},
+    then the search is performed by user_id.
     """
+    query: typing.Dict[str, typing.Any] = {
+        "$or": [
+            {"expiration_time": {"$exists": False}},
+            {"expiration_time": {"$gt": time()}},
+        ],
+    }
     source = message.text.split()
     try:
         creator = source[1]
-        if creator[0] != "@":
-            await tg.send_message(
-                message.chat.id, _("You did not enter username."),
-            )
-            return
-
+        if creator.isdigit():
+            query["user_id"] = int(creator)
+        elif creator[0] != "@":
+            creator = f"@{creator}"
+        if creator[0] == "@":
+            query["mention"] = creator
     except IndexError:
         await tg.send_message(
             message.chat.id, _("You did not enter username."),
         )
         return
 
-    query = {
-        "mention": creator,
-        "$or": [
-            {"expiration_time": {"$exists": False}},
-            {"expiration_time": {"$gt": time()}},
-        ],
-    }
     cursor = database.orders.find(query).sort("start_time", pymongo.DESCENDING)
     quantity = await database.orders.count_documents(query)
     await state.finish()
