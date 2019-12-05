@@ -188,6 +188,14 @@ msgstr ""
 msgid "Hide"
 msgstr ""
 
+#: src/handlers/base.py src/handlers/order.py
+msgid "You did not enter username."
+msgstr ""
+
+#: src/handlers/base.py src/handlers/order.py
+msgid "You have not entered a currency."
+msgstr ""
+
 #: src/handlers/creation.py
 msgid "You're using the wrong button."
 msgstr ""
