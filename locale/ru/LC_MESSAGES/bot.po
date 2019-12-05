@@ -194,6 +194,14 @@ msgstr "Эскроу"
 msgid "Hide"
 msgstr "Скрыть"
 
+#: src/handlers/base.py src/handlers/order.py
+msgid "You did not enter username."
+msgstr "Вы не ввели username."
+
+#: src/handlers/base.py src/handlers/order.py
+msgid "You have not entered a currency."
+msgstr "Вы не ввели валюту."
+
 #: src/handlers/creation.py
 msgid "You're using the wrong button."
 msgstr "Вы используете неправильную кнопку."
