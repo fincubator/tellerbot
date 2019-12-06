@@ -12,13 +12,13 @@ RUN groupadd -g 999 $GROUP \
 WORKDIR $HOME
 USER $USER:$GROUP
 
-COPY --chown=$USER:$GROUP requirements.txt .
+COPY --chown=999:999 requirements.txt .
 ENV PATH $PATH:$HOME/.local/bin
 RUN pip install --user --no-cache-dir --requirement requirements.txt
 
-COPY --chown=$USER:$GROUP locale/ locale/
+COPY --chown=999:999 locale/ locale/
 RUN pybabel compile --directory=locale/ --domain=bot
 
-COPY --chown=$USER:$GROUP . .
+COPY --chown=999:999 . .
 
 ENTRYPOINT ["python", "."]
