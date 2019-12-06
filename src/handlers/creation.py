@@ -398,16 +398,7 @@ async def choose_sum(message: types.Message, state: FSMContext):
 
 @state_handler(OrderCreation.payment_system)
 async def payment_system_handler(call: types.CallbackQuery):
-    """Unset ``sum_currency`` if needed and ask for cashless payment system."""
-    await database.creation.update_one(
-        {
-            "user_id": call.from_user.id,
-            "sum_currency": {"$exists": True},
-            "sum_price": {"$exists": False},
-            "sum_sell": {"$exists": False},
-        },
-        {"$unset": {"sum_currency": True}},
-    )
+    """Ask for cashless payment system."""
     await tg.edit_message_text(
         _("Send cashless payment system."),
         call.message.chat.id,
