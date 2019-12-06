@@ -649,31 +649,26 @@ async def search_currencies(message: types.Message, state: FSMContext):
     /s BTC will find all (BTC->{*} || {*}->BTC) orders.
     """
     query = {
-        "$and": [
-            {
-                "$or": [
-                    {"expiration_time": {"$exists": False}},
-                    {"expiration_time": {"$gt": time()}},
-                ]
-            },
+        "$or": [
+            {"expiration_time": {"$exists": False}},
+            {"expiration_time": {"$gt": time()}},
         ]
     }
 
     source = message.text.upper().split()
-    try:
+    if len(source) == 2:
+        query = {"$and": [query, {"$or": [{"sell": source[1]}, {"buy": source[1]}]}]}
+    elif len(source) == 3:
         sell, buy = source[1], source[2]
         if sell != "*":
             query["sell"] = sell
         if buy != "*":
             query["buy"] = buy
-    except IndexError:
-        if len(source) == 1:
-            await tg.send_message(
-                message.chat.id, _("You have not entered a currency.")
-            )
-            return
-        else:
-            query["$and"] += [{"$or": [{"sell": source[1]}, {"buy": source[1]}]}]
+    else:
+        await tg.send_message(
+            message.chat.id, _("Send currency or currency pair as an argument.")
+        )
+        return
 
     cursor = database.orders.find(query).sort("start_time", pymongo.DESCENDING)
     quantity = await database.orders.count_documents(query)
@@ -703,13 +698,13 @@ async def search_by_creator(message: types.Message, state: FSMContext):
         creator = source[1]
         if creator.isdigit():
             query["user_id"] = int(creator)
-        elif creator[0] != "@":
-            creator = f"@{creator}"
-        if creator[0] == "@":
+        elif creator[0] == "@":
             query["mention"] = creator
+        else:
+            query["mention"] = "@" + creator
     except IndexError:
         await tg.send_message(
-            message.chat.id, _("You did not enter username."),
+            message.chat.id, _("Send username as an argument."),
         )
         return
 
