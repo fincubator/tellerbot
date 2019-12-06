@@ -83,18 +83,19 @@ async def errors_handler(update: types.Update, exception: Exception):
         chat_id = update.callback_query.message.chat.id
 
     if chat_id is not None:
-        await tg.send_message(
-            Config.EXCEPTIONS_CHAT_ID,
-            "Error handling {} {} from {} ({}) in chat {}\n{}".format(
-                update_type,
-                update.update_id,
-                markdown.link(from_user.mention, from_user.url),
-                from_user.id,
-                chat_id,
-                markdown.escape_md(traceback.format_exc(limit=-3)),
-            ),
-            parse_mode=types.ParseMode.MARKDOWN,
-        )
+        if Config.EXCEPTIONS_CHAT_ID is not None:
+            await tg.send_message(
+                Config.EXCEPTIONS_CHAT_ID,
+                "Error handling {} {} from {} ({}) in chat {}\n{}".format(
+                    update_type,
+                    update.update_id,
+                    markdown.link(from_user.mention, from_user.url),
+                    from_user.id,
+                    chat_id,
+                    markdown.escape_md(traceback.format_exc(limit=-3)),
+                ),
+                parse_mode=types.ParseMode.MARKDOWN,
+            )
         await tg.send_message(
             chat_id,
             _(
