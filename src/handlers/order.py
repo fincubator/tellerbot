@@ -419,10 +419,14 @@ async def edit_field(message: types.Message, state: FSMContext):
     error = None
 
     if message.text == "-":
-        update_dict["$unset"] = {field: True}
-        if field == "duration":
-            update_dict["$unset"]["expiration_time"] = True
-            update_dict["$unset"]["notify"] = True
+        if field == "price":
+            unset_dict = {"price_buy": True, "price_sell": True}
+        else:
+            unset_dict = {field: True}
+            if field == "duration":
+                unset_dict["expiration_time"] = True
+                unset_dict["notify"] = True
+        update_dict["$unset"] = unset_dict
 
     elif field == "sum_buy":
         try:
