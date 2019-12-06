@@ -640,13 +640,25 @@ async def hide_button(call: types.CallbackQuery):
 
 @private_handler(commands=["p", "pair"], state=any_state)
 async def search_currencies(message: types.Message, state: FSMContext):
-    """
-    Search orders by currencies.
+    """Search orders by currency pair.
 
-    For instance:
-    /s BTC RUB will find all BTC->RUB orders,
-    /s BTC * will find all BTC->{Everything} orders,
-    /s BTC will find all (BTC->{*} || {*}->BTC) orders.
+    Currency pair is indicated with one or two space separated
+    arguments after **/pair** or **/p** in message text. If two
+    arguments are sent, then first is the currency order's creator
+    wants to sell and second is the currency that order's creator
+    wants to buy. If one argument is sent, then it's any of the
+    currencies in a pair.
+
+    Any argument can be replaced with *, which results in searching
+    pairs with any currency in place of the wildcard.
+
+    Examples:
+        /p BTC USD  Show orders that sell BTC and buy USD (BTC → USD)
+        /p BTC *    Show orders that sell BTC and buy any currency
+        /p * USD    Show orders that sell any currency and buy USD
+        /p BTC      Show orders that sell or buy BTC
+        /p * *      Equivalent to /book
+
     """
     query = {
         "$or": [
@@ -680,12 +692,13 @@ async def search_currencies(message: types.Message, state: FSMContext):
 
 @private_handler(commands=["c", "creator"], state=any_state)
 async def search_by_creator(message: types.Message, state: FSMContext):
-    """
-    User enter /creator {username}.
+    """Search orders by creator.
 
-    The function returns orders of the given person.
-    If user enter /creator {number},
-    then the search is performed by user_id.
+    Creator is indicated with username (with or without @) or user ID
+    after **/creator** or **/c** in message text.
+
+    In contrast to usernames and user IDs, names aren't unique and
+    therefore not supported.
     """
     query: typing.Dict[str, typing.Any] = {
         "$or": [
