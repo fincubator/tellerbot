@@ -640,7 +640,7 @@ async def hide_button(call: types.CallbackQuery):
 
 @private_handler(commands=["p", "pair"], state=any_state)
 async def search_currencies(message: types.Message, state: FSMContext):
-    """Search orders by currency pair.
+    r"""Search orders by currency pair.
 
     Currency pair is indicated with one or two space separated
     arguments after **/pair** or **/p** in message text. If two
@@ -649,15 +649,19 @@ async def search_currencies(message: types.Message, state: FSMContext):
     wants to buy. If one argument is sent, then it's any of the
     currencies in a pair.
 
-    Any argument can be replaced with *, which results in searching
+    Any argument can be replaced with \*, which results in searching
     pairs with any currency in place of the wildcard.
 
     Examples:
+        ==========  =================================================
+        Command     Description
+        ==========  =================================================
         /p BTC USD  Show orders that sell BTC and buy USD (BTC → USD)
         /p BTC *    Show orders that sell BTC and buy any currency
         /p * USD    Show orders that sell any currency and buy USD
         /p BTC      Show orders that sell or buy BTC
         /p * *      Equivalent to /book
+        ==========  =================================================
 
     """
     query = {
