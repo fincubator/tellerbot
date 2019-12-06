@@ -720,9 +720,9 @@ async def search_by_creator(message: types.Message, state: FSMContext):
         if creator.isdigit():
             query["user_id"] = int(creator)
         elif creator[0] == "@":
-            query["mention"] = creator
+            query["mention"] = creator.lower()
         else:
-            query["mention"] = "@" + creator
+            query["mention"] = "@" + creator.lower()
     except IndexError:
         await tg.send_message(
             message.chat.id, _("Send username as an argument."),
