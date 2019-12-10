@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 """Handlers for start menu."""
+import re
 import typing
 from time import time
 
@@ -253,9 +254,9 @@ async def search_by_creator(message: types.Message, state: FSMContext):
         if creator.isdigit():
             query["user_id"] = int(creator)
         elif creator[0] == "@":
-            query["mention"] = creator.lower()
+            query["mention"] = re.compile(f"^{creator}$", re.IGNORECASE)
         else:
-            query["mention"] = "@" + creator.lower()
+            query["mention"] = re.compile(f"^@{creator}$", re.IGNORECASE)
     except IndexError:
         await tg.send_message(
             message.chat.id, _("Send username as an argument."),
