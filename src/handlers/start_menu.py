@@ -123,8 +123,8 @@ async def handle_book(
     Currency pair is indicated with one or two space separated
     arguments after **/book** in message text. If two arguments are
     sent, then first is the currency order's creator wants to sell
-    and second is the currency that order's creator wants to buy. If
-    one argument is sent, then it's any of the currencies in a pair.
+    and second is the currency order's creator wants to buy. If one
+    argument is sent, then it's any of the currencies in a pair.
 
     Any argument can be replaced with \*, which results in searching
     pairs with any currency in place of the wildcard.
@@ -256,3 +256,96 @@ async def search_by_creator(message: types.Message, state: FSMContext):
     await orders_list(
         cursor, message.chat.id, 0, quantity, "orders", user_id=message.from_user.id
     )
+
+
+@private_handler(commands=["subscribe", "s"], state=any_state)
+@private_handler(commands=["unsubscribe", "u"], state=any_state)
+async def subcribe_to_pair(
+    message: types.Message, state: FSMContext, command: Command.CommandObj,
+):
+    r"""Manage subscription to pairs.
+
+    Currency pair is indicated with two space separated arguments
+    after **/subscribe** or **/unsubscribe** in message text. First
+    argument is the currency order's creator wants to sell and second
+    is the currency order's creator wants to buy.
+
+    Similarly to **/book**, any argument can be replaced with \*, which
+    results in subscribing to pairs with any currency in place of the
+    wildcard.
+
+    Without arguments commands show list of user's subscriptions.
+    """
+    source = message.text.upper().split()
+
+    if len(source) == 1:
+        user = await database.subscriptions.find_one({"id": message.from_user.id})
+        sublist = ""
+        if user:
+            for i, sub in enumerate(user["subscriptions"]):
+                sublist += "\n{}. {} → {}".format(
+                    i + 1,
+                    sub["sell"] if sub["sell"] else "*",
+                    sub["buy"] if sub["buy"] else "*",
+                )
+        if sublist:
+            answer = _("Your subscriptions:") + sublist
+        else:
+            answer = _("You don't have subscriptions.")
+        await tg.send_message(message.chat.id, answer, reply_markup=start_keyboard())
+        return
+
+    try:
+        sell, buy = source[1], source[2]
+        sub = {"sell": None, "buy": None}
+        if sell != "*":
+            sub["sell"] = sell
+        if buy != "*":
+            sub["buy"] = buy
+    except IndexError:
+        await tg.send_message(
+            message.chat.id,
+            _("Send currency or currency pair as an argument."),
+            reply_markup=start_keyboard(),
+        )
+        return
+
+    if command.command[0] == "s":
+        update_result = await database.subscriptions.update_one(
+            {"id": message.from_user.id},
+            {
+                "$setOnInsert": {"chat": message.chat.id},
+                "$addToSet": {"subscriptions": sub},
+            },
+            upsert=True,
+        )
+        if not update_result.matched_count or update_result.modified_count:
+            await tg.send_message(
+                message.chat.id,
+                _("Subscription is added."),
+                reply_markup=start_keyboard(),
+            )
+        else:
+            await tg.send_message(
+                message.chat.id,
+                _("Subscription already exists."),
+                reply_markup=start_keyboard(),
+            )
+    elif command.command[0] == "u":
+        delete_result = await database.subscriptions.update_one(
+            {"id": message.from_user.id}, {"$pull": {"subscriptions": sub}}
+        )
+        if delete_result.modified_count:
+            await tg.send_message(
+                message.chat.id,
+                _("Subscription is deleted."),
+                reply_markup=start_keyboard(),
+            )
+        else:
+            await tg.send_message(
+                message.chat.id,
+                _("Couldn't delete subscription."),
+                reply_markup=start_keyboard(),
+            )
+    else:
+        raise AssertionError(f"Unknown command: {command.command}")

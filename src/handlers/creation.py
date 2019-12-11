@@ -21,6 +21,7 @@ Handlers decorated with ``state_handler`` are called by
 corresponding step using back/skip inline buttons. Handlers decorated
 with ``private_handler`` are called when user sends value.
 """
+import asyncio
 from datetime import datetime
 from decimal import Decimal
 from string import ascii_letters
@@ -53,6 +54,7 @@ from src.i18n import i18n
 from src.money import money
 from src.money import MoneyValueError
 from src.money import normalize
+from src.notifications import order_notification
 from src.states import OrderCreation
 
 
@@ -617,6 +619,7 @@ async def set_order(order: MutableMapping[str, Any], chat_id: int):
     order["_id"] = inserted_order.inserted_id
     await tg.send_message(chat_id, _("Order is set."), reply_markup=start_keyboard())
     await show_order(order, chat_id, order["user_id"], show_id=True)
+    asyncio.create_task(order_notification(order))
 
 
 @state_handler(OrderCreation.comments)

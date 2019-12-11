@@ -17,6 +17,7 @@
 """Handlers for escrow exchange."""
 import asyncio
 import typing
+from dataclasses import replace
 from decimal import Decimal
 from functools import wraps
 from time import time
@@ -31,7 +32,6 @@ from aiogram.types import User
 from aiogram.utils import markdown
 from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
-from dataclasses import replace
 
 from src import states
 from src.bot import dp

@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 import typing
+from dataclasses import dataclass
 
 from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
-from dataclasses import dataclass
 
 from src.database import database
 

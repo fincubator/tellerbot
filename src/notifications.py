@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 import asyncio
+import typing
 from time import time
 
 from aiogram.utils.exceptions import TelegramAPIError
@@ -46,3 +47,30 @@ async def run_loop():
                 await database.orders.update_one(
                     {"_id": order["_id"]}, {"$set": {"notify": False}}
                 )
+
+
+async def order_notification(order: typing.Mapping[str, typing.Any]):
+    """Notify users about order.
+
+    Subscriptions to these notifications are managed with
+    **/subscribe** or **/unsubscribe** commands of ``start_menu``
+    handlers.
+    """
+    users = database.subscriptions.find(
+        {
+            "subscriptions": {
+                "$elemMatch": {
+                    "buy": {"$in": [order["buy"], None]},
+                    "sell": {"$in": [order["sell"], None]},
+                }
+            },
+        }
+    )
+    async for user in users:
+        if user["id"] == order["user_id"]:
+            continue
+        order = await database.orders.find_one({"_id": order["_id"]})  # Update order
+        if not order:
+            return
+        await show_order(order, user["chat"], user["id"], show_id=True)
+        await asyncio.sleep(1)  # Avoid Telegram limit
