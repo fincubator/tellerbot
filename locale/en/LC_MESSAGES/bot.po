@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-06 03:21+0300\n"
+"POT-Creation-Date: 2019-12-11 22:04+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -525,14 +525,6 @@ msgstr ""
 msgid "Couldn't hide order."
 msgstr ""
 
-#: src/handlers/order.py
-msgid "Send currency or currency pair as an argument."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Send username as an argument."
-msgstr ""
-
 #: src/handlers/start_menu.py
 msgid "Please, choose your language."
 msgstr ""
@@ -547,6 +539,38 @@ msgstr ""
 
 #: src/handlers/start_menu.py
 msgid "What's your question?"
+msgstr ""
+
+#: src/handlers/start_menu.py
+msgid "Send username as an argument."
+msgstr ""
+
+#: src/handlers/start_menu.py
+msgid "Your subscriptions:"
+msgstr ""
+
+#: src/handlers/start_menu.py
+msgid "You don't have subscriptions."
+msgstr ""
+
+#: src/handlers/start_menu.py
+msgid "Send currency or currency pair as an argument."
+msgstr ""
+
+#: src/handlers/start_menu.py
+msgid "Subscription is added."
+msgstr ""
+
+#: src/handlers/start_menu.py
+msgid "Subscription already exists."
+msgstr ""
+
+#: src/handlers/start_menu.py
+msgid "Subscription is deleted."
+msgstr ""
+
+#: src/handlers/start_menu.py
+msgid "Couldn't delete subscription."
 msgstr ""
 
 #: src/handlers/support.py

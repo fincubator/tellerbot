@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-06 03:21+0300\n"
+"POT-Creation-Date: 2019-12-11 22:04+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -540,14 +540,6 @@ msgstr "Заказ удалён."
 msgid "Couldn't hide order."
 msgstr "Не удалось скрыть заказ."
 
-#: src/handlers/order.py
-msgid "Send currency or currency pair as an argument."
-msgstr "Отправьте валюту или пару валют в качестве аргумента."
-
-#: src/handlers/order.py
-msgid "Send username as an argument."
-msgstr "Отправьте username в качестве аргумента."
-
 #: src/handlers/start_menu.py
 msgid "Please, choose your language."
 msgstr "Пожалуйста, выберите свой язык."
@@ -563,6 +555,38 @@ msgstr "Выберите свой язык."
 #: src/handlers/start_menu.py
 msgid "What's your question?"
 msgstr "Какой у вас вопрос?"
+
+#: src/handlers/start_menu.py
+msgid "Send username as an argument."
+msgstr "Отправьте username в качестве аргумента."
+
+#: src/handlers/start_menu.py
+msgid "Your subscriptions:"
+msgstr "Ваши подписки:"
+
+#: src/handlers/start_menu.py
+msgid "You don't have subscriptions."
+msgstr "У вас нет подписок."
+
+#: src/handlers/start_menu.py
+msgid "Send currency or currency pair as an argument."
+msgstr "Отправьте валюту или пару валют в качестве аргумента."
+
+#: src/handlers/start_menu.py
+msgid "Subscription is added."
+msgstr "Подписка добавлена."
+
+#: src/handlers/start_menu.py
+msgid "Subscription already exists."
+msgstr "Подписка уже существует."
+
+#: src/handlers/start_menu.py
+msgid "Subscription is deleted."
+msgstr "Подписка удалена."
+
+#: src/handlers/start_menu.py
+msgid "Couldn't delete subscription."
+msgstr "Не удалось удалить подписку."
 
 #: src/handlers/support.py
 msgid "Your request is cancelled."
