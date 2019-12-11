@@ -58,18 +58,15 @@ async def default_callback_query(call: types.CallbackQuery):
     await call.answer(_("Unknown button."))
 
 
-@dp.errors_handler(exception=MessageNotModified)
-async def message_not_modified_handler(update: types.Update, exception: Exception):
-    """Ignore exception raised when edited test is the same as current."""
-    return True
-
-
 @dp.errors_handler()
 async def errors_handler(update: types.Update, exception: Exception):
     """Handle exceptions when calling handlers.
 
     Send error notification to special chat and warn user about the error.
     """
+    if isinstance(exception, MessageNotModified):
+        return True
+
     log.error("Error handling request {}".format(update.update_id), exc_info=True)
 
     chat_id = None
