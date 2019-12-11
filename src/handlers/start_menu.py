@@ -93,12 +93,8 @@ async def handle_create(message: types.Message, state: FSMContext):
         )
         return
 
-    await database.creation.update_one(
-        {"user_id": message.from_user.id},
-        {"$set": {"mention": message.from_user.mention}},
-        upsert=True,
-    )
-    await states.OrderCreation.first()
+    creation = {"user_id": message.from_user.id}
+    await database.creation.find_one_and_replace(creation, creation)
 
     await tg.send_message(
         message.chat.id,
@@ -240,10 +236,15 @@ async def search_by_creator(message: types.Message, state: FSMContext):
         creator = source[1]
         if creator.isdigit():
             query["user_id"] = int(creator)
-        elif creator[0] == "@":
-            query["mention"] = re.compile(f"^{creator}$", re.IGNORECASE)
         else:
-            query["mention"] = re.compile(f"^@{creator}$", re.IGNORECASE)
+            mention_regexp = f"^{creator}$" if creator[0] == "@" else f"^@{creator}$"
+            user = await database.users.find_one(
+                {
+                    "mention": re.compile(mention_regexp, re.IGNORECASE),
+                    "has_username": True,
+                }
+            )
+            query["user_id"] = user["id"]
     except IndexError:
         await tg.send_message(
             message.chat.id, _("Send username as an argument."),

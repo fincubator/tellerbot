@@ -334,8 +334,13 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
             answer, call.message.chat.id, call.message.message_id, reply_markup=keyboard
         )
     else:
-        init_user = await database.users.find_one({"id": call.from_user.id})
-        counter_user = await database.users.find_one({"id": order["user_id"]})
+        projection = {"id": True, "locale": True, "mention": True}
+        init_user = await database.users.find_one(
+            {"id": call.from_user.id}, projection=projection
+        )
+        counter_user = await database.users.find_one(
+            {"id": order["user_id"]}, projection=projection
+        )
         await database.escrow.delete_many({"init.send_address": {"$exists": False}})
         offer = EscrowOffer(
             **{
@@ -346,16 +351,8 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
                 "type": "buy" if get_escrow_instance(order["buy"]) else "sell",
                 "time": time(),
                 "sum_currency": currency_arg,
-                "init": {
-                    "id": init_user["id"],
-                    "locale": init_user.get("locale"),
-                    "mention": call.from_user.mention,
-                },
-                "counter": {
-                    "id": counter_user["id"],
-                    "locale": counter_user.get("locale"),
-                    "mention": order["mention"],
-                },
+                "init": init_user,
+                "counter": counter_user,
                 "pending_input_from": call.message.chat.id,
             }
         )

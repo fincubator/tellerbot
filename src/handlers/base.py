@@ -35,6 +35,7 @@ from src.bot import (  # noqa: F401, noreorder
     state_handlers,
 )
 from src.bot import tg
+from src.database import database
 from src.i18n import _
 from src.money import normalize
 
@@ -268,9 +269,11 @@ async def show_order(
     header = ""
     if show_id:
         header += "ID: {}\n".format(markdown.code(order["_id"]))
+
+    creator = await database.users.find_one({"id": order["user_id"]})
     header += "{} ({}) ".format(
-        markdown.link(order["mention"], types.User(id=order["user_id"]).url),
-        markdown.code(order["user_id"]),
+        markdown.link(creator["mention"], types.User(id=creator["id"]).url),
+        markdown.code(creator["id"]),
     )
     if invert:
         header += _("sells {} for {}", locale=locale).format(
@@ -364,7 +367,7 @@ async def show_order(
             ),
         )
 
-        if order["user_id"] == user_id:
+        if creator["id"] == user_id:
             keyboard.row(
                 types.InlineKeyboardButton(
                     _("Edit", locale=locale),

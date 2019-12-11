@@ -18,9 +18,9 @@ import os
 import typing
 from pathlib import Path
 
+from aiogram import types
 from aiogram.contrib.middlewares.i18n import I18nMiddleware
-from aiogram.types import User
-from babel import Locale
+from pymongo import ReturnDocument
 
 from src.database import database
 
@@ -51,15 +51,22 @@ class I18nMiddlewareManual(I18nMiddleware):
         if action not in ("pre_process_message", "pre_process_callback_query"):
             return None
 
-        user: User = User.get_current()
-        document = await database.users.find_one({"id": user.id})
-        if document:
-            return document.get("locale")
-
-        locale: Locale = user.locale
-        if locale:
-            return locale.language
-        return None
+        user: types.User = types.User.get_current()
+        chat: types.Chat = types.Chat.get_current()
+        await database.users.update_many(
+            {"id": {"$ne": user.id}, "mention": user.mention},
+            {"$set": {"has_username": False}},
+        )
+        document = await database.users.find_one_and_update(
+            {"id": user.id},
+            {
+                "$set": {"mention": user.mention, "has_username": bool(user.username)},
+                "$setOnInsert": {"chat": chat.id, "locale": user.language_code},
+            },
+            upsert=True,
+            return_document=ReturnDocument.AFTER,
+        )
+        return document["locale"]
 
 
 _ = i18n = I18nMiddlewareManual("bot", Path(__file__).parents[1] / "locale")
