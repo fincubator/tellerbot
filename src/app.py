@@ -55,7 +55,7 @@ def main():
         host=Config.INTERNAL_HOST,
         port=Config.SERVER_PORT,
     )
-    print()  # Executor stopped with ^C
+    print()  # noqa: T001  Executor stopped with ^C
 
     # Stop all background tasks
     loop = asyncio.get_event_loop()
