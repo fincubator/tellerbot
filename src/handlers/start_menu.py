@@ -21,6 +21,7 @@ from time import time
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher.filters.state import any_state
 from aiogram.types import InlineKeyboardButton
 from aiogram.types import InlineKeyboardMarkup
@@ -112,14 +113,56 @@ async def handle_create(message: types.Message, state: FSMContext):
 @private_handler(
     lambda msg: msg.text.startswith(emojize(":closed_book:")), state=any_state
 )
-async def handle_book(message: types.Message, state: FSMContext):
-    """Show order book."""
+async def handle_book(
+    message: types.Message,
+    state: FSMContext,
+    command: typing.Optional[Command.CommandObj] = None,
+):
+    r"""Show order book with specified currency pair.
+
+    Currency pair is indicated with one or two space separated
+    arguments after **/book** in message text. If two arguments are
+    sent, then first is the currency order's creator wants to sell
+    and second is the currency that order's creator wants to buy. If
+    one argument is sent, then it's any of the currencies in a pair.
+
+    Any argument can be replaced with \*, which results in searching
+    pairs with any currency in place of the wildcard.
+
+    Examples:
+        =============  =================================================
+        Command        Description
+        =============  =================================================
+        /book BTC USD  Show orders that sell BTC and buy USD (BTC → USD)
+        /book BTC *    Show orders that sell BTC and buy any currency
+        /book * USD    Show orders that sell any currency and buy USD
+        /book BTC      Show orders that sell or buy BTC
+        /book * *      Equivalent to /book
+        =============  =================================================
+
+    """
     query = {
         "$or": [
             {"expiration_time": {"$exists": False}},
             {"expiration_time": {"$gt": time()}},
         ]
     }
+
+    if command is not None:
+        source = message.text.upper().split()
+        if len(source) == 2:
+            currency = source[1]
+            if currency != "*":
+                query = {
+                    "$and": [query, {"$or": [{"sell": source[1]}, {"buy": source[1]}]}]
+                }
+        elif len(source) >= 3:
+            sell, buy = source[1], source[2]
+            if sell != "*":
+                query["sell"] = sell
+            if buy != "*":
+                query["buy"] = buy
+
     cursor = database.orders.find(query).sort("start_time", DESCENDING)
     quantity = await database.orders.count_documents(query)
     await state.finish()
@@ -173,62 +216,6 @@ async def help_command(message: types.Message):
                 [InlineKeyboardButton(_("Cancel"), callback_data="unhelp")]
             ]
         ),
-    )
-
-
-@private_handler(commands=["p", "pair"], state=any_state)
-async def search_currencies(message: types.Message, state: FSMContext):
-    r"""Search orders by currency pair.
-
-    Currency pair is indicated with one or two space separated
-    arguments after **/pair** or **/p** in message text. If two
-    arguments are sent, then first is the currency order's creator
-    wants to sell and second is the currency that order's creator
-    wants to buy. If one argument is sent, then it's any of the
-    currencies in a pair.
-
-    Any argument can be replaced with \*, which results in searching
-    pairs with any currency in place of the wildcard.
-
-    Examples:
-        ==========  =================================================
-        Command     Description
-        ==========  =================================================
-        /p BTC USD  Show orders that sell BTC and buy USD (BTC → USD)
-        /p BTC *    Show orders that sell BTC and buy any currency
-        /p * USD    Show orders that sell any currency and buy USD
-        /p BTC      Show orders that sell or buy BTC
-        /p * *      Equivalent to /book
-        ==========  =================================================
-
-    """
-    query = {
-        "$or": [
-            {"expiration_time": {"$exists": False}},
-            {"expiration_time": {"$gt": time()}},
-        ]
-    }
-
-    source = message.text.upper().split()
-    if len(source) == 2:
-        query = {"$and": [query, {"$or": [{"sell": source[1]}, {"buy": source[1]}]}]}
-    elif len(source) == 3:
-        sell, buy = source[1], source[2]
-        if sell != "*":
-            query["sell"] = sell
-        if buy != "*":
-            query["buy"] = buy
-    else:
-        await tg.send_message(
-            message.chat.id, _("Send currency or currency pair as an argument.")
-        )
-        return
-
-    cursor = database.orders.find(query).sort("start_time", DESCENDING)
-    quantity = await database.orders.count_documents(query)
-    await state.finish()
-    await orders_list(
-        cursor, message.chat.id, 0, quantity, "orders", user_id=message.from_user.id
     )
 
 
