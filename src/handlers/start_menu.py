@@ -244,7 +244,11 @@ async def search_by_creator(message: types.Message, state: FSMContext):
                     "has_username": True,
                 }
             )
-            query["user_id"] = user["id"]
+            if user:
+                query["user_id"] = user["id"]
+            else:
+                await tg.send_message(message.chat.id, _("User is not found."))
+                return
     except IndexError:
         await tg.send_message(
             message.chat.id, _("Send username as an argument."),

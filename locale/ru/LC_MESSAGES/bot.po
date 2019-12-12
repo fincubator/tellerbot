@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-11 22:04+0300\n"
+"POT-Creation-Date: 2019-12-12 16:36+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -555,6 +555,10 @@ msgstr "Выберите свой язык."
 #: src/handlers/start_menu.py
 msgid "What's your question?"
 msgstr "Какой у вас вопрос?"
+
+#: src/handlers/start_menu.py
+msgid "User is not found."
+msgstr "Пользователь не найден."
 
 #: src/handlers/start_menu.py
 msgid "Send username as an argument."

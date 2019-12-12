@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-11 22:04+0300\n"
+"POT-Creation-Date: 2019-12-12 16:36+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -539,6 +539,10 @@ msgstr ""
 
 #: src/handlers/start_menu.py
 msgid "What's your question?"
+msgstr ""
+
+#: src/handlers/start_menu.py
+msgid "User is not found."
 msgstr ""
 
 #: src/handlers/start_menu.py
