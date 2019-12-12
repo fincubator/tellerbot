@@ -26,6 +26,7 @@ try:
     with open(Config.DATABASE_PASSWORD_FILENAME, "r") as password_file:
         client = AsyncIOMotorClient(
             Config.DATABASE_HOST,
+            Config.DATABASE_PORT,
             username=Config.DATABASE_USERNAME,
             password=password_file.read(),
         )

@@ -40,10 +40,11 @@ class Config:
     SERVER_HOST: str
     SERVER_PORT: int
     WEBHOOK_PATH: str
-    DATABASE_NAME: str = "tellerbot"
     DATABASE_HOST: str = "127.0.0.1"
+    DATABASE_PORT: int = 27017
     DATABASE_USERNAME: str
     DATABASE_PASSWORD_FILENAME: str
+    DATABASE_NAME: str = "tellerbot"
 
     LOGGER_LEVEL: str
     LOG_FILENAME: str

@@ -23,7 +23,7 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD_FILE=${DATABASE_PASSWORD_FILENAME}
     command: mongod --quiet
     ports:
-      - 27017
+      - ${DATABASE_PORT}:27017
     volumes:
       - ${DATABASE_PASSWORD_FILENAME}:${DATABASE_PASSWORD_FILENAME}:ro
       - ~/data/db:/data/db
