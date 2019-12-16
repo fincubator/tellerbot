@@ -189,9 +189,7 @@ async def orders_list(
     keyboard.row(
         types.InlineKeyboardButton(
             _("Invert"),
-            callback_data="{} {} {}".format(
-                buttons_data, start - Config.ORDERS_COUNT, int(not invert)
-            ),
+            callback_data="{} {} {}".format(buttons_data, start, int(not invert)),
         )
     )
     keyboard.add(*buttons)
