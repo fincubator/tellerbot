@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-12 16:36+0300\n"
+"POT-Creation-Date: 2019-12-16 12:23+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -519,6 +519,10 @@ msgstr "Отправьте новую продолжительность."
 #: src/handlers/order.py
 msgid "Send new comments."
 msgstr "Отправьте новые комментарии."
+
+#: src/handlers/order.py
+msgid "Unset"
+msgstr "Сбросить"
 
 #: src/handlers/order.py
 msgid "Yes, I'm totally sure"
