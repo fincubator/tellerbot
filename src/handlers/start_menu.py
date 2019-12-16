@@ -94,7 +94,8 @@ async def handle_create(message: types.Message, state: FSMContext):
         return
 
     creation = {"user_id": message.from_user.id}
-    await database.creation.find_one_and_replace(creation, creation)
+    await database.creation.find_one_and_replace(creation, creation, upsert=True)
+    await states.OrderCreation.first()
 
     await tg.send_message(
         message.chat.id,
