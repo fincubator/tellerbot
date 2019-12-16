@@ -386,7 +386,11 @@ async def edit_button(call: types.CallbackQuery, order: OrderType):
 
     await call.answer()
     if answer:
-        result = await tg.send_message(call.message.chat.id, answer)
+        keyboard = types.InlineKeyboardMarkup()
+        keyboard.row(types.InlineKeyboardButton(_("Unset"), callback_data="unset"))
+        result = await tg.send_message(
+            call.message.chat.id, answer, reply_markup=keyboard,
+        )
         await database.users.update_one(
             {"id": call.from_user.id},
             {
@@ -404,6 +408,49 @@ async def edit_button(call: types.CallbackQuery, order: OrderType):
         await states.field_editing.set()
 
 
+async def finish_edit(user, update_dict):
+    """Update and show order after editing."""
+    edit = user["edit"]
+    result = await database.orders.update_one({"_id": edit["order_id"]}, update_dict)
+    if result.modified_count:
+        order = await database.orders.find_one({"_id": edit["order_id"]})
+        await show_order(
+            order,
+            user["chat"],
+            user["id"],
+            message_id=edit["order_message_id"],
+            location_message_id=edit["location_message_id"],
+            show_id=edit["show_id"],
+            invert=edit["invert"],
+            edit=True,
+        )
+    await database.users.update_one(
+        {"_id": user["_id"]}, {"$unset": {"edit": True, STATE_KEY: True}}
+    )
+
+
+@dp.callback_query_handler(
+    lambda call: call.data == "unset", state=states.field_editing
+)
+async def unset_button(call: types.CallbackQuery, state: FSMContext):
+    """React to "Unset" button by unsetting the edit field."""
+    user = await database.users.find_one({"id": call.from_user.id})
+    field = user["edit"]["field"]
+    if field == "price":
+        unset_dict = {"price_buy": True, "price_sell": True}
+    else:
+        unset_dict = {field: True}
+        if field == "duration":
+            unset_dict["expiration_time"] = True
+            unset_dict["notify"] = True
+    await call.answer()
+    await finish_edit(user, {"$unset": unset_dict})
+    try:
+        await tg.delete_message(user["chat"], user["edit"]["message_id"])
+    except MessageCantBeDeleted:
+        return
+
+
 @private_handler(state=states.field_editing)
 async def edit_field(message: types.Message, state: FSMContext):
     """Ask new value of chosen order's field during editing."""
@@ -411,21 +458,10 @@ async def edit_field(message: types.Message, state: FSMContext):
     edit = user["edit"]
     field = edit["field"]
     invert = edit["invert"]
-    update_dict = {}
     set_dict = {}
     error = None
 
-    if message.text == "-":
-        if field == "price":
-            unset_dict = {"price_buy": True, "price_sell": True}
-        else:
-            unset_dict = {field: True}
-            if field == "duration":
-                unset_dict["expiration_time"] = True
-                unset_dict["notify"] = True
-        update_dict["$unset"] = unset_dict
-
-    elif field == "sum_buy":
+    if field == "sum_buy":
         try:
             transaction_sum = money(message.text)
         except MoneyValueError as exception:
@@ -464,7 +500,7 @@ async def edit_field(message: types.Message, state: FSMContext):
                 set_dict["price_buy"] = Decimal128(price)
                 set_dict["price_sell"] = Decimal128(price_sell)
 
-                if order["sum_currency"] == "buy":
+                if order.get("sum_currency") == "buy":
                     set_dict["sum_sell"] = Decimal128(
                         normalize(order["sum_buy"].to_decimal() * price_sell)
                     )
@@ -477,7 +513,7 @@ async def edit_field(message: types.Message, state: FSMContext):
                 set_dict["price_buy"] = Decimal128(price_buy)
                 set_dict["price_sell"] = Decimal128(price)
 
-                if order["sum_currency"] == "sell":
+                if order.get("sum_currency") == "sell":
                     set_dict["sum_buy"] = Decimal128(
                         normalize(order["sum_sell"].to_decimal() * price_buy)
                     )
@@ -528,30 +564,10 @@ async def edit_field(message: types.Message, state: FSMContext):
         set_dict["comments"] = comments
 
     if set_dict:
-        update_dict["$set"] = set_dict
-
-    if update_dict:
-        result = await database.orders.update_one(
-            {"_id": edit["order_id"]}, update_dict
-        )
-        if result.modified_count:
-            order = await database.orders.find_one({"_id": edit["order_id"]})
-            await show_order(
-                order,
-                message.chat.id,
-                message.from_user.id,
-                message_id=edit["order_message_id"],
-                location_message_id=edit["location_message_id"],
-                show_id=edit["show_id"],
-                invert=edit["invert"],
-                edit=True,
-            )
-        await database.users.update_one(
-            {"id": message.from_user.id}, {"$unset": {"edit": True, STATE_KEY: True}}
-        )
+        await finish_edit(user, {"$set": set_dict})
         await message.delete()
         try:
-            await tg.delete_message(message.chat.id, edit["message_id"])
+            await tg.delete_message(user["chat"], edit["message_id"])
         except MessageCantBeDeleted:
             return
     elif error:
@@ -609,14 +625,11 @@ async def confirm_delete_button(call: types.CallbackQuery):
         return
 
     location_message_id = int(call.data.split()[2])
-    keyboard = types.InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                types.InlineKeyboardButton(
-                    _("Hide"), callback_data="hide {}".format(location_message_id)
-                )
-            ]
-        ]
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.row(
+        types.InlineKeyboardButton(
+            _("Hide"), callback_data="hide {}".format(location_message_id)
+        )
     )
     await tg.edit_message_text(
         _("Order is deleted."),
