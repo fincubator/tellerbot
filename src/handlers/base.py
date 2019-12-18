@@ -207,7 +207,11 @@ async def orders_list(
 
     if message_id is None:
         await tg.send_message(
-            chat_id, text, reply_markup=keyboard, parse_mode=types.ParseMode.MARKDOWN
+            chat_id,
+            text,
+            reply_markup=keyboard,
+            parse_mode=types.ParseMode.MARKDOWN,
+            disable_web_page_preview=True,
         )
     else:
         await tg.edit_message_text(
@@ -216,6 +220,7 @@ async def orders_list(
             message_id,
             reply_markup=keyboard,
             parse_mode=types.ParseMode.MARKDOWN,
+            disable_web_page_preview=True,
         )
 
 
@@ -410,8 +415,13 @@ async def show_order(
             message_id,
             reply_markup=keyboard,
             parse_mode=types.ParseMode.MARKDOWN,
+            disable_web_page_preview=True,
         )
     else:
         await tg.send_message(
-            chat_id, answer, reply_markup=keyboard, parse_mode=types.ParseMode.MARKDOWN
+            chat_id,
+            answer,
+            reply_markup=keyboard,
+            parse_mode=types.ParseMode.MARKDOWN,
+            disable_web_page_preview=True,
         )
