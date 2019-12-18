@@ -40,6 +40,7 @@ from src.handlers.base import private_handler
 from src.handlers.base import start_keyboard
 from src.i18n import _
 from src.i18n import i18n
+from src.money import gateway_currency_regexp
 
 
 @private_handler(commands=["start"], state=any_state)
@@ -150,15 +151,14 @@ async def handle_book(
         if len(source) == 2:
             currency = source[1]
             if currency != "*":
-                query = {
-                    "$and": [query, {"$or": [{"sell": source[1]}, {"buy": source[1]}]}]
-                }
+                regexp = gateway_currency_regexp(currency)
+                query = {"$and": [query, {"$or": [{"sell": regexp}, {"buy": regexp}]}]}
         elif len(source) >= 3:
             sell, buy = source[1], source[2]
             if sell != "*":
-                query["sell"] = sell
+                query["sell"] = gateway_currency_regexp(sell)
             if buy != "*":
-                query["buy"] = buy
+                query["buy"] = gateway_currency_regexp(buy)
 
     cursor = database.orders.find(query).sort("start_time", DESCENDING)
     quantity = await database.orders.count_documents(query)

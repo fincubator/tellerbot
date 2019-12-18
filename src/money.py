@@ -15,12 +15,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 import decimal
+import re
 from decimal import Decimal
 
 from src.i18n import _
 
 HIGH_EXP = Decimal("1e15")
 LOW_EXP = Decimal("1e-8")
+
+
+def gateway_currency_regexp(currency):
+    """Return regexp that ignores gateway if it isn't specified."""
+    return currency if "." in currency else re.compile(fr"^(\w+\.)?{currency}$")
 
 
 def normalize(money: Decimal, exp: Decimal = LOW_EXP) -> Decimal:

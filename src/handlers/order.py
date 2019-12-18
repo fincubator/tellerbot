@@ -30,6 +30,7 @@ from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
 from motor.core import AgnosticBaseCursor as Cursor
 
+from src import money
 from src import states
 from src.bot import dp
 from src.bot import tg
@@ -42,9 +43,6 @@ from src.handlers.base import orders_list
 from src.handlers.base import private_handler
 from src.handlers.base import show_order
 from src.i18n import _
-from src.money import money
-from src.money import MoneyValueError
-from src.money import normalize
 
 OrderType = typing.Mapping[str, typing.Any]
 
@@ -169,8 +167,8 @@ async def aggregate_orders(buy: str, sell: str) -> typing.Tuple[Cursor, int]:
     time and quantity of documents in it.
     """
     query = {
-        "buy": buy,
-        "sell": sell,
+        "buy": money.gateway_currency_regexp(buy),
+        "sell": money.gateway_currency_regexp(sell),
         "$or": [
             {"expiration_time": {"$exists": False}},
             {"expiration_time": {"$gt": time()}},
@@ -463,63 +461,63 @@ async def edit_field(message: types.Message, state: FSMContext):
 
     if field == "sum_buy":
         try:
-            transaction_sum = money(message.text)
-        except MoneyValueError as exception:
+            transaction_sum = money.money(message.text)
+        except money.MoneyValueError as exception:
             error = str(exception)
         else:
             order = await database.orders.find_one({"_id": edit["order_id"]})
             set_dict["sum_buy"] = Decimal128(transaction_sum)
             if "price_sell" in order:
                 set_dict["sum_sell"] = Decimal128(
-                    normalize(transaction_sum * order["price_sell"].to_decimal())
+                    money.normalize(transaction_sum * order["price_sell"].to_decimal())
                 )
 
     elif field == "sum_sell":
         try:
-            transaction_sum = money(message.text)
-        except MoneyValueError as exception:
+            transaction_sum = money.money(message.text)
+        except money.MoneyValueError as exception:
             error = str(exception)
         else:
             order = await database.orders.find_one({"_id": edit["order_id"]})
             set_dict["sum_sell"] = Decimal128(transaction_sum)
             if "price_buy" in order:
                 set_dict["sum_buy"] = Decimal128(
-                    normalize(transaction_sum * order["price_buy"].to_decimal())
+                    money.normalize(transaction_sum * order["price_buy"].to_decimal())
                 )
 
     elif field == "price":
         try:
-            price = money(message.text)
-        except MoneyValueError as exception:
+            price = money.money(message.text)
+        except money.MoneyValueError as exception:
             error = str(exception)
         else:
             order = await database.orders.find_one({"_id": edit["order_id"]})
 
             if invert:
-                price_sell = normalize(Decimal(1) / price)
+                price_sell = money.normalize(Decimal(1) / price)
                 set_dict["price_buy"] = Decimal128(price)
                 set_dict["price_sell"] = Decimal128(price_sell)
 
                 if order.get("sum_currency") == "buy":
                     set_dict["sum_sell"] = Decimal128(
-                        normalize(order["sum_buy"].to_decimal() * price_sell)
+                        money.normalize(order["sum_buy"].to_decimal() * price_sell)
                     )
                 elif "sum_sell" in order:
                     set_dict["sum_buy"] = Decimal128(
-                        normalize(order["sum_sell"].to_decimal() * price)
+                        money.normalize(order["sum_sell"].to_decimal() * price)
                     )
             else:
-                price_buy = normalize(Decimal(1) / price)
+                price_buy = money.normalize(Decimal(1) / price)
                 set_dict["price_buy"] = Decimal128(price_buy)
                 set_dict["price_sell"] = Decimal128(price)
 
                 if order.get("sum_currency") == "sell":
                     set_dict["sum_buy"] = Decimal128(
-                        normalize(order["sum_sell"].to_decimal() * price_buy)
+                        money.normalize(order["sum_sell"].to_decimal() * price_buy)
                     )
                 elif "sum_buy" in order:
                     set_dict["sum_sell"] = Decimal128(
-                        normalize(order["sum_buy"].to_decimal() * price)
+                        money.normalize(order["sum_buy"].to_decimal() * price)
                     )
 
     elif field == "payment_system":
