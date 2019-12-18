@@ -22,9 +22,9 @@ corresponding step using back/skip inline buttons. Handlers decorated
 with ``private_handler`` are called when user sends value.
 """
 import asyncio
+import re
 from datetime import datetime
 from decimal import Decimal
-from string import ascii_letters
 from time import time
 from typing import Any
 from typing import Mapping
@@ -56,6 +56,9 @@ from src.money import MoneyValueError
 from src.money import normalize
 from src.notifications import order_notification
 from src.states import OrderCreation
+
+
+CURRENCY_REGEXP = re.compile(r"^(?:(\w+)\.)?(\w+)$")
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith("state "), state=any_state)
@@ -121,26 +124,38 @@ async def create_order_handler(call: types.CallbackQuery):
     )
 
 
-@private_handler(state=OrderCreation.buy)
-async def choose_buy(message: types.Message, state: FSMContext):
-    """Set currency user wants to buy and ask for one they want to sell."""
-    if not all(ch in ascii_letters + "." for ch in message.text):
-        await tg.send_message(
-            message.chat.id, _("Currency may only contain latin characters.")
-        )
-        return
-    if len(message.text) >= 20:
+async def match_currency(message: types.Message):
+    """Match message text with currency pattern."""
+    text = message.text.upper()
+
+    if len(text) >= 20:
         await tg.send_message(
             message.chat.id,
             _(
                 "This value should contain less than {} characters "
                 "(you sent {} characters)."
-            ).format(20, len(message.text)),
+            ).format(20, len(text)),
         )
-        return
+        return None
 
+    match = CURRENCY_REGEXP.match(text)
+    if not match:
+        await tg.send_message(
+            message.chat.id, _("Currency may only contain latin characters.")
+        )
+        return None
+
+    return match
+
+
+@private_handler(state=OrderCreation.buy)
+async def choose_buy(message: types.Message, state: FSMContext):
+    """Set currency user wants to buy and ask for one they want to sell."""
+    match = await match_currency(message)
+    if not match:
+        return
     await database.creation.update_one(
-        {"user_id": message.from_user.id}, {"$set": {"buy": message.text.upper()}}
+        {"user_id": message.from_user.id}, {"$set": {"buy": match.group(0)}}
     )
     await OrderCreation.sell.set()
     await tg.send_message(
@@ -168,24 +183,13 @@ async def choose_buy_handler(call: types.CallbackQuery):
 @private_handler(state=OrderCreation.sell)
 async def choose_sell(message: types.Message, state: FSMContext):
     """Set currency user wants to sell and ask for price."""
-    if not all(ch in ascii_letters + "." for ch in message.text):
-        await tg.send_message(
-            message.chat.id, _("Currency may only contain latin characters.")
-        )
-        return
-    if len(message.text) >= 20:
-        await tg.send_message(
-            message.chat.id,
-            _(
-                "This value should contain less than {} characters "
-                "(you sent {} characters)."
-            ).format(20, len(message.text)),
-        )
+    match = await match_currency(message)
+    if not match:
         return
 
     order = await database.creation.find_one_and_update(
         {"user_id": message.from_user.id},
-        {"$set": {"sell": message.text.upper(), "price_currency": "sell"}},
+        {"$set": {"sell": match.group(0), "price_currency": "sell"}},
         return_document=ReturnDocument.AFTER,
     )
 
