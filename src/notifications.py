@@ -24,6 +24,7 @@ from src.bot import tg
 from src.database import database
 from src.handlers.base import show_order
 from src.i18n import _
+from src.money import gateway_currency_regexp
 
 
 async def run_loop():
@@ -60,8 +61,8 @@ async def order_notification(order: typing.Mapping[str, typing.Any]):
         {
             "subscriptions": {
                 "$elemMatch": {
-                    "buy": {"$in": [order["buy"], None]},
-                    "sell": {"$in": [order["sell"], None]},
+                    "buy": {"$in": [gateway_currency_regexp(order["buy"]), None]},
+                    "sell": {"$in": [gateway_currency_regexp(order["sell"]), None]},
                 }
             },
         }
