@@ -68,5 +68,5 @@ for name, annotation in Config.__annotations__.items():
         value = getenv_bool(name)
     else:
         value = getenv(name)
-    if value:
+    if value is not None:
         setattr(Config, name, value)
