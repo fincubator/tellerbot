@@ -74,8 +74,8 @@ python .
 ## Contributing
 You can help by working on [opened issues](https://github.com/fincubator/tellerbot/issues), fixing bugs, creating new features, improving documentation or translating bot messages to your language.
 
-Before contributing, please read [CONTRIBUTING.md](https://github.com/fincubator/tellerbot/blob/master/CONTRIBUTING.md) first.
+Before contributing, please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 
 ## License
-TellerBot is released under the GNU Affero General Public License v3.0. See [COPYING](https://github.com/fincubator/tellerbot/blob/master/COPYING) for the full licensing conditions.
+TellerBot is released under the GNU Affero General Public License v3.0. See [COPYING](COPYING) for the full licensing conditions.
