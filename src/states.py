@@ -73,8 +73,6 @@ class Escrow(StatesGroup):
     send_address = State()
     #: Send first and last 4 digits of fiat sender's card number.
     send_card_number = State()
-    #: Confirm transfer of not escrow asset.
-    final_confirmation = State()
 
 
 #: Ask support a question.

@@ -792,13 +792,8 @@ async def edit_keyboard(
         await tg.edit_message_reply_markup(chat_id, message_id, reply_markup=keyboard)
 
 
-@escrow_callback_handler(
-    lambda call: call.data.startswith("tokens_sent "),
-    state=states.Escrow.final_confirmation,
-)
-async def final_offer_confirmation(
-    call: types.CallbackQuery, state: FSMContext, offer: EscrowOffer
-):
+@escrow_callback_handler(lambda call: call.data.startswith("tokens_sent "),)
+async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer):
     """Ask not escrow asset receiver to confirm transfer."""
     if offer.type == "buy":
         confirm_user = offer.init
@@ -837,7 +832,7 @@ async def final_offer_confirmation(
         reply.message_id,
         keyboard,
     )
-    await state.finish()
+    await dp.current_state().finish()
     await call.answer()
     await tg.send_message(
         other_user["id"],
