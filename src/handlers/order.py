@@ -323,6 +323,11 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
     )
     answer = _("Send exchange sum in {}.").format(sum_currency)
     if edit:
+        keyboard.row(
+            types.InlineKeyboardButton(
+                _("Cancel"), callback_data=call.message.reply_markup[1][1].callback_data
+            )
+        )
         await database.escrow.update_one(
             {"pending_input_from": call.from_user.id},
             {"$set": {"sum_currency": currency_arg}},
@@ -332,6 +337,12 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
             answer, call.message.chat.id, call.message.message_id, reply_markup=keyboard
         )
     else:
+        offer_id = ObjectId()
+        keyboard.row(
+            types.InlineKeyboardButton(
+                _("Cancel"), callback_data=f"init_cancel {offer_id}"
+            )
+        )
         projection = {"id": True, "locale": True, "mention": True}
         init_user = await database.users.find_one(
             {"id": call.from_user.id}, projection=projection
@@ -342,7 +353,7 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
         await database.escrow.delete_many({"init.send_address": {"$exists": False}})
         offer = EscrowOffer(
             **{
-                "_id": ObjectId(),
+                "_id": offer_id,
                 "order": order["_id"],
                 "buy": order["buy"],
                 "sell": order["sell"],

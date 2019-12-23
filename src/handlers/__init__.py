@@ -26,9 +26,9 @@ from aiogram.utils.exceptions import MessageNotModified
 from src.bot import dp
 from src.bot import tg
 from src.config import Config
+from src.handlers import escrow  # noqa: F401, noreorder
 from src.handlers import start_menu  # noqa: F401, noreorder
 from src.handlers import creation  # noqa: F401
-from src.handlers import escrow  # noqa: F401
 from src.handlers import language  # noqa: F401
 from src.handlers import order  # noqa: F401
 from src.handlers import support  # noqa: F401
