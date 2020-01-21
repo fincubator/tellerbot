@@ -1,4 +1,4 @@
-# Copyright (C) 2019  alfred richardsn
+# Copyright (C) 2019, 2020  alfred richardsn
 #
 # This file is part of TellerBot.
 #
@@ -170,12 +170,13 @@ async def choose_buy(message: types.Message, state: FSMContext):
 @state_handler(OrderCreation.sell)
 async def choose_buy_handler(call: types.CallbackQuery):
     """Ask currency user wants to sell."""
+    order = await database.creation.find_one({"user_id": call.from_user.id})
     await tg.edit_message_text(
         _("What currency do you want to sell?"),
         call.message.chat.id,
         call.message.message_id,
         reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=await inline_control_buttons()
+            inline_keyboard=await inline_control_buttons(skip="sell" in order)
         ),
     )
 
