@@ -230,9 +230,7 @@ async def ask_fee(user_id: int, chat_id: int, offer: EscrowOffer):
 @escrow_callback_handler(
     lambda call: call.data.startswith("accept_insurance "), state=states.Escrow.amount
 )
-async def accept_insurance(
-    call: types.CallbackQuery, state: FSMContext, offer: EscrowOffer
-):
+async def accept_insurance(call: types.CallbackQuery, offer: EscrowOffer):
     """Ask for fee payment agreement after accepting partial insurance."""
     await ask_fee(call.from_user.id, call.message.chat.id, offer)
 
@@ -240,14 +238,14 @@ async def accept_insurance(
 @escrow_callback_handler(
     lambda call: call.data.startswith("init_cancel "), state=states.Escrow.amount
 )
-async def init_cancel(call: types.CallbackQuery, state: FSMContext, offer: EscrowOffer):
+async def init_cancel(call: types.CallbackQuery, offer: EscrowOffer):
     """Cancel offer on initiator's request."""
     await offer.delete_document()
     await call.answer()
     await tg.send_message(
         call.message.chat.id, _("Escrow was cancelled."), reply_markup=start_keyboard()
     )
-    await state.finish()
+    await dp.current_state().finish()
 
 
 async def full_card_number_request(chat_id: int, offer: EscrowOffer):
