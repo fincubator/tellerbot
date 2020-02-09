@@ -106,9 +106,7 @@ def escrow_message_handler(*args, **kwargs):
     Add offer of ``EscrowOffer`` to arguments of decorated private message handler.
     """
 
-    def decorator(
-        handler: typing.Callable[[types.Message, FSMContext, EscrowOffer], typing.Any]
-    ):
+    def decorator(handler: typing.Callable[[types.Message, EscrowOffer], typing.Any]):
         @wraps(handler)
         @private_handler(*args, **kwargs)
         async def wrapper(message: types.Message, state: FSMContext):
@@ -119,7 +117,7 @@ def escrow_message_handler(*args, **kwargs):
                 await tg.send_message(message.chat.id, _("Offer is not active."))
                 return
 
-            return await handler(message, state, EscrowOffer(**offer))
+            return await handler(message, EscrowOffer(**offer))
 
         return wrapper
 
@@ -148,7 +146,7 @@ async def get_insurance(offer: EscrowOffer) -> Decimal:
 
 
 @escrow_message_handler(state=states.Escrow.amount)
-async def set_escrow_sum(message: types.Message, state: FSMContext, offer: EscrowOffer):
+async def set_escrow_sum(message: types.Message, offer: EscrowOffer):
     """Set sum and ask for fee payment agreement."""
     try:
         offer_sum = money(message.text)
@@ -374,9 +372,7 @@ async def choose_bank(call: types.CallbackQuery, offer: EscrowOffer):
 
 
 @escrow_message_handler(state=states.Escrow.full_card)
-async def full_card_number_message(
-    message: types.Message, state: FSMContext, offer: EscrowOffer
-):
+async def full_card_number_message(message: types.Message, offer: EscrowOffer):
     """React to sent message while sending full card number to fiat sender."""
     if message.from_user.id == offer.init["id"]:
         user = offer.counter
@@ -424,9 +420,7 @@ async def full_card_number_sent(call: types.CallbackQuery, offer: EscrowOffer):
 
 
 @escrow_message_handler(state=states.Escrow.receive_card_number)
-async def set_receive_card_number(
-    message: types.Message, state: FSMContext, offer: EscrowOffer
-):
+async def set_receive_card_number(message: types.Message, offer: EscrowOffer):
     """Create address from first and last 4 digits of card number and ask send address.
 
     First and last 4 digits of card number are sent by fiat receiver,
@@ -451,9 +445,7 @@ async def set_receive_card_number(
 
 
 @escrow_message_handler(state=states.Escrow.receive_address)
-async def set_receive_address(
-    message: types.Message, state: FSMContext, offer: EscrowOffer
-):
+async def set_receive_address(message: types.Message, offer: EscrowOffer):
     """Set escrow asset receiver's address and ask for sender's information.
 
     If there is a fiat currency, which is indicated by existing
@@ -499,9 +491,7 @@ async def set_receive_address(
 
 
 @escrow_message_handler(state=states.Escrow.send_address)
-async def set_send_address(
-    message: types.Message, state: FSMContext, offer: EscrowOffer
-):
+async def set_send_address(message: types.Message, offer: EscrowOffer):
     """Set send address of any party."""
     if len(message.text) >= 150:
         await tg.send_message(
@@ -514,13 +504,13 @@ async def set_send_address(
         return
 
     if message.from_user.id == offer.init["id"]:
-        await set_init_send_address(message.text, message, state, offer)
+        await set_init_send_address(message.text, message, offer)
     else:
-        await set_counter_send_address(message.text, message, state, offer)
+        await set_counter_send_address(message.text, message, offer)
 
 
 @escrow_message_handler(state=states.Escrow.name)
-async def set_name(message: types.Message, state: FSMContext, offer: EscrowOffer):
+async def set_name(message: types.Message, offer: EscrowOffer):
     """Set fiat sender's name on card and ask for first and last 4 digits."""
     name = message.text.split()
     if len(name) != 3:
@@ -549,9 +539,7 @@ async def set_name(message: types.Message, state: FSMContext, offer: EscrowOffer
 
 
 @escrow_message_handler(state=states.Escrow.send_card_number)
-async def set_send_card_number(
-    message: types.Message, state: FSMContext, offer: EscrowOffer
-):
+async def set_send_card_number(message: types.Message, offer: EscrowOffer):
     """Set first and last 4 digits of any party."""
     card_number = await get_card_number(message.text, message.chat.id)
     if not card_number:
@@ -559,13 +547,13 @@ async def set_send_card_number(
 
     address = ("*" * 8).join(card_number)
     if message.from_user.id == offer.init["id"]:
-        await set_init_send_address(address, message, state, offer)
+        await set_init_send_address(address, message, offer)
     else:
-        await set_counter_send_address(address, message, state, offer)
+        await set_counter_send_address(address, message, offer)
 
 
 async def set_init_send_address(
-    address: str, message: types.Message, state: FSMContext, offer: EscrowOffer
+    address: str, message: types.Message, offer: EscrowOffer
 ):
     """Set ``address`` as sender's address of initiator.
 
@@ -621,7 +609,7 @@ async def set_init_send_address(
     await tg.send_message(
         message.from_user.id, _("Offer sent."), reply_markup=sell_keyboard
     )
-    await state.finish()
+    await dp.current_state().finish()
 
 
 @escrow_callback_handler(lambda call: call.data.startswith("accept "))
@@ -648,7 +636,7 @@ async def decline_offer(call: types.CallbackQuery, offer: EscrowOffer):
 
 
 async def set_counter_send_address(
-    address: str, message: types.Message, state: FSMContext, offer: EscrowOffer
+    address: str, message: types.Message, offer: EscrowOffer
 ):
     """Set ``address`` as sender's address of counteragent.
 
@@ -736,7 +724,7 @@ async def set_counter_send_address(
     await offer.update_document(
         {"$set": update, "$unset": {"pending_input_from": True}}
     )
-    await state.finish()
+    await dp.current_state().finish()
 
 
 @escrow_callback_handler(lambda call: call.data.startswith("escrow_cancel "))
