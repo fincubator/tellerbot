@@ -93,7 +93,7 @@ async def errors_handler(update: types.Update, exception: Exception):
                     markdown.link(from_user.mention, from_user.url),
                     from_user.id,
                     chat_id,
-                    markdown.escape_md(traceback.format_exc(limit=-3)),
+                    markdown.code(traceback.format_exc(limit=-3)),
                 ),
                 parse_mode=types.ParseMode.MARKDOWN,
             )
