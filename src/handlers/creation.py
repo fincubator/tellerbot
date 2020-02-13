@@ -58,7 +58,7 @@ from src.notifications import order_notification
 from src.states import OrderCreation
 
 
-CURRENCY_REGEXP = re.compile(r"^(?:(\w+)\.)?(\w+)$")
+CURRENCY_REGEXP = re.compile(r"^(?:([A-Z]+)\.)?([A-Z]+)$")
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith("state "), state=any_state)
