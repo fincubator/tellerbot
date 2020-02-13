@@ -1,4 +1,4 @@
-# Copyright (C) 2019  alfred richardsn
+# Copyright (C) 2019, 2020  alfred richardsn
 #
 # This file is part of TellerBot.
 #
@@ -29,7 +29,6 @@ from src.config import Config
 from src.handlers import escrow  # noqa: F401, noreorder
 from src.handlers import start_menu  # noqa: F401, noreorder
 from src.handlers import creation  # noqa: F401
-from src.handlers import language  # noqa: F401
 from src.handlers import order  # noqa: F401
 from src.handlers import support  # noqa: F401
 from src.handlers.base import private_handler

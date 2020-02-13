@@ -1,4 +1,4 @@
-# Copyright (C) 2019  alfred richardsn
+# Copyright (C) 2019, 2020  alfred richardsn
 #
 # This file is part of TellerBot.
 #
@@ -52,21 +52,19 @@ class I18nMiddlewareManual(I18nMiddleware):
             return None
 
         user: types.User = types.User.get_current()
-        chat: types.Chat = types.Chat.get_current()
         await database.users.update_many(
             {"id": {"$ne": user.id}, "mention": user.mention},
             {"$set": {"has_username": False}},
         )
         document = await database.users.find_one_and_update(
             {"id": user.id},
-            {
-                "$set": {"mention": user.mention, "has_username": bool(user.username)},
-                "$setOnInsert": {"chat": chat.id, "locale": user.language_code},
-            },
-            upsert=True,
+            {"$set": {"mention": user.mention, "has_username": bool(user.username)}},
             return_document=ReturnDocument.AFTER,
         )
-        return document["locale"]
+        if document:
+            return document.get("locale", user.language_code)
+        else:
+            return user.language_code
 
 
 _ = i18n = I18nMiddlewareManual("bot", Path(__file__).parents[1] / "locale")

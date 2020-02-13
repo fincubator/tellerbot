@@ -1,4 +1,4 @@
-# Copyright (C) 2019  alfred richardsn
+# Copyright (C) 2019, 2020  alfred richardsn
 #
 # This file is part of TellerBot.
 #
@@ -30,6 +30,7 @@ from babel import Locale
 from pymongo import DESCENDING
 
 from src import states
+from src.bot import dp
 from src.bot import tg
 from src.config import Config
 from src.database import database
@@ -69,6 +70,22 @@ async def handle_start_command(message: types.Message, state: FSMContext):
     await state.finish()
     await tg.send_message(
         message.chat.id, help_message(), reply_markup=start_keyboard()
+    )
+
+
+@dp.callback_query_handler(
+    lambda call: call.data.startswith("locale "), state=any_state
+)
+async def locale_button(call: types.CallbackQuery):
+    """Choose language from list."""
+    locale = call.data.split()[1]
+    await database.users.update_one(
+        {"id": call.from_user.id}, {"$set": {"locale": locale}}
+    )
+    i18n.ctx_locale.set(locale)
+    await call.answer()
+    await tg.send_message(
+        call.message.chat.id, help_message(), reply_markup=start_keyboard()
     )
 
 
