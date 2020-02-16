@@ -94,7 +94,7 @@ async def orders_list(
     buttons_data: str,
     user_id: typing.Optional[int] = None,
     message_id: typing.Optional[int] = None,
-    invert: bool = False,
+    invert: typing.Optional[bool] = None,
 ) -> None:
     """Send list of orders.
 
@@ -103,11 +103,18 @@ async def orders_list(
     :param start: Start index.
     :param quantity: Quantity of orders in cursor.
     :param buttons_data: Beginning of callback data of left/right buttons.
-    :param user_id: If cursor is user-specific, Telegram ID of user
-        who created all orders in cursor.
+    :param user_id: Telegram ID of current user if cursor is not user-specific.
     :param message_id: Telegram ID of message to edit.
     :param invert: Invert all prices.
     """
+    user = await database.users.find_one({"id": types.User.get_current().id})
+    if invert is None:
+        invert = user.get("invert_book", False)
+    else:
+        await database.users.update_one(
+            {"_id": user["_id"]}, {"$set": {"invert_book": invert}}
+        )
+
     keyboard = types.InlineKeyboardMarkup(row_width=min(Config.ORDERS_COUNT // 2, 8))
 
     inline_orders_buttons = (
@@ -243,7 +250,7 @@ async def show_order(
     message_id: typing.Optional[int] = None,
     location_message_id: typing.Optional[int] = None,
     show_id: bool = False,
-    invert: bool = False,
+    invert: typing.Optional[bool] = None,
     edit: bool = False,
     locale: typing.Optional[str] = None,
 ):
@@ -260,6 +267,14 @@ async def show_order(
     :param edit: Enter edit mode.
     :param locale: Locale of message receiver.
     """
+    user = await database.users.find_one({"id": user_id})
+    if invert is None:
+        invert = user.get("invert_order", False)
+    else:
+        await database.users.update_one(
+            {"_id": user["_id"]}, {"$set": {"invert_order": invert}}
+        )
+
     if location_message_id is None:
         if order.get("lat") is not None and order.get("lon") is not None:
             location_message = await tg.send_location(
