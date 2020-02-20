@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-16 12:23+0300\n"
+"POT-Creation-Date: 2020-02-16 23:43+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -190,6 +190,10 @@ msgstr "Удалить"
 msgid "Escrow"
 msgstr "Эскроу"
 
+#: src/handlers/base.py
+msgid "Change duration"
+msgstr "Изменить длительность"
+
 #: src/handlers/base.py src/handlers/order.py
 msgid "Hide"
 msgstr "Скрыть"
@@ -218,15 +222,15 @@ msgstr "Заказ отменён."
 msgid "What currency do you want to buy?"
 msgstr "Какую валюту вы хотите купить?"
 
-#: src/handlers/creation.py
-msgid "Currency may only contain latin characters."
-msgstr "Валюта может содержать только латинские символы."
-
 #: src/handlers/creation.py src/handlers/escrow.py src/handlers/order.py
 msgid ""
 "This value should contain less than {} characters (you sent {} "
 "characters)."
 msgstr "Это значение должно содержать меньше {} символов (вы отправили {})."
+
+#: src/handlers/creation.py
+msgid "Currency may only contain latin characters."
+msgstr "Валюта может содержать только латинские символы."
 
 #: src/handlers/creation.py
 msgid "What currency do you want to sell?"
@@ -304,7 +308,7 @@ msgstr "Отправьте число, не превышающее сумму з
 msgid "Continue"
 msgstr "Продолжить"
 
-#: src/handlers/escrow.py src/handlers/start_menu.py
+#: src/handlers/escrow.py src/handlers/order.py src/handlers/start_menu.py
 msgid "Cancel"
 msgstr "Отменить"
 
