@@ -344,18 +344,18 @@ async def show_order(
         )
     )
 
-    if edit:
+    if edit and creator["id"] == user_id:
         buttons = []
         for i, (field, value) in enumerate(lines_format.items()):
             if value is not None:
                 lines.append(f"{i + 1}. {field_names[field]} {value}")
-            elif edit:
+            else:
                 lines.append(f"{i + 1}. {field_names[field]} -")
             buttons.append(
                 types.InlineKeyboardButton(
                     f"{i + 1}",
-                    callback_data="edit {} {} {} {}".format(
-                        order["_id"], field, location_message_id, int(invert)
+                    callback_data="edit {} {} {}".format(
+                        order["_id"], field, location_message_id
                     ),
                 )
             )
@@ -406,8 +406,8 @@ async def show_order(
                 keyboard.row(
                     types.InlineKeyboardButton(
                         _("Change duration", locale=locale),
-                        callback_data="edit {} duration {} {}".format(
-                            order["_id"], location_message_id, int(invert)
+                        callback_data="edit {} duration {}".format(
+                            order["_id"], location_message_id
                         ),
                     )
                 )

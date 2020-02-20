@@ -372,10 +372,18 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith("edit "), state=any_state)
-@order_handler
-async def edit_button(call: types.CallbackQuery, order: OrderType):
+async def edit_button(call: types.CallbackQuery):
     """React to "Edit" button by entering edit mode on order."""
     args = call.data.split()
+
+    order_id = args[1]
+    order = await database.orders.find_one(
+        {"_id": ObjectId(order_id), "user_id": call.from_user.id}
+    )
+    if not order:
+        await call.answer(_("Couldn't edit order."))
+        return
+
     field = args[2]
 
     if field == "sum_buy":
@@ -409,7 +417,6 @@ async def edit_button(call: types.CallbackQuery, order: OrderType):
                     "edit.order_id": order["_id"],
                     "edit.field": field,
                     "edit.location_message_id": int(args[3]),
-                    "edit.invert": bool(int(args[4])),
                     "edit.show_id": call.message.text.startswith("ID"),
                 }
             },
@@ -430,7 +437,6 @@ async def finish_edit(user, update_dict):
             message_id=edit["order_message_id"],
             location_message_id=edit["location_message_id"],
             show_id=edit["show_id"],
-            invert=edit["invert"],
             edit=True,
         )
     await database.users.update_one(
@@ -466,7 +472,7 @@ async def edit_field(message: types.Message, state: FSMContext):
     user = await database.users.find_one({"id": message.from_user.id})
     edit = user["edit"]
     field = edit["field"]
-    invert = edit["invert"]
+    invert = user.get("invert_order", False)
     set_dict = {}
     error = None
 
