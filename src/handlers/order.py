@@ -410,11 +410,14 @@ async def edit_button(call: types.CallbackQuery):
     if answer:
         keyboard = types.InlineKeyboardMarkup()
         keyboard.row(types.InlineKeyboardButton(_("Unset"), callback_data="unset"))
+        user = await database.users.find_one({"id": call.from_user.id})
+        if "edit" in user:
+            await tg.delete_message(call.message.chat.id, user["edit"]["message_id"])
         result = await tg.send_message(
             call.message.chat.id, answer, reply_markup=keyboard,
         )
         await database.users.update_one(
-            {"id": call.from_user.id},
+            {"_id": user["_id"]},
             {
                 "$set": {
                     "edit.order_message_id": call.message.message_id,
@@ -423,10 +426,10 @@ async def edit_button(call: types.CallbackQuery):
                     "edit.field": field,
                     "edit.location_message_id": int(args[3]),
                     "edit.show_id": call.message.text.startswith("ID"),
+                    STATE_KEY: states.field_editing.state,
                 }
             },
         )
-        await states.field_editing.set()
 
 
 async def finish_edit(user, update_dict):

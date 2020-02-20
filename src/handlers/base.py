@@ -35,7 +35,7 @@ from src.bot import (  # noqa: F401, noreorder
     state_handlers,
 )
 from src.bot import tg
-from src.database import database
+from src.database import database, STATE_KEY
 from src.i18n import _
 from src.money import normalize
 
@@ -267,7 +267,7 @@ async def show_order(
     :param edit: Enter edit mode.
     :param locale: Locale of message receiver.
     """
-    new_edit_message = None
+    new_edit_msg = None
     if invert is None:
         user = await database.users.find_one({"id": user_id})
         invert = user.get("invert_order", False)
@@ -275,12 +275,19 @@ async def show_order(
         user = await database.users.find_one_and_update(
             {"id": user_id}, {"$set": {"invert_order": invert}}
         )
-        if "edit" in user and user["edit"]["field"] == "price":
-            new_edit_message = _("Send new price in {}/{}.")
-            if invert:
-                new_edit_message = new_edit_message.format(order["buy"], order["sell"])
-            else:
-                new_edit_message = new_edit_message.format(order["sell"], order["buy"])
+        if "edit" in user:
+            if edit:
+                if user["edit"]["field"] == "price":
+                    new_edit_msg = _("Send new price in {}/{}.")
+                    if invert:
+                        new_edit_msg = new_edit_msg.format(order["buy"], order["sell"])
+                    else:
+                        new_edit_msg = new_edit_msg.format(order["sell"], order["buy"])
+            elif user["edit"]["order_message_id"] == message_id:
+                await tg.delete_message(user["chat"], user["edit"]["message_id"])
+                await database.users.update_one(
+                    {"_id": user["_id"]}, {"$unset": {"edit": True, STATE_KEY: True}}
+                )
 
     if location_message_id is None:
         if order.get("lat") is not None and order.get("lon") is not None:
@@ -448,11 +455,11 @@ async def show_order(
             parse_mode=types.ParseMode.MARKDOWN,
             disable_web_page_preview=True,
         )
-        if new_edit_message is not None:
+        if new_edit_msg is not None:
             keyboard = types.InlineKeyboardMarkup()
             keyboard.row(types.InlineKeyboardButton(_("Unset"), callback_data="unset"))
             await tg.edit_message_text(
-                new_edit_message,
+                new_edit_msg,
                 chat_id,
                 user["edit"]["message_id"],
                 reply_markup=keyboard,
