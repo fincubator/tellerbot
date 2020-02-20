@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-16 23:43+0300\n"
+"POT-Creation-Date: 2020-02-20 23:20+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -158,6 +158,10 @@ msgstr "Продолжительность:"
 msgid "Comments:"
 msgstr "Комментарии:"
 
+#: src/handlers/base.py src/handlers/order.py
+msgid "Send new price in {}/{}."
+msgstr "Отправьте новую цену в {}/{}."
+
 #: src/handlers/base.py
 msgid "sells {} for {}"
 msgstr "продаёт {} за {}"
@@ -187,16 +191,20 @@ msgid "Delete"
 msgstr "Удалить"
 
 #: src/handlers/base.py
-msgid "Escrow"
-msgstr "Эскроу"
-
-#: src/handlers/base.py
 msgid "Change duration"
 msgstr "Изменить длительность"
+
+#: src/handlers/base.py
+msgid "Escrow"
+msgstr "Эскроу"
 
 #: src/handlers/base.py src/handlers/order.py
 msgid "Hide"
 msgstr "Скрыть"
+
+#: src/handlers/base.py src/handlers/order.py
+msgid "Unset"
+msgstr "Сбросить"
 
 #: src/handlers/creation.py
 msgid "You're using the wrong button."
@@ -501,16 +509,16 @@ msgid "Send exchange sum in {}."
 msgstr "Отправьте сумму обмена в {}."
 
 #: src/handlers/order.py
+msgid "Couldn't edit order."
+msgstr ""
+
+#: src/handlers/order.py
 msgid "Send new amount of buying."
 msgstr "Отправьте новую сумму покупки."
 
 #: src/handlers/order.py
 msgid "Send new amount of selling."
 msgstr "Отправьте новую сумму продажи."
-
-#: src/handlers/order.py
-msgid "Send new price."
-msgstr "Отправьте новую цену."
 
 #: src/handlers/order.py
 msgid "Send new payment system."
@@ -523,10 +531,6 @@ msgstr "Отправьте новую продолжительность."
 #: src/handlers/order.py
 msgid "Send new comments."
 msgstr "Отправьте новые комментарии."
-
-#: src/handlers/order.py
-msgid "Unset"
-msgstr "Сбросить"
 
 #: src/handlers/order.py
 msgid "Yes, I'm totally sure"

@@ -391,7 +391,12 @@ async def edit_button(call: types.CallbackQuery):
     elif field == "sum_sell":
         answer = _("Send new amount of selling.")
     elif field == "price":
-        answer = _("Send new price.")
+        user = await database.users.find_one({"id": call.from_user.id})
+        answer = _("Send new price in {}/{}.")
+        if user.get("invert_order", False):
+            answer = answer.format(order["buy"], order["sell"])
+        else:
+            answer = answer.format(order["sell"], order["buy"])
     elif field == "payment_system":
         answer = _("Send new payment system.")
     elif field == "duration":

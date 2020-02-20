@@ -267,13 +267,20 @@ async def show_order(
     :param edit: Enter edit mode.
     :param locale: Locale of message receiver.
     """
-    user = await database.users.find_one({"id": user_id})
+    new_edit_message = None
     if invert is None:
+        user = await database.users.find_one({"id": user_id})
         invert = user.get("invert_order", False)
     else:
-        await database.users.update_one(
-            {"_id": user["_id"]}, {"$set": {"invert_order": invert}}
+        user = await database.users.find_one_and_update(
+            {"id": user_id}, {"$set": {"invert_order": invert}}
         )
+        if "edit" in user and user["edit"]["field"] == "price":
+            new_edit_message = _("Send new price in {}/{}.")
+            if invert:
+                new_edit_message = new_edit_message.format(order["buy"], order["sell"])
+            else:
+                new_edit_message = new_edit_message.format(order["sell"], order["buy"])
 
     if location_message_id is None:
         if order.get("lat") is not None and order.get("lon") is not None:
@@ -441,6 +448,15 @@ async def show_order(
             parse_mode=types.ParseMode.MARKDOWN,
             disable_web_page_preview=True,
         )
+        if new_edit_message is not None:
+            keyboard = types.InlineKeyboardMarkup()
+            keyboard.row(types.InlineKeyboardButton(_("Unset"), callback_data="unset"))
+            await tg.edit_message_text(
+                new_edit_message,
+                chat_id,
+                user["edit"]["message_id"],
+                reply_markup=keyboard,
+            )
     else:
         await tg.send_message(
             chat_id,
