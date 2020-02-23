@@ -33,21 +33,26 @@ async def run_loop():
         cursor = database.orders.find(
             {"expiration_time": {"$lte": time()}, "notify": True}
         )
+        sent = False
         async for order in cursor:
             user = await database.users.find_one({"id": order["user_id"]})
             message = _("Your order has expired.", locale=user["locale"])
             message += "\nID: {}".format(order["_id"])
             try:
+                if sent:
+                    await asyncio.sleep(1)  # Avoid Telegram limit
                 await tg.send_message(user["chat"], message)
             except TelegramAPIError:
                 pass
             else:
                 await show_order(order, user["chat"], user["id"])
-                await asyncio.sleep(1)  # Avoid Telegram limit
+                sent = True
             finally:
                 await database.orders.update_one(
                     {"_id": order["_id"]}, {"$set": {"notify": False}}
                 )
+        if not sent:
+            await asyncio.sleep(1)  # Reduce database load
 
 
 async def order_notification(order: typing.Mapping[str, typing.Any]):
