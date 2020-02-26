@@ -355,19 +355,30 @@ async def choose_sum(message: types.Message, state: FSMContext):
     sum in another currency. Otherwise calculate it if price was
     specified, and, finally, ask for cashless payment system.
     """
+    order = await database.creation.find_one({"user_id": message.from_user.id})
+    if "sum_currency" not in order:
+        currency = message.text.upper()
+        if currency == order["buy"]:
+            sum_currency = "buy"
+        elif currency == order["sell"]:
+            sum_currency = "sell"
+        else:
+            await tg.send_message(
+                message.chat.id, _("Choose currency of sum with buttons.")
+            )
+            return
+        await database.creation.update_one(
+            {"_id": order["_id"]}, {"$set": {"sum_currency": sum_currency}}
+        )
+        await tg.send_message(
+            message.chat.id, _("Send order sum in {}.").format(currency)
+        )
+        return
+
     try:
         transaction_sum = money(message.text)
     except MoneyValueError as exception:
         await tg.send_message(message.chat.id, str(exception))
-        return
-
-    order = await database.creation.find_one(
-        {"user_id": message.from_user.id, "sum_currency": {"$exists": True}}
-    )
-    if not order:
-        await tg.send_message(
-            message.chat.id, _("Choose currency of sum with buttons.")
-        )
         return
 
     update_dict = {"sum_" + order["sum_currency"]: Decimal128(transaction_sum)}
