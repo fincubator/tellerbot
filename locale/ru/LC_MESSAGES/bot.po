@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-20 23:20+0300\n"
+"POT-Creation-Date: 2020-02-26 05:30+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -226,10 +226,6 @@ msgstr "Вы не создаёте заказ."
 msgid "Order is cancelled."
 msgstr "Заказ отменён."
 
-#: src/handlers/creation.py src/handlers/start_menu.py
-msgid "What currency do you want to buy?"
-msgstr "Какую валюту вы хотите купить?"
-
 #: src/handlers/creation.py src/handlers/escrow.py src/handlers/order.py
 msgid ""
 "This value should contain less than {} characters (you sent {} "
@@ -237,8 +233,40 @@ msgid ""
 msgstr "Это значение должно содержать меньше {} символов (вы отправили {})."
 
 #: src/handlers/creation.py
+msgid "Gateway may only contain latin characters."
+msgstr "Шлюз может содержать только латинские символы."
+
+#: src/handlers/creation.py
+msgid "Request whitelisting"
+msgstr "Запросить занесение в белый список"
+
+#: src/handlers/creation.py
+msgid "This gateway of {} is not whitelisted."
+msgstr "Этот шлюз {} не занесён в белый список."
+
+#: src/handlers/creation.py
 msgid "Currency may only contain latin characters."
 msgstr "Валюта может содержать только латинские символы."
+
+#: src/handlers/creation.py
+msgid "Gateway can't be specified for fiat currencies."
+msgstr "Шлюз не может быть указан для фиатных валют."
+
+#: src/handlers/creation.py
+msgid "Choose gateway of {}."
+msgstr "Выберите шлюз {}."
+
+#: src/handlers/creation.py
+msgid "This currency is not whitelisted."
+msgstr "Эта валюта не занесена в белый список."
+
+#: src/handlers/creation.py
+msgid "You've already sent request for this currency."
+msgstr "Вы уже отправляли запрос для этой валюты."
+
+#: src/handlers/creation.py
+msgid "Request sent."
+msgstr "Запрос отправлен."
 
 #: src/handlers/creation.py
 msgid "What currency do you want to sell?"
@@ -510,7 +538,7 @@ msgstr "Отправьте сумму обмена в {}."
 
 #: src/handlers/order.py
 msgid "Couldn't edit order."
-msgstr ""
+msgstr "Не удалось отредактировать заказ."
 
 #: src/handlers/order.py
 msgid "Send new amount of buying."
@@ -559,6 +587,10 @@ msgstr "Пожалуйста, выберите свой язык."
 #: src/handlers/start_menu.py
 msgid "You can't create more than {} orders in {} hours."
 msgstr "Вы не можете создать больше чем {} заказов за {} часа."
+
+#: src/handlers/start_menu.py
+msgid "What currency do you want to buy?"
+msgstr "Какую валюту вы хотите купить?"
 
 #: src/handlers/start_menu.py
 msgid "Choose your language."
@@ -643,3 +675,7 @@ msgstr "Отправьте число большее, чем"
 #: src/notifications.py
 msgid "Your order has expired."
 msgstr "Срок действия вашего заказа истёк."
+
+#: src/whitelist.py
+msgid "Without gateway"
+msgstr "Без шлюза"

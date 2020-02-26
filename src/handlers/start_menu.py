@@ -30,12 +30,12 @@ from babel import Locale
 from pymongo import DESCENDING
 
 from src import states
+from src import whitelist
 from src.bot import dp
 from src.bot import tg
 from src.config import Config
 from src.database import database
 from src.handlers.base import help_message
-from src.handlers.base import inline_control_buttons
 from src.handlers.base import orders_list
 from src.handlers.base import private_handler
 from src.handlers.base import start_keyboard
@@ -118,9 +118,7 @@ async def handle_create(message: types.Message, state: FSMContext):
     await tg.send_message(
         message.chat.id,
         _("What currency do you want to buy?"),
-        reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=await inline_control_buttons(back=False, skip=False)
-        ),
+        reply_markup=whitelist.currency_keyboard(),
     )
 
 

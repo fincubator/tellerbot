@@ -48,7 +48,7 @@ NODES = (
 class GolosBlockchain(BaseBlockchain):
     """Golos node client implementation for escrow exchange."""
 
-    assets = frozenset({"GOLOS", "GBG"})
+    assets = frozenset(["GOLOS", "GBG"])
     address = "tellerbot"
     explorer = "https://golos.cf/tx/?={}"
 

@@ -37,11 +37,14 @@ from aiogram.dispatcher.filters.state import any_state
 from aiogram.types import ContentType
 from aiogram.types import InlineKeyboardButton
 from aiogram.types import InlineKeyboardMarkup
+from aiogram.utils.emoji import emojize
 from bson.decimal128 import Decimal128
 from pymongo import ReturnDocument
 
+from src import whitelist
 from src.bot import dp
 from src.bot import tg
+from src.config import Config
 from src.database import database
 from src.handlers.base import inline_control_buttons
 from src.handlers.base import private_handler
@@ -111,20 +114,54 @@ async def cancel_order_creation(call: types.CallbackQuery, state: FSMContext):
     )
 
 
-@state_handler(OrderCreation.buy)
-async def create_order_handler(call: types.CallbackQuery):
-    """Ask currency user wants to buy."""
-    await tg.edit_message_text(
-        _("What currency do you want to buy?"),
-        call.message.chat.id,
-        call.message.message_id,
-        reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=await inline_control_buttons(back=False)
-        ),
+async def set_gateway(currency_type: str, message: types.Message):
+    """Try to append gateway from message text to currency."""
+    gateway = message.text.upper()
+
+    if len(gateway) >= 20:
+        await tg.send_message(
+            message.chat.id,
+            _(
+                "This value should contain less than {} characters "
+                "(you sent {} characters)."
+            ).format(20, len(gateway)),
+        )
+        return None
+
+    if any(ch < "A" or ch > "Z" for ch in gateway):
+        await tg.send_message(
+            message.chat.id, _("Gateway may only contain latin characters.")
+        )
+        return None
+
+    order = await database.creation.find_one({"user_id": message.from_user.id})
+    if gateway not in whitelist.CRYPTOCURRENCY[order[currency_type]]:
+        keyboard = InlineKeyboardMarkup()
+        keyboard.row(
+            InlineKeyboardButton(
+                _("Request whitelisting"),
+                callback_data="whitelisting_request {}.{}".format(
+                    gateway, order[currency_type]
+                ),
+            )
+        )
+        keyboard.row(InlineKeyboardButton(_("Cancel"), callback_data="cancel"))
+        await tg.send_message(
+            message.chat.id,
+            _("This gateway of {} is not whitelisted.").format(order[currency_type]),
+            reply_markup=keyboard,
+        )
+        return False
+
+    set_dict = {currency_type: gateway + "." + order[currency_type]}
+    if currency_type == "sell":
+        set_dict["price_currency"] = "sell"
+    return await database.creation.find_one_and_update(
+        {"_id": order["_id"]}, {"$set": set_dict}, return_document=ReturnDocument.AFTER,
     )
 
 
-async def match_currency(message: types.Message):
+async def match_currency(currency_type: str, message: types.Message):
     """Match message text with currency pattern."""
     text = message.text.upper()
 
@@ -145,57 +182,137 @@ async def match_currency(message: types.Message):
         )
         return None
 
-    return match
+    whitelisting_request_answer = None
+    gateway, currency = match.groups()
+    if currency in whitelist.FIAT:
+        if gateway is not None:
+            await tg.send_message(
+                message.chat.id, _("Gateway can't be specified for fiat currencies.")
+            )
+            return None
+    elif currency in whitelist.CRYPTOCURRENCY:
+        gateways = whitelist.CRYPTOCURRENCY[currency]
+        if gateway is None:
+            if len(gateways) > 1:
+                await database.creation.update_one(
+                    {"user_id": message.from_user.id},
+                    {"$set": {currency_type: currency}},
+                )
+                await tg.send_message(
+                    message.chat.id,
+                    _("Choose gateway of {}.").format(currency),
+                    reply_markup=whitelist.gateway_keyboard(
+                        currency, one_time_keyboard=currency_type == "sell"
+                    ),
+                )
+                await OrderCreation.next()
+                return None
+            elif gateways:
+                gateway = gateways[0]
+        elif gateway not in gateways:
+            whitelisting_request_answer = _(
+                "This gateway of {} is not whitelisted."
+            ).format(currency)
+    else:
+        whitelisting_request_answer = _("This currency is not whitelisted.")
+
+    if whitelisting_request_answer is not None:
+        keyboard = InlineKeyboardMarkup()
+        keyboard.row(
+            InlineKeyboardButton(
+                _("Request whitelisting"),
+                callback_data=f"whitelisting_request {match.group(0)}",
+            )
+        )
+        keyboard.row(InlineKeyboardButton(_("Cancel"), callback_data="cancel"))
+        await tg.send_message(
+            message.chat.id, whitelisting_request_answer, reply_markup=keyboard
+        )
+        return None
+
+    return f"{gateway}.{currency}" if gateway else currency
+
+
+@dp.callback_query_handler(
+    lambda call: call.data.startswith("whitelisting_request "), state=any_state
+)
+async def whitelisting_request(call: types.CallbackQuery):
+    """Send whitelisting request to support or increment requests count."""
+    currency = call.data.split()[1]
+    request = await database.whitelisting_requests.find_one_and_update(
+        {"_id": currency},
+        {"$addToSet": {"users": call.from_user.id}},
+        upsert=True,
+        return_document=ReturnDocument.BEFORE,
+    )
+
+    double_request = False
+    if request:
+        if call.from_user.id in request["users"]:
+            double_request = True
+        else:
+            support_text = emojize(":label: #whitelisting_request {} - {}.").format(
+                currency, len(request["users"]) + 1
+            )
+            if len(request["users"]) == 1:
+                message = await tg.send_message(Config.SUPPORT_CHAT_ID, support_text)
+                await database.whitelisting_requests.update_one(
+                    {"_id": request["_id"]},
+                    {"$set": {"message_id": message.message_id}},
+                )
+            else:
+                await tg.edit_message_text(
+                    support_text, Config.SUPPORT_CHAT_ID, request["message_id"],
+                )
+
+    await dp.get_current().current_state().finish()
+    await call.answer()
+    await tg.send_message(
+        call.message.chat.id,
+        _("You've already sent request for this currency.")
+        if double_request
+        else _("Request sent."),
+    )
 
 
 @private_handler(state=OrderCreation.buy)
 async def choose_buy(message: types.Message, state: FSMContext):
     """Set currency user wants to buy and ask for one they want to sell."""
-    match = await match_currency(message)
+    match = await match_currency("buy", message)
     if not match:
         return
+
     await database.creation.update_one(
-        {"user_id": message.from_user.id}, {"$set": {"buy": match.group(0)}}
+        {"user_id": message.from_user.id}, {"$set": {"buy": match}}
     )
     await OrderCreation.sell.set()
     await tg.send_message(
         message.chat.id,
         _("What currency do you want to sell?"),
-        reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=await inline_control_buttons(skip=False)
-        ),
+        reply_markup=whitelist.currency_keyboard(one_time_keyboard=True),
     )
 
 
-@state_handler(OrderCreation.sell)
-async def choose_buy_handler(call: types.CallbackQuery):
-    """Ask currency user wants to sell."""
-    order = await database.creation.find_one({"user_id": call.from_user.id})
-    await tg.edit_message_text(
+@private_handler(state=OrderCreation.buy_gateway)
+async def choose_buy_gateway(message: types.Message, state: FSMContext):
+    """Set gateway of buy currency and ask for sell currency."""
+    if not message.text.startswith(emojize(":fast_forward:")):
+        order = await set_gateway("buy", message)
+        if not order:
+            return
+
+    await OrderCreation.sell.set()
+    await tg.send_message(
+        message.chat.id,
         _("What currency do you want to sell?"),
-        call.message.chat.id,
-        call.message.message_id,
-        reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=await inline_control_buttons(skip="sell" in order)
-        ),
+        reply_markup=whitelist.currency_keyboard(one_time_keyboard=True),
     )
 
 
-@private_handler(state=OrderCreation.sell)
-async def choose_sell(message: types.Message, state: FSMContext):
-    """Set currency user wants to sell and ask for price."""
-    match = await match_currency(message)
-    if not match:
-        return
-
-    order = await database.creation.find_one_and_update(
-        {"user_id": message.from_user.id},
-        {"$set": {"sell": match.group(0), "price_currency": "sell"}},
-        return_document=ReturnDocument.AFTER,
-    )
-
+async def set_price_state(message: types.Message, order: Mapping[str, Any]):
+    """Ask for price."""
     await OrderCreation.price.set()
-    buttons = await inline_control_buttons()
+    buttons = await inline_control_buttons(back=False)
     buttons.insert(0, [InlineKeyboardButton(_("Invert"), callback_data="price buy")])
     await tg.send_message(
         message.chat.id,
@@ -204,6 +321,38 @@ async def choose_sell(message: types.Message, state: FSMContext):
         ),
         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons),
     )
+
+
+@private_handler(state=OrderCreation.sell)
+async def choose_sell(message: types.Message, state: FSMContext):
+    """Set currency user wants to sell and ask for price."""
+    match = await match_currency("sell", message)
+    if not match:
+        return
+
+    order = await database.creation.find_one_and_update(
+        {"user_id": message.from_user.id},
+        {"$set": {"sell": match, "price_currency": "sell"}},
+        return_document=ReturnDocument.AFTER,
+    )
+    await set_price_state(message, order)
+
+
+@private_handler(state=OrderCreation.sell_gateway)
+async def choose_sell_gateway(message: types.Message, state: FSMContext):
+    """Set gateway of sell currency and ask for price."""
+    if not message.text.startswith(emojize(":fast_forward:")):
+        order = await set_gateway("sell", message)
+        if not order:
+            return
+    else:
+        order = await database.creation.find_one_and_update(
+            {"user_id": message.from_user.id},
+            {"$set": {"price_currency": "sell"}},
+            return_document=ReturnDocument.AFTER,
+        )
+
+    await set_price_state(message, order)
 
 
 async def price_ask(

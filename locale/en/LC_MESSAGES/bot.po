@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-20 23:20+0300\n"
+"POT-Creation-Date: 2020-02-26 05:30+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -220,10 +220,6 @@ msgstr ""
 msgid "Order is cancelled."
 msgstr ""
 
-#: src/handlers/creation.py src/handlers/start_menu.py
-msgid "What currency do you want to buy?"
-msgstr ""
-
 #: src/handlers/creation.py src/handlers/escrow.py src/handlers/order.py
 msgid ""
 "This value should contain less than {} characters (you sent {} "
@@ -231,7 +227,39 @@ msgid ""
 msgstr ""
 
 #: src/handlers/creation.py
+msgid "Gateway may only contain latin characters."
+msgstr ""
+
+#: src/handlers/creation.py
+msgid "Request whitelisting"
+msgstr ""
+
+#: src/handlers/creation.py
+msgid "This gateway of {} is not whitelisted."
+msgstr ""
+
+#: src/handlers/creation.py
 msgid "Currency may only contain latin characters."
+msgstr ""
+
+#: src/handlers/creation.py
+msgid "Gateway can't be specified for fiat currencies."
+msgstr ""
+
+#: src/handlers/creation.py
+msgid "Choose gateway of {}."
+msgstr ""
+
+#: src/handlers/creation.py
+msgid "This currency is not whitelisted."
+msgstr ""
+
+#: src/handlers/creation.py
+msgid "You've already sent request for this currency."
+msgstr ""
+
+#: src/handlers/creation.py
+msgid "Request sent."
 msgstr ""
 
 #: src/handlers/creation.py
@@ -546,6 +574,10 @@ msgid "You can't create more than {} orders in {} hours."
 msgstr ""
 
 #: src/handlers/start_menu.py
+msgid "What currency do you want to buy?"
+msgstr ""
+
+#: src/handlers/start_menu.py
 msgid "Choose your language."
 msgstr ""
 
@@ -627,4 +659,8 @@ msgstr ""
 
 #: src/notifications.py
 msgid "Your order has expired."
+msgstr ""
+
+#: src/whitelist.py
+msgid "Without gateway"
 msgstr ""

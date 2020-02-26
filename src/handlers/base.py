@@ -63,7 +63,7 @@ def start_keyboard() -> types.ReplyKeyboardMarkup:
 
 
 async def inline_control_buttons(
-    back: bool = True, skip: bool = True
+    back: bool = True, skip: bool = True, cancel: bool = True
 ) -> typing.List[types.InlineKeyboardButton]:
     """Create inline button row with translated labels to control current state."""
     buttons = []
@@ -83,6 +83,10 @@ async def inline_control_buttons(
                 )
             )
         buttons.append(row)
+    if cancel:
+        buttons.append(
+            [types.InlineKeyboardButton(_("Cancel"), callback_data="cancel")]
+        )
     return buttons
 
 

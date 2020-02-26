@@ -27,8 +27,12 @@ class OrderCreation(StatesGroup):
 
     #: Currency user wants to buy (unskippable).
     buy = State()
+    #: Gateway of buy currency (unskippable).
+    buy_gateway = State()
     #: Currency user wants to sell (unskippable).
     sell = State()
+    #: Gateway of sell currency (unskippable).
+    sell_gateway = State()
     #: Price in one of the currencies.
     price = State()
     #: Sum in any of the currencies.
