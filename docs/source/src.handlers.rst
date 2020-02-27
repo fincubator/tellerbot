@@ -28,14 +28,6 @@ src.handlers.escrow module
    :undoc-members:
    :show-inheritance:
 
-src.handlers.language module
-----------------------------
-
-.. automodule:: src.handlers.language
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 src.handlers.order module
 -------------------------
 

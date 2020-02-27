@@ -69,6 +69,15 @@ src.states module
    :show-inheritance:
 
 
+src.whitelist module
+--------------------
+
+.. automodule:: src.whitelist
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
 Module contents
 ---------------
 
