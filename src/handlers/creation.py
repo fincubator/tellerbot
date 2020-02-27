@@ -193,7 +193,7 @@ async def match_currency(currency_type: str, message: types.Message):
     elif currency in whitelist.CRYPTOCURRENCY:
         gateways = whitelist.CRYPTOCURRENCY[currency]
         if gateway is None:
-            if len(gateways) > 1:
+            if gateways:
                 await database.creation.update_one(
                     {"user_id": message.from_user.id},
                     {"$set": {currency_type: currency}},
@@ -207,8 +207,6 @@ async def match_currency(currency_type: str, message: types.Message):
                 )
                 await OrderCreation.next()
                 return None
-            elif gateways:
-                gateway = gateways[0]
         elif gateway not in gateways:
             whitelisting_request_answer = _(
                 "This gateway of {} is not whitelisted."
