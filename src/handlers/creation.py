@@ -263,7 +263,6 @@ async def whitelisting_request(call: types.CallbackQuery):
                     support_text, Config.SUPPORT_CHAT_ID, request["message_id"],
                 )
 
-    await dp.get_current().current_state().finish()
     await call.answer()
     await tg.send_message(
         call.message.chat.id,
