@@ -200,12 +200,12 @@ class BaseBlockchain(ABC):
                 _("Transaction is confirmed.", locale=other_user["locale"]),
                 self.trx_url(trx_id),
             )
-            answer += "\n" + markdown.escape_md(
-                _("Send {} {} to address {}", locale=other_user["locale"]).format(
-                    offer[f"sum_{new_currency}"],
-                    offer[new_currency],
-                    escrow_user["receive_address"],
-                )
+            answer += "\n" + _(
+                "Send {} {} to address {}", locale=other_user["locale"]
+            ).format(
+                offer[f"sum_{new_currency}"],
+                offer[new_currency],
+                markdown.escape_md(escrow_user["receive_address"]),
             )
             answer += "."
             await tg.send_message(
