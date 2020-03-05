@@ -42,7 +42,7 @@ from src.escrow.escrow_offer import EscrowOffer
 from src.handlers.base import orders_list
 from src.handlers.base import private_handler
 from src.handlers.base import show_order
-from src.i18n import _
+from src.i18n import i18n
 
 OrderType = typing.Mapping[str, typing.Any]
 
@@ -60,7 +60,7 @@ def order_handler(
         order_id = call.data.split()[1]
         order = await database.orders.find_one({"_id": ObjectId(order_id)})
         if not order:
-            await call.answer(_("Order is not found."))
+            await call.answer(i18n("order_not_found"))
             return
 
         return await handler(call, order)
@@ -89,7 +89,7 @@ async def show_orders(
     :param invert: Invert all prices.
     """
     if start >= quantity > 0:
-        await call.answer(_("There are no more orders."))
+        await call.answer(i18n("no_more_orders"))
         return
 
     try:
@@ -105,7 +105,7 @@ async def show_orders(
             invert=invert,
         )
     except MessageNotModified:
-        await call.answer(_("There are no previous orders."))
+        await call.answer(i18n("no_previous_orders"))
 
 
 @dp.callback_query_handler(
@@ -129,7 +129,7 @@ async def get_order_command(message: types.Message):
     order_id = args[1] if len(args) > 1 else args[0]
     order = await database.orders.find_one({"_id": ObjectId(order_id)})
     if not order:
-        await tg.send_message(message.chat.id, _("Order is not found."))
+        await tg.send_message(message.chat.id, i18n("order_not_found"))
         return
     await show_order(order, message.chat.id, message.from_user.id)
 
@@ -295,9 +295,7 @@ async def match_button(call: types.CallbackQuery, order: OrderType):
 async def escrow_button(call: types.CallbackQuery, order: OrderType):
     """React to "Escrow" button by starting escrow exchange."""
     if not Config.ESCROW_ENABLED:
-        await call.answer(
-            _("Escrow is temporarily unavailable. Sorry for the inconvenience.")
-        )
+        await call.answer(i18n("escrow_unavailable"))
         return
     args = call.data.split()
     currency_arg = args[2]
@@ -317,15 +315,16 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
     keyboard = types.InlineKeyboardMarkup()
     keyboard.row(
         types.InlineKeyboardButton(
-            _("Change to {}").format(new_currency),
+            i18n("change_to {currency}").format(currency=new_currency),
             callback_data="escrow {} {} 1".format(order["_id"], new_currency_arg),
         )
     )
-    answer = _("Send exchange sum in {}.").format(sum_currency)
+    answer = i18n("send_exchange_sum {currency}").format(currency=sum_currency)
     if edit:
         keyboard.row(
             types.InlineKeyboardButton(
-                _("Cancel"), callback_data=call.message.reply_markup[1][1].callback_data
+                i18n("cancel"),
+                callback_data=call.message.reply_markup[1][1].callback_data,
             )
         )
         await database.escrow.update_one(
@@ -340,7 +339,7 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
         offer_id = ObjectId()
         keyboard.row(
             types.InlineKeyboardButton(
-                _("Cancel"), callback_data=f"init_cancel {offer_id}"
+                i18n("cancel"), callback_data=f"init_cancel {offer_id}"
             )
         )
         projection = {"id": True, "locale": True, "mention": True}
@@ -381,35 +380,35 @@ async def edit_button(call: types.CallbackQuery):
         {"_id": ObjectId(order_id), "user_id": call.from_user.id}
     )
     if not order:
-        await call.answer(_("Couldn't edit order."))
+        await call.answer(i18n("edit_order_error"))
         return
 
     field = args[2]
 
     if field == "sum_buy":
-        answer = _("Send new amount of buying.")
+        answer = i18n("send_new_buy_amount")
     elif field == "sum_sell":
-        answer = _("Send new amount of selling.")
+        answer = i18n("send_new_sell_amount")
     elif field == "price":
         user = await database.users.find_one({"id": call.from_user.id})
-        answer = _("Send new price in {}/{}.")
+        answer = i18n("new_price {of_currency} {per_currency}")
         if user.get("invert_order", False):
-            answer = answer.format(order["buy"], order["sell"])
+            answer = answer.format(of_currency=order["buy"], per_currency=order["sell"])
         else:
-            answer = answer.format(order["sell"], order["buy"])
+            answer = answer.format(of_currency=order["sell"], per_currency=order["buy"])
     elif field == "payment_system":
-        answer = _("Send new payment system.")
+        answer = i18n("send_new_payment_system")
     elif field == "duration":
-        answer = _("Send new duration.")
+        answer = i18n("send_new_duration")
     elif field == "comments":
-        answer = _("Send new comments.")
+        answer = i18n("send_new_comments")
     else:
         answer = None
 
     await call.answer()
     if answer:
         keyboard = types.InlineKeyboardMarkup()
-        keyboard.row(types.InlineKeyboardButton(_("Unset"), callback_data="unset"))
+        keyboard.row(types.InlineKeyboardButton(i18n("unset"), callback_data="unset"))
         user = await database.users.find_one({"id": call.from_user.id})
         if "edit" in user:
             await tg.delete_message(call.message.chat.id, user["edit"]["message_id"])
@@ -550,10 +549,9 @@ async def edit_field(message: types.Message, state: FSMContext):
         if len(payment_system) >= 150:
             await tg.send_message(
                 message.chat.id,
-                _(
-                    "This value should contain less than {} characters "
-                    "(you sent {} characters)."
-                ).format(150, len(payment_system)),
+                i18n("exceeded_character_limit {limit} {sent}").format(
+                    limit=150, sent=len(payment_system)
+                ),
             )
             return
         set_dict["payment_system"] = payment_system
@@ -564,7 +562,7 @@ async def edit_field(message: types.Message, state: FSMContext):
             if duration <= 0:
                 raise ValueError
         except ValueError:
-            error = _("Send natural number.")
+            error = i18n("send_natural_number")
         else:
             if duration <= 100000:
                 order = await database.orders.find_one({"_id": edit["order_id"]})
@@ -578,10 +576,9 @@ async def edit_field(message: types.Message, state: FSMContext):
         if len(comments) >= 150:
             await tg.send_message(
                 message.chat.id,
-                _(
-                    "This value should contain less than {} characters "
-                    "(you sent {} characters)."
-                ).format(150, len(comments)),
+                i18n("exceeded_character_limit {limit} {sent}").format(
+                    limit=150, sent=len(comments)
+                ),
             )
             return
         set_dict["comments"] = comments
@@ -611,7 +608,7 @@ async def delete_button(call: types.CallbackQuery, order: OrderType):
     keyboard = types.InlineKeyboardMarkup()
     keyboard.row(
         types.InlineKeyboardButton(
-            _("Yes, I'm totally sure"),
+            i18n("totally_sure"),
             callback_data="confirm_delete {} {}".format(
                 order["_id"], location_message_id
             ),
@@ -619,7 +616,7 @@ async def delete_button(call: types.CallbackQuery, order: OrderType):
     )
     keyboard.row(
         types.InlineKeyboardButton(
-            _("No"),
+            i18n("no"),
             callback_data="revert {} {} 0 {}".format(
                 order["_id"], location_message_id, int(show_id)
             ),
@@ -627,7 +624,7 @@ async def delete_button(call: types.CallbackQuery, order: OrderType):
     )
 
     await tg.edit_message_text(
-        _("Are you sure you want to delete the order?"),
+        i18n("delete_order_confirmation"),
         call.message.chat.id,
         call.message.message_id,
         reply_markup=keyboard,
@@ -644,18 +641,18 @@ async def confirm_delete_button(call: types.CallbackQuery):
         {"_id": ObjectId(order_id), "user_id": call.from_user.id}
     )
     if not order:
-        await call.answer(_("Couldn't delete order."))
+        await call.answer(i18n("delete_order_error"))
         return
 
     location_message_id = int(call.data.split()[2])
     keyboard = types.InlineKeyboardMarkup()
     keyboard.row(
         types.InlineKeyboardButton(
-            _("Hide"), callback_data="hide {}".format(location_message_id)
+            i18n("hide"), callback_data="hide {}".format(location_message_id)
         )
     )
     await tg.edit_message_text(
-        _("Order is deleted."),
+        i18n("order_deleted"),
         call.message.chat.id,
         call.message.message_id,
         reply_markup=keyboard,
@@ -668,7 +665,7 @@ async def hide_button(call: types.CallbackQuery):
     try:
         await call.message.delete()
     except MessageCantBeDeleted:
-        await call.answer(_("Couldn't hide order."))
+        await call.answer(i18n("hide_order_error"))
         return
     location_message_id = call.data.split()[1]
     if location_message_id != "-1":

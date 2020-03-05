@@ -35,11 +35,9 @@ from src.bot import dp
 from src.bot import tg
 from src.config import Config
 from src.database import database
-from src.handlers.base import help_message
 from src.handlers.base import orders_list
 from src.handlers.base import private_handler
 from src.handlers.base import start_keyboard
-from src.i18n import _
 from src.i18n import i18n
 from src.money import gateway_currency_regexp
 
@@ -63,13 +61,13 @@ async def handle_start_command(message: types.Message, state: FSMContext):
                 )
             )
         await tg.send_message(
-            message.chat.id, _("Please, choose your language."), reply_markup=keyboard
+            message.chat.id, i18n("choose_language"), reply_markup=keyboard
         )
         return
 
     await state.finish()
     await tg.send_message(
-        message.chat.id, help_message(), reply_markup=start_keyboard()
+        message.chat.id, i18n("help_message"), reply_markup=start_keyboard()
     )
 
 
@@ -85,7 +83,7 @@ async def locale_button(call: types.CallbackQuery):
     i18n.ctx_locale.set(locale)
     await call.answer()
     await tg.send_message(
-        call.message.chat.id, help_message(), reply_markup=start_keyboard()
+        call.message.chat.id, i18n("help_message"), reply_markup=start_keyboard()
     )
 
 
@@ -105,8 +103,8 @@ async def handle_create(message: types.Message, state: FSMContext):
     if user_orders >= Config.ORDERS_LIMIT_COUNT:
         await tg.send_message(
             message.chat.id,
-            _("You can't create more than {} orders in {} hours.").format(
-                Config.ORDERS_LIMIT_COUNT, Config.ORDERS_LIMIT_HOURS
+            i18n("exceeded_order_creation_time_limit {orders} {hours}").format(
+                orders=Config.ORDERS_LIMIT_COUNT, hours=Config.ORDERS_LIMIT_HOURS
             ),
         )
         return
@@ -117,7 +115,7 @@ async def handle_create(message: types.Message, state: FSMContext):
 
     await tg.send_message(
         message.chat.id,
-        _("What currency do you want to buy?"),
+        i18n("ask_buy_currency"),
         reply_markup=whitelist.currency_keyboard(),
     )
 
@@ -209,7 +207,7 @@ async def choose_locale(message: types.Message):
             )
         )
     await tg.send_message(
-        message.chat.id, _("Choose your language."), reply_markup=keyboard
+        message.chat.id, i18n("choose_your_language"), reply_markup=keyboard
     )
 
 
@@ -222,10 +220,10 @@ async def help_command(message: types.Message):
     await states.asking_support.set()
     await tg.send_message(
         message.chat.id,
-        _("What's your question?"),
+        i18n("request_question"),
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(_("Cancel"), callback_data="unhelp")]
+                [InlineKeyboardButton(i18n("cancel"), callback_data="unhelp")]
             ]
         ),
     )
@@ -263,11 +261,11 @@ async def search_by_creator(message: types.Message, state: FSMContext):
             if user:
                 query["user_id"] = user["id"]
             else:
-                await tg.send_message(message.chat.id, _("User is not found."))
+                await tg.send_message(message.chat.id, i18n("user_not_found"))
                 return
     except IndexError:
         await tg.send_message(
-            message.chat.id, _("Send username as an argument."),
+            message.chat.id, i18n("no_user_argument"),
         )
         return
 
@@ -310,9 +308,9 @@ async def subcribe_to_pair(
                     sub["buy"] if sub["buy"] else "*",
                 )
         if sublist:
-            answer = _("Your subscriptions:") + sublist
+            answer = i18n("your_subscriptions") + sublist
         else:
-            answer = _("You don't have subscriptions.")
+            answer = i18n("no_subscriptions")
         await tg.send_message(message.chat.id, answer, reply_markup=start_keyboard())
         return
 
@@ -326,7 +324,7 @@ async def subcribe_to_pair(
     except IndexError:
         await tg.send_message(
             message.chat.id,
-            _("Send currency or currency pair as an argument."),
+            i18n("no_currency_argument"),
             reply_markup=start_keyboard(),
         )
         return
@@ -343,13 +341,13 @@ async def subcribe_to_pair(
         if not update_result.matched_count or update_result.modified_count:
             await tg.send_message(
                 message.chat.id,
-                _("Subscription is added."),
+                i18n("subscription_added"),
                 reply_markup=start_keyboard(),
             )
         else:
             await tg.send_message(
                 message.chat.id,
-                _("Subscription already exists."),
+                i18n("subscription_exists"),
                 reply_markup=start_keyboard(),
             )
     elif command.command[0] == "u":
@@ -359,13 +357,13 @@ async def subcribe_to_pair(
         if delete_result.modified_count:
             await tg.send_message(
                 message.chat.id,
-                _("Subscription is deleted."),
+                i18n("subscription_deleted"),
                 reply_markup=start_keyboard(),
             )
         else:
             await tg.send_message(
                 message.chat.id,
-                _("Couldn't delete subscription."),
+                i18n("subscription_delete_error"),
                 reply_markup=start_keyboard(),
             )
     else:

@@ -18,7 +18,7 @@ import decimal
 import re
 from decimal import Decimal
 
-from src.i18n import _
+from src.i18n import i18n
 
 HIGH_EXP = Decimal("1e15")
 LOW_EXP = Decimal("1e-8")
@@ -41,15 +41,19 @@ def money(value) -> Decimal:
     try:
         money = Decimal(value)
     except decimal.InvalidOperation:
-        raise MoneyValueError(_("Send decimal number."))
+        raise MoneyValueError(i18n("send_decimal_number"))
     if money <= 0:
-        raise MoneyValueError(_("Send positive number."))
+        raise MoneyValueError(i18n("send_positive_number"))
     if money >= HIGH_EXP:
-        raise MoneyValueError(_("Send number less than") + f" {HIGH_EXP:,f}")
+        raise MoneyValueError(
+            i18n("exceeded_money_limit {limit}").format(limit=f"{HIGH_EXP:,f}")
+        )
 
     normalized = normalize(money)
     if normalized.is_zero():
-        raise MoneyValueError(_("Send number greater than") + f" {LOW_EXP:.8f}")
+        raise MoneyValueError(
+            i18n("shortage_money_limit {limit}").format(limit=f"{LOW_EXP:.8f}")
+        )
     return normalized
 
 

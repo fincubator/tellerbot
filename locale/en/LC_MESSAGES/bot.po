@@ -1,15 +1,15 @@
-# English translations for PROJECT.
-# Copyright (C) 2019 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+# English translations for TellerBot.
+# Copyright (C) 2019 Fincubator
+# This file is distributed under the same license as the TellerBot project.
+# alfred richardsn <rchrdsn@protonmail.ch>, 2019.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PROJECT VERSION\n"
-"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-26 05:30+0300\n"
+"Project-Id-Version:  TellerBot\n"
+"Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
+"POT-Creation-Date: 2020-03-05 03:12+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: en\n"
 "Language-Team: en <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
@@ -19,648 +19,653 @@ msgstr ""
 "Generated-By: Babel 2.7.0\n"
 
 #: src/escrow/blockchain/__init__.py
-msgid "Transaction has passed. I'll notify should you get {}."
-msgstr ""
+msgid "transaction_passed {currency}"
+msgstr "Transaction has passed. I'll notify should you get {currency}."
 
 #: src/escrow/blockchain/__init__.py src/handlers/escrow.py
-msgid "Sent"
-msgstr ""
+msgid "sent"
+msgstr "Sent"
 
 #: src/escrow/blockchain/__init__.py
-msgid "Transaction is confirmed."
-msgstr ""
+msgid "transaction_confirmed"
+msgstr "Transaction is confirmed."
 
 #: src/escrow/blockchain/__init__.py src/handlers/escrow.py
-msgid "Send {} {} to address {}"
-msgstr ""
+msgid "send {amount} {currency} {address}"
+msgstr "Send {amount} {currency} to address {address}"
 
 #: src/escrow/blockchain/__init__.py
-msgid "Transaction is not confirmed."
-msgstr ""
+msgid "transaction_not_confirmed"
+msgstr "Transaction is not confirmed."
 
 #: src/escrow/blockchain/__init__.py
-msgid "Please try again."
-msgstr ""
+msgid "try_again"
+msgstr "Please try again."
 
 #: src/escrow/blockchain/__init__.py
-msgid "There are mistakes in your transfer:"
-msgstr ""
+msgid "transfer_mistakes"
+msgstr "There are mistakes in your transfer:"
 
 #: src/escrow/blockchain/__init__.py
-msgid "wrong asset"
-msgstr ""
+msgid "wrong_asset"
+msgstr "wrong asset"
 
 #: src/escrow/blockchain/__init__.py
-msgid "wrong amount"
-msgstr ""
+msgid "wrong_amount"
+msgstr "wrong amount"
 
 #: src/escrow/blockchain/__init__.py
-msgid "wrong memo"
-msgstr ""
+msgid "wrong_memo"
+msgstr "wrong memo"
 
 #: src/escrow/blockchain/__init__.py
-msgid "Transaction will be refunded after confirmation."
-msgstr ""
+msgid "refund_promise"
+msgstr "Transaction will be refunded after confirmation."
 
 #: src/escrow/blockchain/__init__.py
-msgid "Transaction is refunded."
-msgstr ""
+msgid "transaction_refunded"
+msgstr "Transaction is refunded."
 
 #: src/handlers/__init__.py
-msgid "Unknown command."
-msgstr ""
+msgid "unknown_command"
+msgstr "Unknown command."
 
 #: src/handlers/__init__.py
-msgid "Unknown button."
-msgstr ""
+msgid "unknown_button"
+msgstr "Unknown button."
 
 #: src/handlers/__init__.py
-msgid ""
+msgid "unexpected_error"
+msgstr ""
 "There was an unexpected error when handling your request. We're already "
 "notified and will fix it as soon as possible!"
-msgstr ""
 
 #: src/handlers/base.py
+msgid "create_order"
+msgstr "Create order"
+
+#: src/handlers/base.py
+msgid "my_orders"
+msgstr "My orders"
+
+#: src/handlers/base.py
+msgid "order_book"
+msgstr "Order book"
+
+#: src/handlers/base.py
+msgid "language"
+msgstr "Language"
+
+#: src/handlers/base.py
+msgid "support"
+msgstr "Support"
+
+#: src/handlers/base.py
+msgid "back"
+msgstr "Back"
+
+#: src/handlers/base.py
+msgid "skip"
+msgstr "Skip"
+
+#: src/handlers/base.py src/handlers/creation.py src/handlers/escrow.py
+#: src/handlers/order.py src/handlers/start_menu.py
+msgid "cancel"
+msgstr "Cancel"
+
+#: src/handlers/base.py
+msgid "no_orders"
+msgstr "There are no orders."
+
+#: src/handlers/base.py src/handlers/creation.py
+msgid "invert"
+msgstr "Invert"
+
+#: src/handlers/base.py
+msgid "page {number} {total}"
+msgstr "Page {number} of {total}"
+
+#: src/handlers/base.py
+msgid "buy_amount"
+msgstr "Amount of buying:"
+
+#: src/handlers/base.py
+msgid "sell_amount"
+msgstr "Amount of selling:"
+
+#: src/handlers/base.py
+msgid "price"
+msgstr "Price:"
+
+#: src/handlers/base.py
+msgid "payment_system"
+msgstr "Payment system:"
+
+#: src/handlers/base.py
+msgid "duration"
+msgstr "Duration:"
+
+#: src/handlers/base.py
+msgid "comments"
+msgstr "Comments:"
+
+#: src/handlers/base.py src/handlers/order.py
+msgid "new_price {of_currency} {per_currency}"
+msgstr "Send new price in {of_currency}/{per_currency}."
+
+#: src/handlers/base.py
+msgid "sells {sell_currency} {buy_currency}"
+msgstr "sells {sell_currency} for {buy_currency}"
+
+#: src/handlers/base.py
+msgid "buys {buy_currency} {sell_currency}"
+msgstr "buys {buy_currency} for {sell_currency}"
+
+#: src/handlers/base.py
+msgid "finish"
+msgstr "Finish"
+
+#: src/handlers/base.py
+msgid "similar"
+msgstr "Similar"
+
+#: src/handlers/base.py
+msgid "match"
+msgstr "Match"
+
+#: src/handlers/base.py
+msgid "edit"
+msgstr "Edit"
+
+#: src/handlers/base.py
+msgid "delete"
+msgstr "Delete"
+
+#: src/handlers/base.py
+msgid "change_duration"
+msgstr "Change duration"
+
+#: src/handlers/base.py
+msgid "escrow"
+msgstr "Escrow"
+
+#: src/handlers/base.py src/handlers/order.py
+msgid "hide"
+msgstr "Hide"
+
+#: src/handlers/base.py src/handlers/order.py
+msgid "unset"
+msgstr "Unset"
+
+#: src/handlers/creation.py
+msgid "wrong_button"
+msgstr "You're using the wrong button."
+
+#: src/handlers/creation.py
+msgid "back_error"
+msgstr "Couldn't go back."
+
+#: src/handlers/creation.py
+msgid "skip_error"
+msgstr "Couldn't skip."
+
+#: src/handlers/creation.py
+msgid "no_creation"
+msgstr "You are not creating order."
+
+#: src/handlers/creation.py
+msgid "order_cancelled"
+msgstr "Order is cancelled."
+
+#: src/handlers/creation.py src/handlers/escrow.py src/handlers/order.py
+msgid "exceeded_character_limit {limit} {sent}"
+msgstr ""
+"This value should contain less than {limit} characters (you sent {sent} "
+"characters)."
+
+#: src/handlers/creation.py
+msgid "non_latin_characters_gateway"
+msgstr "Gateway may only contain latin characters."
+
+#: src/handlers/creation.py
+msgid "request_whitelisting"
+msgstr "Request whitelisting"
+
+#: src/handlers/creation.py
+msgid "gateway_not_whitelisted {currency}"
+msgstr "This gateway of {currency} is not whitelisted."
+
+#: src/handlers/creation.py
+msgid "non_latin_characters_currency"
+msgstr "Currency may only contain latin characters."
+
+#: src/handlers/creation.py
+msgid "no_fiat_gateway"
+msgstr "Gateway can't be specified for fiat currencies."
+
+#: src/handlers/creation.py
+msgid "choose_gateway {currency}"
+msgstr "Choose gateway of {currency}."
+
+#: src/handlers/creation.py
+msgid "currency_not_whitelisted"
+msgstr "This currency is not whitelisted."
+
+#: src/handlers/creation.py
+msgid "double_request"
+msgstr "You've already sent request for this currency."
+
+#: src/handlers/creation.py
+msgid "request_sent"
+msgstr "Request sent."
+
+#: src/handlers/creation.py
+msgid "ask_sell_currency"
+msgstr "What currency do you want to sell?"
+
+#: src/handlers/creation.py
+msgid "ask_buy_price {of_currency} {per_currency}"
+msgstr "At what price (in {of_currency}/{per_currency}) do you want to buy?"
+
+#: src/handlers/creation.py
+msgid "ask_sell_price {of_currency} {per_currency}"
+msgstr "At what price (in {of_currency}/{per_currency}) do you want to sell?"
+
+#: src/handlers/creation.py
+msgid "ask_sum_currency"
+msgstr "Choose currency of order sum."
+
+#: src/handlers/creation.py
+msgid "ask_order_sum {currency}"
+msgstr "Send order sum in {currency}."
+
+#: src/handlers/creation.py
+msgid "choose_sum_currency_with_buttons"
+msgstr "Choose currency of sum with buttons."
+
+#: src/handlers/creation.py
+msgid "cashless_payment_system"
+msgstr "Отправьте систему безналичной оплаты."
+
+#: src/handlers/creation.py
+msgid "ask_location"
+msgstr "Send location of a preferred meeting point for cash payment."
+
+#: src/handlers/creation.py
+msgid "location_not_found"
+msgstr "Location is not found."
+
+#: src/handlers/creation.py
+msgid "ask_duration"
+msgstr "Send duration of order in days."
+
+#: src/handlers/creation.py
+msgid "choose_location"
+msgstr "Choose one of these locations:"
+
+#: src/handlers/creation.py src/handlers/order.py
+msgid "send_natural_number"
+msgstr "Send natural number."
+
+#: src/handlers/creation.py
+msgid "ask_comments"
+msgstr "Add any additional comments."
+
+#: src/handlers/creation.py
+msgid "order_set"
+msgstr "Order is set."
+
+#: src/handlers/escrow.py
+msgid "send_at_least_8_digits"
+msgstr "You should send at least 8 digits."
+
+#: src/handlers/escrow.py
+msgid "digits_parsing_error"
+msgstr "Can't get digits from message."
+
+#: src/handlers/escrow.py
+msgid "offer_not_active"
+msgstr "Offer is not active."
+
+#: src/handlers/escrow.py
+msgid "exceeded_order_sum"
+msgstr "Send number not exceeding order's sum."
+
+#: src/handlers/escrow.py
+msgid "continue"
+msgstr "Continue"
+
+#: src/handlers/escrow.py
+msgid "exceeded_insurance {amount} {currency}"
+msgstr ""
+"Escrow asset sum exceeds maximum amount to be insured. If you continue, "
+"only {amount} {currency} will be protected and refunded in case of "
+"unexpected events during the exchange."
+
+#: src/handlers/escrow.py
+msgid "exceeded_insurance_options"
+msgstr ""
+"You can send a smaller number, continue with partial insurance or cancel "
+"offer."
+
+#: src/handlers/escrow.py
+msgid "ask_fee {fee_percents}"
+msgstr "Do you agree to pay a fee of {fee_percents}%?"
+
+#: src/handlers/escrow.py
+msgid "will_pay {amount} {currency}"
+msgstr "(You'll pay {amount} {currency})"
+
+#: src/handlers/escrow.py
+msgid "will_get {amount} {currency}"
+msgstr "(You'll get {amount} {currency})"
+
+#: src/handlers/escrow.py
+msgid "yes"
+msgstr "Yes"
+
+#: src/handlers/escrow.py src/handlers/order.py
+msgid "no"
+msgstr "No"
+
+#: src/handlers/escrow.py
+msgid "escrow_cancelled"
+msgstr "Escrow was cancelled."
+
+#: src/handlers/escrow.py
+msgid "request_full_card_number {currency} {user}"
+msgstr "Send your full {currency} card number to {user}."
+
+#: src/handlers/escrow.py
+msgid "choose_bank"
+msgstr "Choose bank."
+
+#: src/handlers/escrow.py
+msgid "asked_full_card_number {user}"
+msgstr "I asked {user} to send you their full card number."
+
+#: src/handlers/escrow.py
+msgid "ask_address {currency}"
+msgstr "Send your {currency} address."
+
+#: src/handlers/escrow.py
+msgid "bank_not_supported"
+msgstr "This bank is not supported."
+
+#: src/handlers/escrow.py
+msgid "send_first_and_last_4_digits_of_card_number {currency}"
+msgstr "Send first and last 4 digits of your {currency} card number."
+
+#: src/handlers/escrow.py
+msgid "wrong_full_card_number_receiver {user}"
+msgstr "You should send it to {user}, not me!"
+
+#: src/handlers/escrow.py
+msgid "exchange_continued {user}"
+msgstr "I continued the exchange with {user}."
+
+#: src/handlers/escrow.py
+msgid "send_name_patronymic_surname"
+msgstr ""
+"Send your name, patronymic and first letter of surname separated by "
+"spaces."
+
+#: src/handlers/escrow.py
+msgid "wrong_word_count {word_count}"
+msgstr "You should send {word_count} words separated by spaces."
+
+#: src/handlers/escrow.py
+msgid "show_order"
+msgstr "Show order"
+
+#: src/handlers/escrow.py
+msgid "accept"
+msgstr "Accept"
+
+#: src/handlers/escrow.py
+msgid "decline"
+msgstr "Decline"
+
+#: src/handlers/escrow.py
 msgid ""
+"escrow_offer_notification {user} {sell_amount} {sell_currency} for "
+"{buy_amount} {buy_currency}"
+msgstr ""
+"You got an escrow offer from {user} to sell {sell_amount} {sell_currency}"
+" for {buy_amount} {buy_currency}"
+
+#: src/handlers/escrow.py
+msgid "using {bank}"
+msgstr "using {bank}"
+
+#: src/handlers/escrow.py
+msgid "offer_sent"
+msgstr "Offer sent."
+
+#: src/handlers/escrow.py
+msgid "escrow_offer_declined"
+msgstr "Your escrow offer was declined."
+
+#: src/handlers/escrow.py
+msgid "offer_declined"
+msgstr "Offer was declined."
+
+#: src/handlers/escrow.py
+msgid "with_memo"
+msgstr "with memo"
+
+#: src/handlers/escrow.py
+msgid "transfer_information_sent"
+msgstr "Transfer information sent."
+
+#: src/handlers/escrow.py
+msgid "transaction_completion_notification_promise"
+msgstr "I'll notify you when transaction is complete."
+
+#: src/handlers/escrow.py
+msgid "cancel_after_transfer"
+msgstr "You can't cancel offer after transfer to escrow."
+
+#: src/handlers/escrow.py
+msgid "cancel_before_verification"
+msgstr "You can't cancel this offer until transaction will be verified."
+
+#: src/handlers/escrow.py
+msgid "receiving_confirmation {currency} {user}"
+msgstr "Did you get {currency} from {user}?"
+
+#: src/handlers/escrow.py
+msgid "complete_escrow_promise"
+msgstr "When your transfer is confirmed, I'll complete escrow."
+
+#: src/handlers/escrow.py
+msgid "escrow_completing"
+msgstr "Escrow is being completed, just one moment."
+
+#: src/handlers/escrow.py
+msgid "escrow_completed"
+msgstr "Escrow is completed!"
+
+#: src/handlers/escrow.py
+msgid "escrow_sent {amount} {currency}"
+msgstr "I sent you {amount} {currency}."
+
+#: src/handlers/escrow.py
+msgid "request_validation_promise"
+msgstr "We'll manually validate your request and decide on the return."
+
+#: src/handlers/order.py
+msgid "order_not_found"
+msgstr "Order is not found."
+
+#: src/handlers/order.py
+msgid "no_more_orders"
+msgstr "There are no more orders."
+
+#: src/handlers/order.py
+msgid "no_previous_orders"
+msgstr "There are no previous orders."
+
+#: src/handlers/order.py
+msgid "escrow_unavailable"
+msgstr "Escrow is temporarily unavailable. Sorry for the inconvenience."
+
+#: src/handlers/order.py
+msgid "change_to {currency}"
+msgstr "Change to {currency}"
+
+#: src/handlers/order.py
+msgid "send_exchange_sum {currency}"
+msgstr "Send exchange sum in {currency}."
+
+#: src/handlers/order.py
+msgid "edit_order_error"
+msgstr "Couldn't edit order."
+
+#: src/handlers/order.py
+msgid "send_new_buy_amount"
+msgstr "Send new amount of buying."
+
+#: src/handlers/order.py
+msgid "send_new_sell_amount"
+msgstr "Send new amount of selling."
+
+#: src/handlers/order.py
+msgid "send_new_payment_system"
+msgstr "Send new payment system."
+
+#: src/handlers/order.py
+msgid "send_new_duration"
+msgstr "Send new duration."
+
+#: src/handlers/order.py
+msgid "send_new_comments"
+msgstr "Send new comments."
+
+#: src/handlers/order.py
+msgid "totally_sure"
+msgstr "Yes, I'm totally sure"
+
+#: src/handlers/order.py
+msgid "delete_order_confirmation"
+msgstr "Are you sure you want to delete the order?"
+
+#: src/handlers/order.py
+msgid "delete_order_error"
+msgstr "Couldn't delete order."
+
+#: src/handlers/order.py
+msgid "order_deleted"
+msgstr "Order is deleted."
+
+#: src/handlers/order.py
+msgid "hide_order_error"
+msgstr "Couldn't hide order."
+
+#: src/handlers/start_menu.py
+msgid "choose_language"
+msgstr "Please, choose your language."
+
+#: src/handlers/start_menu.py
+msgid "help_message"
+msgstr ""
 "Hello, I'm TellerBot. I can help you meet with people that you can swap "
 "money with.\n"
 "\n"
 "Choose one of the options on your keyboard."
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Create order"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "My orders"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Order book"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Language"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Support"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Back"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Skip"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "There are no orders."
-msgstr ""
-
-#: src/handlers/base.py src/handlers/creation.py
-msgid "Invert"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Page {} of {}"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Amount of buying:"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Amount of selling:"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Price:"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Payment system:"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Duration:"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Comments:"
-msgstr ""
-
-#: src/handlers/base.py src/handlers/order.py
-msgid "Send new price in {}/{}."
-msgstr ""
-
-#: src/handlers/base.py
-msgid "sells {} for {}"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "buys {} for {}"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Finish"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Similar"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Match"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Edit"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Delete"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Change duration"
-msgstr ""
-
-#: src/handlers/base.py
-msgid "Escrow"
-msgstr ""
-
-#: src/handlers/base.py src/handlers/order.py
-msgid "Hide"
-msgstr ""
-
-#: src/handlers/base.py src/handlers/order.py
-msgid "Unset"
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "You're using the wrong button."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Couldn't go back."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Couldn't skip."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "You are not creating order."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Order is cancelled."
-msgstr ""
-
-#: src/handlers/creation.py src/handlers/escrow.py src/handlers/order.py
-msgid ""
-"This value should contain less than {} characters (you sent {} "
-"characters)."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Gateway may only contain latin characters."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Request whitelisting"
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "This gateway of {} is not whitelisted."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Currency may only contain latin characters."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Gateway can't be specified for fiat currencies."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Choose gateway of {}."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "This currency is not whitelisted."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "You've already sent request for this currency."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Request sent."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "What currency do you want to sell?"
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "At what price (in {}/{}) do you want to buy?"
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "At what price (in {}/{}) do you want to sell?"
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Choose currency of order sum."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Send order sum in {}."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Choose currency of sum with buttons."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Send cashless payment system."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Send location of a preferred meeting point for cash payment."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Location is not found."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Send duration of order in days."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Choose one of these locations:"
-msgstr ""
-
-#: src/handlers/creation.py src/handlers/order.py
-msgid "Send natural number."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Add any additional comments."
-msgstr ""
-
-#: src/handlers/creation.py
-msgid "Order is set."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "You should send at least 8 digits."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Can't get digits from message."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Offer is not active."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Send number not exceeding order's sum."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Continue"
-msgstr ""
-
-#: src/handlers/escrow.py src/handlers/order.py src/handlers/start_menu.py
-msgid "Cancel"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid ""
-"Escrow asset sum exceeds maximum amount to be insured. If you continue, "
-"only {} {} will be protected and refunded in case of unexpected events "
-"during the exchange."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid ""
-"You can send a smaller number, continue with partial insurance or cancel "
-"offer."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Do you agree to pay a fee of 5%?"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "(You'll pay {} {})"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "(You'll get {} {})"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Yes"
-msgstr ""
-
-#: src/handlers/escrow.py src/handlers/order.py
-msgid "No"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Escrow was cancelled."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Send your full {currency} card number to {user}."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Choose bank."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "I asked {} to send you their full card number."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Send your {} address."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "This bank is not supported."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Send first and last 4 digits of your {} card number."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "You should send it to {}, not me!"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "I continued the exchange with {}."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid ""
-"Send your name, patronymic and first letter of surname separated by "
-"spaces."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "You should send {} words separated by spaces."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Show order"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Accept"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Decline"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "You got an escrow offer from {} to sell {} {} for {} {}"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "using {}"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Offer sent."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Your escrow offer was declined."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Offer was declined."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "with memo"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Transfer information sent."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "I'll notify you when transaction is complete."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "You can't cancel offer after transfer to escrow."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "You can't cancel this offer until transaction will be verified."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Did you get {} from {}?"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "When your transfer is confirmed, I'll complete escrow."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Escrow is being completed, just one moment."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "Escrow is completed!"
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "I sent you {} {}."
-msgstr ""
-
-#: src/handlers/escrow.py
-msgid "We'll manually validate your request and decide on the return."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Order is not found."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "There are no more orders."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "There are no previous orders."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Escrow is temporarily unavailable. Sorry for the inconvenience."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Change to {}"
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Send exchange sum in {}."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Couldn't edit order."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Send new amount of buying."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Send new amount of selling."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Send new payment system."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Send new duration."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Send new comments."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Yes, I'm totally sure"
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Are you sure you want to delete the order?"
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Couldn't delete order."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Order is deleted."
-msgstr ""
-
-#: src/handlers/order.py
-msgid "Couldn't hide order."
-msgstr ""
 
 #: src/handlers/start_menu.py
-msgid "Please, choose your language."
-msgstr ""
+msgid "exceeded_order_creation_time_limit {orders} {hours}"
+msgstr "You can't create more than {orders} orders in {hours} hours."
 
 #: src/handlers/start_menu.py
-msgid "You can't create more than {} orders in {} hours."
-msgstr ""
+msgid "ask_buy_currency"
+msgstr "What currency do you want to buy?"
 
 #: src/handlers/start_menu.py
-msgid "What currency do you want to buy?"
-msgstr ""
+msgid "choose_your_language"
+msgstr "Choose your language."
 
 #: src/handlers/start_menu.py
-msgid "Choose your language."
-msgstr ""
+msgid "request_question"
+msgstr "What's your question?"
 
 #: src/handlers/start_menu.py
-msgid "What's your question?"
-msgstr ""
+msgid "user_not_found"
+msgstr "User is not found."
 
 #: src/handlers/start_menu.py
-msgid "User is not found."
-msgstr ""
+msgid "no_user_argument"
+msgstr "Send username as an argument."
 
 #: src/handlers/start_menu.py
-msgid "Send username as an argument."
-msgstr ""
+msgid "your_subscriptions"
+msgstr "Your subscriptions:"
 
 #: src/handlers/start_menu.py
-msgid "Your subscriptions:"
-msgstr ""
+msgid "no_subscriptions"
+msgstr "You don't have subscriptions."
 
 #: src/handlers/start_menu.py
-msgid "You don't have subscriptions."
-msgstr ""
+msgid "no_currency_argument"
+msgstr "Send currency or currency pair as an argument."
 
 #: src/handlers/start_menu.py
-msgid "Send currency or currency pair as an argument."
-msgstr ""
+msgid "subscription_added"
+msgstr "Subscription is added."
 
 #: src/handlers/start_menu.py
-msgid "Subscription is added."
-msgstr ""
+msgid "subscription_exists"
+msgstr "Subscription already exists."
 
 #: src/handlers/start_menu.py
-msgid "Subscription already exists."
-msgstr ""
+msgid "subscription_deleted"
+msgstr "Subscription is deleted."
 
 #: src/handlers/start_menu.py
-msgid "Subscription is deleted."
-msgstr ""
-
-#: src/handlers/start_menu.py
-msgid "Couldn't delete subscription."
-msgstr ""
+msgid "subscription_delete_error"
+msgstr "Couldn't delete subscription."
 
 #: src/handlers/support.py
-msgid "Your request is cancelled."
-msgstr ""
+msgid "request_cancelled"
+msgstr "Your request is cancelled."
 
 #: src/handlers/support.py
-msgid "Your message was forwarded. We'll respond to you within 24 hours."
-msgstr ""
+msgid "support_response_promise"
+msgstr "Your message was forwarded. We'll respond to you within 24 hours."
 
 #: src/handlers/support.py
-msgid "Reply is sent."
-msgstr ""
+msgid "reply_sent"
+msgstr "Reply is sent."
 
 #: src/handlers/support.py
-msgid "Escrow was enabled."
-msgstr ""
+msgid "escrow_enabled"
+msgstr "Escrow was enabled."
 
 #: src/handlers/support.py
-msgid "Escrow was disabled."
-msgstr ""
+msgid "escrow_disabled"
+msgstr "Escrow was disabled."
 
 #: src/money.py
-msgid "Send decimal number."
-msgstr ""
+msgid "send_decimal_number"
+msgstr "Send decimal number."
 
 #: src/money.py
-msgid "Send positive number."
-msgstr ""
+msgid "send_positive_number"
+msgstr "Send positive number."
 
 #: src/money.py
-msgid "Send number less than"
-msgstr ""
+msgid "exceeded_money_limit {limit}"
+msgstr "Send number less than {limit}"
 
 #: src/money.py
-msgid "Send number greater than"
-msgstr ""
+msgid "shortage_money_limit {limit}"
+msgstr "Send number greater than {limit}"
 
 #: src/notifications.py
-msgid "Your order has expired."
-msgstr ""
+msgid "order_expired"
+msgstr "Your order has expired."
 
 #: src/whitelist.py
-msgid "Without gateway"
-msgstr ""
+msgid "without_gateway"
+msgstr "Without gateway"

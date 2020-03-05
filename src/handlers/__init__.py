@@ -33,7 +33,7 @@ from src.handlers import order  # noqa: F401
 from src.handlers import support  # noqa: F401
 from src.handlers.base import private_handler
 from src.handlers.base import start_keyboard
-from src.i18n import _
+from src.i18n import i18n
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ log = logging.getLogger(__name__)
 async def default_message(message: types.Message):
     """React to message which has not passed any previous conditions."""
     await tg.send_message(
-        message.chat.id, _("Unknown command."), reply_markup=start_keyboard()
+        message.chat.id, i18n("unknown_command"), reply_markup=start_keyboard()
     )
 
 
@@ -54,7 +54,7 @@ async def default_callback_query(call: types.CallbackQuery):
     if the bot stopped working until it times out. So unknown buttons
     are better be answered accordingly.
     """
-    await call.answer(_("Unknown button."))
+    await call.answer(i18n("unknown_button"))
 
 
 @dp.errors_handler()
@@ -97,12 +97,7 @@ async def errors_handler(update: types.Update, exception: Exception):
                 parse_mode=types.ParseMode.MARKDOWN,
             )
         await tg.send_message(
-            chat_id,
-            _(
-                "There was an unexpected error when handling your request. "
-                "We're already notified and will fix it as soon as possible!"
-            ),
-            reply_markup=start_keyboard(),
+            chat_id, i18n("unexpected_error"), reply_markup=start_keyboard(),
         )
 
     return True

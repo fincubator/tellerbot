@@ -32,7 +32,7 @@ from src import states
 from src.bot import dp
 from src.bot import tg
 from src.database import database
-from src.i18n import _
+from src.i18n import i18n
 
 
 class InsuranceLimits(typing.NamedTuple):
@@ -178,11 +178,9 @@ class BaseBlockchain(ABC):
             escrow_user = offer["counter"]
             other_user = offer["init"]
 
-        answer = _(
-            "Transaction has passed. I'll notify should you get {}.",
-            locale=escrow_user["locale"],
-        )
-        answer = answer.format(offer[new_currency])
+        answer = i18n(
+            "transaction_passed {currency}", locale=escrow_user["locale"]
+        ).format(currency=offer[new_currency])
         await tg.send_message(escrow_user["id"], answer)
         is_confirmed = await create_task(self.is_block_confirmed(block_num, op))
         if is_confirmed:
@@ -192,20 +190,20 @@ class BaseBlockchain(ABC):
             keyboard = InlineKeyboardMarkup()
             keyboard.add(
                 InlineKeyboardButton(
-                    _("Sent", locale=other_user["locale"]),
+                    i18n("sent", locale=other_user["locale"]),
                     callback_data="tokens_sent {}".format(offer["_id"]),
                 )
             )
             answer = markdown.link(
-                _("Transaction is confirmed.", locale=other_user["locale"]),
+                i18n("transaction_confirmed", locale=other_user["locale"]),
                 self.trx_url(trx_id),
             )
-            answer += "\n" + _(
-                "Send {} {} to address {}", locale=other_user["locale"]
+            answer += "\n" + i18n(
+                "send {amount} {currency} {address}", locale=other_user["locale"]
             ).format(
-                offer[f"sum_{new_currency}"],
-                offer[new_currency],
-                markdown.escape_md(escrow_user["receive_address"]),
+                amount=offer[f"sum_{new_currency}"],
+                currency=offer[new_currency],
+                address=markdown.escape_md(escrow_user["receive_address"]),
             )
             answer += "."
             await tg.send_message(
@@ -221,8 +219,8 @@ class BaseBlockchain(ABC):
         await database.escrow.update_one(
             {"_id": offer["_id"]}, {"$set": {"transaction_time": time()}}
         )
-        answer = _("Transaction is not confirmed.", locale=escrow_user["locale"])
-        answer += " " + _("Please try again.", locale=escrow_user["locale"])
+        answer = i18n("transaction_not_confirmed", locale=escrow_user["locale"])
+        answer += " " + i18n("try_again", locale=escrow_user["locale"])
         await tg.send_message(escrow_user["id"], answer)
         return False
 
@@ -251,23 +249,24 @@ class BaseBlockchain(ABC):
             return
 
         user = offer["init"] if offer["type"] == "buy" else offer["counter"]
-        answer = _("There are mistakes in your transfer:", locale=user["locale"])
+        answer = i18n("transfer_mistakes", locale=user["locale"])
         points = []
         for reason in reasons:
             if reason == "asset":
-                point = _("wrong asset", locale=user["locale"])
+                memo_point = i18n("wrong_asset", locale="en")
+                message_point = i18n("wrong_asset", locale=user["locale"])
             elif reason == "amount":
-                point = _("wrong amount", locale=user["locale"])
+                memo_point = i18n("wrong_amount", locale="en")
+                message_point = i18n("wrong_amount", locale=user["locale"])
             elif reason == "memo":
-                point = _("wrong memo", locale=user["locale"])
+                memo_point = i18n("wrong_memo", locale="en")
+                message_point = i18n("wrong_memo", locale=user["locale"])
             else:
                 continue
-            points.append(point)
-            answer += "\n• " + point
+            points.append(memo_point)
+            answer += f"\n• {message_point}"
 
-        answer += "\n\n" + _(
-            "Transaction will be refunded after confirmation.", locale=user["locale"]
-        )
+        answer += "\n\n" + i18n("refund_promise", locale=user["locale"])
         await tg.send_message(user["id"], answer, parse_mode=ParseMode.MARKDOWN)
         is_confirmed = await create_task(self.is_block_confirmed(block_num, op))
         await database.escrow.update_one(
@@ -281,11 +280,11 @@ class BaseBlockchain(ABC):
                 memo="reason of refund: " + ", ".join(points),
             )
             answer = markdown.link(
-                _("Transaction is refunded.", locale=user["locale"]), trx_url
+                i18n("transaction_refunded", locale=user["locale"]), trx_url
             )
         else:
-            answer = _("Transaction is not confirmed.", locale=user["locale"])
-        answer += " " + _("Please try again.", locale=user["locale"])
+            answer = i18n("transaction_not_confirmed", locale=user["locale"])
+        answer += " " + i18n("try_again", locale=user["locale"])
         await tg.send_message(user["id"], answer, parse_mode=ParseMode.MARKDOWN)
 
 

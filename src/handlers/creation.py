@@ -52,7 +52,6 @@ from src.handlers.base import show_order
 from src.handlers.base import start_keyboard
 from src.handlers.base import state_handler
 from src.handlers.base import state_handlers
-from src.i18n import _
 from src.i18n import i18n
 from src.money import money
 from src.money import MoneyValueError
@@ -73,7 +72,7 @@ async def change_state(call: types.CallbackQuery, state: FSMContext):
 
     state_name = await state.get_state()
     if state_name != query_state_name:
-        return await call.answer(_("You're using the wrong button."))
+        return await call.answer(i18n("wrong_button"))
 
     if state_name in OrderCreation.all_states_names:
         if direction == "back":
@@ -88,9 +87,9 @@ async def change_state(call: types.CallbackQuery, state: FSMContext):
         await state.set_state(state_name)
 
     if direction == "back":
-        answer = _("Couldn't go back.")
+        answer = i18n("back_error")
     elif direction == "skip":
-        answer = _("Couldn't skip.")
+        answer = i18n("skip_error")
     return await call.answer(answer)
 
 
@@ -103,14 +102,12 @@ async def cancel_order_creation(call: types.CallbackQuery, state: FSMContext):
     order = await database.creation.delete_one({"user_id": call.from_user.id})
     if not order.deleted_count:
         await tg.send_message(
-            call.message.chat.id,
-            _("You are not creating order."),
-            reply_markup=start_keyboard(),
+            call.message.chat.id, i18n("no_creation"), reply_markup=start_keyboard(),
         )
         return True
 
     await tg.send_message(
-        call.message.chat.id, _("Order is cancelled."), reply_markup=start_keyboard()
+        call.message.chat.id, i18n("order_cancelled"), reply_markup=start_keyboard()
     )
 
 
@@ -121,17 +118,14 @@ async def set_gateway(currency_type: str, message: types.Message):
     if len(gateway) >= 20:
         await tg.send_message(
             message.chat.id,
-            _(
-                "This value should contain less than {} characters "
-                "(you sent {} characters)."
-            ).format(20, len(gateway)),
+            i18n("exceeded_character_limit {limit} {sent}").format(
+                limit=20, sent=len(gateway)
+            ),
         )
         return None
 
     if any(ch < "A" or ch > "Z" for ch in gateway):
-        await tg.send_message(
-            message.chat.id, _("Gateway may only contain latin characters.")
-        )
+        await tg.send_message(message.chat.id, i18n("non_latin_characters_gateway"))
         return None
 
     order = await database.creation.find_one({"user_id": message.from_user.id})
@@ -139,16 +133,18 @@ async def set_gateway(currency_type: str, message: types.Message):
         keyboard = InlineKeyboardMarkup()
         keyboard.row(
             InlineKeyboardButton(
-                _("Request whitelisting"),
+                i18n("request_whitelisting"),
                 callback_data="whitelisting_request {}.{}".format(
                     gateway, order[currency_type]
                 ),
             )
         )
-        keyboard.row(InlineKeyboardButton(_("Cancel"), callback_data="cancel"))
+        keyboard.row(InlineKeyboardButton(i18n("cancel"), callback_data="cancel"))
         await tg.send_message(
             message.chat.id,
-            _("This gateway of {} is not whitelisted.").format(order[currency_type]),
+            i18n("gateway_not_whitelisted {currency}").format(
+                currency=order[currency_type]
+            ),
             reply_markup=keyboard,
         )
         return False
@@ -168,27 +164,22 @@ async def match_currency(currency_type: str, message: types.Message):
     if len(text) >= 20:
         await tg.send_message(
             message.chat.id,
-            _(
-                "This value should contain less than {} characters "
-                "(you sent {} characters)."
-            ).format(20, len(text)),
+            i18n("exceeded_character_limit {limit} {sent}").format(
+                limit=20, sent=len(text)
+            ),
         )
         return None
 
     match = CURRENCY_REGEXP.match(text)
     if not match:
-        await tg.send_message(
-            message.chat.id, _("Currency may only contain latin characters.")
-        )
+        await tg.send_message(message.chat.id, i18n("non_latin_characters_currency"))
         return None
 
     whitelisting_request_answer = None
     gateway, currency = match.groups()
     if currency in whitelist.FIAT:
         if gateway is not None:
-            await tg.send_message(
-                message.chat.id, _("Gateway can't be specified for fiat currencies.")
-            )
+            await tg.send_message(message.chat.id, i18n("no_fiat_gateway"))
             return None
     elif currency in whitelist.CRYPTOCURRENCY:
         gateways = whitelist.CRYPTOCURRENCY[currency]
@@ -200,7 +191,7 @@ async def match_currency(currency_type: str, message: types.Message):
                 )
                 await tg.send_message(
                     message.chat.id,
-                    _("Choose gateway of {}.").format(currency),
+                    i18n("choose_gateway {currency}").format(currency=currency),
                     reply_markup=whitelist.gateway_keyboard(
                         currency, one_time_keyboard=currency_type == "sell"
                     ),
@@ -208,21 +199,21 @@ async def match_currency(currency_type: str, message: types.Message):
                 await OrderCreation.next()
                 return None
         elif gateway not in gateways:
-            whitelisting_request_answer = _(
-                "This gateway of {} is not whitelisted."
-            ).format(currency)
+            whitelisting_request_answer = i18n(
+                "gateway_not_whitelisted {currency}"
+            ).format(currency=currency)
     else:
-        whitelisting_request_answer = _("This currency is not whitelisted.")
+        whitelisting_request_answer = i18n("currency_not_whitelisted")
 
     if whitelisting_request_answer is not None:
         keyboard = InlineKeyboardMarkup()
         keyboard.row(
             InlineKeyboardButton(
-                _("Request whitelisting"),
+                i18n("request_whitelisting"),
                 callback_data=f"whitelisting_request {match.group(0)}",
             )
         )
-        keyboard.row(InlineKeyboardButton(_("Cancel"), callback_data="cancel"))
+        keyboard.row(InlineKeyboardButton(i18n("cancel"), callback_data="cancel"))
         await tg.send_message(
             message.chat.id, whitelisting_request_answer, reply_markup=keyboard
         )
@@ -266,9 +257,7 @@ async def whitelisting_request(call: types.CallbackQuery):
     await call.answer()
     await tg.send_message(
         call.message.chat.id,
-        _("You've already sent request for this currency.")
-        if double_request
-        else _("Request sent."),
+        i18n("double_request") if double_request else i18n("request_sent"),
     )
 
 
@@ -285,7 +274,7 @@ async def choose_buy(message: types.Message, state: FSMContext):
     await OrderCreation.sell.set()
     await tg.send_message(
         message.chat.id,
-        _("What currency do you want to sell?"),
+        i18n("ask_sell_currency"),
         reply_markup=whitelist.currency_keyboard(one_time_keyboard=True),
     )
 
@@ -301,7 +290,7 @@ async def choose_buy_gateway(message: types.Message, state: FSMContext):
     await OrderCreation.sell.set()
     await tg.send_message(
         message.chat.id,
-        _("What currency do you want to sell?"),
+        i18n("ask_sell_currency"),
         reply_markup=whitelist.currency_keyboard(one_time_keyboard=True),
     )
 
@@ -310,11 +299,11 @@ async def set_price_state(message: types.Message, order: Mapping[str, Any]):
     """Ask for price."""
     await OrderCreation.price.set()
     buttons = await inline_control_buttons(back=False)
-    buttons.insert(0, [InlineKeyboardButton(_("Invert"), callback_data="price buy")])
+    buttons.insert(0, [InlineKeyboardButton(i18n("invert"), callback_data="price buy")])
     await tg.send_message(
         message.chat.id,
-        _("At what price (in {}/{}) do you want to buy?").format(
-            order["sell"], order["buy"]
+        i18n("ask_buy_price {of_currency} {per_currency}").format(
+            of_currency=order["sell"], per_currency=order["buy"]
         ),
         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons),
     )
@@ -357,20 +346,22 @@ async def price_ask(
 ):
     """Edit currency of price in message to ``price_currency`` field value."""
     if price_currency == "sell":
-        answer = _("At what price (in {}/{}) do you want to buy?").format(
-            order["sell"], order["buy"]
+        answer = i18n("ask_buy_price {of_currency} {per_currency}").format(
+            of_currency=order["sell"], per_currency=order["buy"]
         )
         callback_command = "buy"
     else:
-        answer = _("At what price (in {}/{}) do you want to sell?").format(
-            order["buy"], order["sell"]
+        answer = (
+            i18n("ask_sell_price {of_currency} {per_currency}").format(
+                of_currency=order["buy"], per_currency=order["sell"]
+            ),
         )
         callback_command = "sell"
 
     buttons = await inline_control_buttons()
     callback_data = f"price {callback_command}"
     buttons.insert(
-        0, [InlineKeyboardButton(_("Invert"), callback_data=callback_data)],
+        0, [InlineKeyboardButton(i18n("invert"), callback_data=callback_data)],
     )
     await tg.edit_message_text(
         answer,
@@ -397,7 +388,7 @@ async def price_handler(call: types.CallbackQuery):
     """Ask for price."""
     order = await database.creation.find_one({"user_id": call.from_user.id})
     if not order:
-        await call.answer(_("You are not creating order."))
+        await call.answer(i18n("no_creation"))
         return True
 
     price_currency = order.get("price_currency")
@@ -447,7 +438,7 @@ async def choose_price(message: types.Message, state: FSMContext):
         keyboard.row(*row)
 
     await tg.send_message(
-        message.chat.id, _("Choose currency of order sum."), reply_markup=keyboard
+        message.chat.id, i18n("ask_sum_currency"), reply_markup=keyboard
     )
 
 
@@ -459,7 +450,7 @@ async def sum_handler(call: types.CallbackQuery):
     )
 
     if not order:
-        await call.answer(_("You are not creating order."))
+        await call.answer(i18n("no_creation"))
         return True
 
     keyboard = InlineKeyboardMarkup()
@@ -471,7 +462,7 @@ async def sum_handler(call: types.CallbackQuery):
         keyboard.row(*row)
 
     await tg.edit_message_text(
-        _("Choose currency of order sum."),
+        i18n("ask_sum_currency"),
         call.message.chat.id,
         call.message.message_id,
         reply_markup=keyboard,
@@ -489,7 +480,8 @@ async def choose_sum_currency(call: types.CallbackQuery):
     )
     await call.answer()
     await tg.send_message(
-        call.message.chat.id, _("Send order sum in {}.").format(order[sum_currency])
+        call.message.chat.id,
+        i18n("ask_order_sum {currency}").format(currency=order[sum_currency]),
     )
 
 
@@ -510,14 +502,14 @@ async def choose_sum(message: types.Message, state: FSMContext):
             sum_currency = "sell"
         else:
             await tg.send_message(
-                message.chat.id, _("Choose currency of sum with buttons.")
+                message.chat.id, i18n("choose_sum_currency_with_buttons")
             )
             return
         await database.creation.update_one(
             {"_id": order["_id"]}, {"$set": {"sum_currency": sum_currency}}
         )
         await tg.send_message(
-            message.chat.id, _("Send order sum in {}.").format(currency)
+            message.chat.id, i18n("ask_order_sum {currency}").format(currency=currency)
         )
         return
 
@@ -542,7 +534,9 @@ async def choose_sum(message: types.Message, state: FSMContext):
         await database.creation.update_one({"_id": order["_id"]}, {"$set": update_dict})
         await tg.send_message(
             message.chat.id,
-            _("Send order sum in {}.").format(order[update_dict["sum_currency"]]),
+            i18n("ask_order_sum {currency}").format(
+                currency=order[update_dict["sum_currency"]]
+            ),
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=await inline_control_buttons(back=False)
             ),
@@ -553,7 +547,7 @@ async def choose_sum(message: types.Message, state: FSMContext):
     await OrderCreation.payment_system.set()
     await tg.send_message(
         message.chat.id,
-        _("Send cashless payment system."),
+        i18n("cashless_payment_system"),
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=await inline_control_buttons()
         ),
@@ -564,7 +558,7 @@ async def choose_sum(message: types.Message, state: FSMContext):
 async def payment_system_handler(call: types.CallbackQuery):
     """Ask for cashless payment system."""
     await tg.edit_message_text(
-        _("Send cashless payment system."),
+        i18n("cashless_payment_system"),
         call.message.chat.id,
         call.message.message_id,
         reply_markup=InlineKeyboardMarkup(
@@ -580,10 +574,9 @@ async def choose_payment_system(message: types.Message, state: FSMContext):
     if len(payment_system) >= 150:
         await tg.send_message(
             message.chat.id,
-            _(
-                "This value should contain less than {} characters "
-                "(you sent {} characters)."
-            ).format(150, len(payment_system)),
+            i18n("exceeded_character_limit {limit} {sent}").format(
+                limit=150, sent=len(payment_system)
+            ),
         )
         return
 
@@ -593,7 +586,7 @@ async def choose_payment_system(message: types.Message, state: FSMContext):
     await OrderCreation.location.set()
     await tg.send_message(
         message.chat.id,
-        _("Send location of a preferred meeting point for cash payment."),
+        i18n("ask_location"),
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=await inline_control_buttons()
         ),
@@ -604,7 +597,7 @@ async def choose_payment_system(message: types.Message, state: FSMContext):
 async def location_handler(call: types.CallbackQuery):
     """Ask for location."""
     await tg.edit_message_text(
-        _("Send location of a preferred meeting point for cash payment."),
+        i18n("ask_location"),
         call.message.chat.id,
         call.message.message_id,
         reply_markup=InlineKeyboardMarkup(
@@ -655,7 +648,7 @@ async def text_location(message: types.Message, state: FSMContext):
         )
 
     if not results:
-        await tg.send_message(message.chat.id, _("Location is not found."))
+        await tg.send_message(message.chat.id, i18n("location_not_found"))
         return
 
     if len(results) == 1:
@@ -667,7 +660,7 @@ async def text_location(message: types.Message, state: FSMContext):
         await OrderCreation.duration.set()
         await tg.send_message(
             message.chat.id,
-            _("Send duration of order in days."),
+            i18n("ask_duration"),
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=await inline_control_buttons()
             ),
@@ -676,7 +669,7 @@ async def text_location(message: types.Message, state: FSMContext):
 
     keyboard = InlineKeyboardMarkup(row_width=5)
 
-    answer = _("Choose one of these locations:") + "\n\n"
+    answer = i18n("choose_location") + "\n\n"
     buttons = []
     for i, result in enumerate(results):
         answer += "{}. {}\n".format(i + 1, result["display_name"])
@@ -717,7 +710,7 @@ async def choose_location(message: types.Message, state: FSMContext):
     await OrderCreation.duration.set()
     await tg.send_message(
         message.chat.id,
-        _("Send duration of order in days."),
+        i18n("ask_duration"),
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=await inline_control_buttons()
         ),
@@ -728,7 +721,7 @@ async def choose_location(message: types.Message, state: FSMContext):
 async def duration_handler(call: types.CallbackQuery):
     """Ask for duration."""
     await tg.edit_message_text(
-        _("Send duration of order in days."),
+        i18n("ask_duration"),
         call.message.chat.id,
         call.message.message_id,
         reply_markup=InlineKeyboardMarkup(
@@ -745,7 +738,7 @@ async def choose_duration(message: types.Message, state: FSMContext):
         if duration <= 0:
             raise ValueError
     except ValueError:
-        await tg.send_message(message.chat.id, _("Send natural number."))
+        await tg.send_message(message.chat.id, i18n("send_natural_number"))
         return
 
     if duration <= 100000:  # More than ~274 years is practically non-expiring
@@ -756,7 +749,7 @@ async def choose_duration(message: types.Message, state: FSMContext):
     await OrderCreation.comments.set()
     await tg.send_message(
         message.chat.id,
-        _("Add any additional comments."),
+        i18n("ask_comments"),
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=await inline_control_buttons()
         ),
@@ -779,7 +772,7 @@ async def set_order(order: MutableMapping[str, Any], chat_id: int):
 
     inserted_order = await database.orders.insert_one(order)
     order["_id"] = inserted_order.inserted_id
-    await tg.send_message(chat_id, _("Order is set."), reply_markup=start_keyboard())
+    await tg.send_message(chat_id, i18n("order_set"), reply_markup=start_keyboard())
     await show_order(order, chat_id, order["user_id"], show_id=True)
     asyncio.create_task(order_notification(order))
 
@@ -788,7 +781,7 @@ async def set_order(order: MutableMapping[str, Any], chat_id: int):
 async def comment_handler(call: types.CallbackQuery):
     """Ask for comments."""
     await tg.edit_message_text(
-        _("Add any additional comments."),
+        i18n("ask_comments"),
         call.message.chat.id,
         call.message.message_id,
         reply_markup=InlineKeyboardMarkup(
@@ -804,10 +797,9 @@ async def choose_comments(message: types.Message, state: FSMContext):
     if len(comments) >= 150:
         await tg.send_message(
             message.chat.id,
-            _(
-                "This value should contain less than {} characters "
-                "(you sent {} characters)."
-            ).format(150, len(comments)),
+            i18n("exceeded_character_limit {limit} {sent}").format(
+                limit=150, sent=len(comments)
+            ),
         )
         return
 

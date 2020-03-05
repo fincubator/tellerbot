@@ -22,7 +22,7 @@ from aiogram.types import KeyboardButton
 from aiogram.types import ReplyKeyboardMarkup
 from aiogram.utils.emoji import emojize
 
-from src.i18n import _
+from src.i18n import i18n
 
 FIAT: Tuple[str, ...] = ("CNY", "EUR", "RUB", "UAH", "USD")
 
@@ -53,5 +53,5 @@ def gateway_keyboard(
     """Get keyboard with gateways of ``currency`` from whitelist."""
     keyboard = ReplyKeyboardMarkup(row_width=6, one_time_keyboard=one_time_keyboard)
     keyboard.add(*[KeyboardButton(g) for g in CRYPTOCURRENCY[currency]])
-    keyboard.row(KeyboardButton(emojize(":fast_forward: ") + _("Without gateway")))
+    keyboard.row(KeyboardButton(emojize(":fast_forward: ") + i18n("without_gateway")))
     return keyboard

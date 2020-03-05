@@ -23,7 +23,7 @@ from aiogram.utils.exceptions import TelegramAPIError
 from src.bot import tg
 from src.database import database
 from src.handlers.base import show_order
-from src.i18n import _
+from src.i18n import i18n
 from src.money import gateway_currency_regexp
 
 
@@ -36,7 +36,7 @@ async def run_loop():
         sent = False
         async for order in cursor:
             user = await database.users.find_one({"id": order["user_id"]})
-            message = _("Your order has expired.", locale=user["locale"])
+            message = i18n("order_expired", locale=user["locale"])
             message += "\nID: {}".format(order["_id"])
             try:
                 if sent:

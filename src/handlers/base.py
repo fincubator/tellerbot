@@ -36,28 +36,19 @@ from src.bot import (  # noqa: F401, noreorder
 )
 from src.bot import tg
 from src.database import database, STATE_KEY
-from src.i18n import _
+from src.i18n import i18n
 from src.money import normalize
-
-
-def help_message() -> str:
-    """Translate initial greeting message."""
-    return _(
-        "Hello, I'm TellerBot. "
-        "I can help you meet with people that you can swap money with.\n\n"
-        "Choose one of the options on your keyboard."
-    )
 
 
 def start_keyboard() -> types.ReplyKeyboardMarkup:
     """Create reply keyboard with main menu."""
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     keyboard.add(
-        types.KeyboardButton(emojize(":heavy_plus_sign: ") + _("Create order")),
-        types.KeyboardButton(emojize(":bust_in_silhouette: ") + _("My orders")),
-        types.KeyboardButton(emojize(":closed_book: ") + _("Order book")),
-        types.KeyboardButton(emojize(":abcd: ") + _("Language")),
-        types.KeyboardButton(emojize(":question: ") + _("Support")),
+        types.KeyboardButton(emojize(":heavy_plus_sign: ") + i18n("create_order")),
+        types.KeyboardButton(emojize(":bust_in_silhouette: ") + i18n("my_orders")),
+        types.KeyboardButton(emojize(":closed_book: ") + i18n("order_book")),
+        types.KeyboardButton(emojize(":abcd: ") + i18n("language")),
+        types.KeyboardButton(emojize(":question: ") + i18n("support")),
     )
     return keyboard
 
@@ -73,19 +64,19 @@ async def inline_control_buttons(
         if back:
             row.append(
                 types.InlineKeyboardButton(
-                    _("Back"), callback_data=f"state {state_name} back"
+                    i18n("back"), callback_data=f"state {state_name} back"
                 )
             )
         if skip:
             row.append(
                 types.InlineKeyboardButton(
-                    _("Skip"), callback_data=f"state {state_name} skip"
+                    i18n("skip"), callback_data=f"state {state_name} skip"
                 )
             )
         buttons.append(row)
     if cancel:
         buttons.append(
-            [types.InlineKeyboardButton(_("Cancel"), callback_data="cancel")]
+            [types.InlineKeyboardButton(i18n("cancel"), callback_data="cancel")]
         )
     return buttons
 
@@ -138,7 +129,7 @@ async def orders_list(
 
     if quantity == 0:
         keyboard.row(*inline_orders_buttons)
-        text = _("There are no orders.")
+        text = i18n("no_orders")
         if message_id is None:
             await tg.send_message(chat_id, text, reply_markup=keyboard)
         else:
@@ -199,7 +190,7 @@ async def orders_list(
 
     keyboard.row(
         types.InlineKeyboardButton(
-            _("Invert"),
+            i18n("invert"),
             callback_data="{} {} {}".format(buttons_data, start, int(not invert)),
         )
     )
@@ -208,9 +199,9 @@ async def orders_list(
 
     text = (
         "\\["
-        + _("Page {} of {}").format(
-            math.ceil(start / Config.ORDERS_COUNT) + 1,
-            math.ceil(quantity / Config.ORDERS_COUNT),
+        + i18n("page {number} {total}").format(
+            number=math.ceil(start / Config.ORDERS_COUNT) + 1,
+            total=math.ceil(quantity / Config.ORDERS_COUNT),
         )
         + "]\n"
         + "\n".join(lines)
@@ -238,12 +229,12 @@ async def orders_list(
 def get_order_field_names():
     """Get translated names of order fields."""
     return {
-        "sum_buy": _("Amount of buying:"),
-        "sum_sell": _("Amount of selling:"),
-        "price": _("Price:"),
-        "payment_system": _("Payment system:"),
-        "duration": _("Duration:"),
-        "comments": _("Comments:"),
+        "sum_buy": i18n("buy_amount"),
+        "sum_sell": i18n("sell_amount"),
+        "price": i18n("price"),
+        "payment_system": i18n("payment_system"),
+        "duration": i18n("duration"),
+        "comments": i18n("comments"),
     }
 
 
@@ -282,11 +273,15 @@ async def show_order(
         if "edit" in user:
             if edit:
                 if user["edit"]["field"] == "price":
-                    new_edit_msg = _("Send new price in {}/{}.")
+                    new_edit_msg = i18n("new_price {of_currency} {per_currency}")
                     if invert:
-                        new_edit_msg = new_edit_msg.format(order["buy"], order["sell"])
+                        new_edit_msg = new_edit_msg.format(
+                            of_currency=order["buy"], per_currency=order["sell"]
+                        )
                     else:
-                        new_edit_msg = new_edit_msg.format(order["sell"], order["buy"])
+                        new_edit_msg = new_edit_msg.format(
+                            of_currency=order["sell"], per_currency=order["buy"]
+                        )
             elif user["edit"]["order_message_id"] == message_id:
                 await tg.delete_message(user["chat"], user["edit"]["message_id"])
                 await database.users.update_one(
@@ -312,12 +307,10 @@ async def show_order(
         markdown.code(creator["id"]),
     )
     if invert:
-        header += _("sells {} for {}", locale=locale).format(
-            order["sell"], order["buy"]
-        )
+        act = i18n("sells {sell_currency} {buy_currency}", locale=locale)
     else:
-        header += _("buys {} for {}", locale=locale).format(order["buy"], order["sell"])
-    header += "\n"
+        act = i18n("buys {buy_currency} {sell_currency}", locale=locale)
+    header += act.format(buy_currency=order["buy"], sell_currency=order["sell"]) + "\n"
 
     lines = [header]
     field_names = get_order_field_names()
@@ -352,7 +345,7 @@ async def show_order(
 
     keyboard.row(
         types.InlineKeyboardButton(
-            _("Invert", locale=locale),
+            i18n("invert", locale=locale),
             callback_data="{} {} {} {}".format(
                 "revert" if invert else "invert",
                 order["_id"],
@@ -381,7 +374,7 @@ async def show_order(
         keyboard.add(*buttons)
         keyboard.row(
             types.InlineKeyboardButton(
-                _("Finish", locale=locale),
+                i18n("finish", locale=locale),
                 callback_data="{} {} {} 0".format(
                     "invert" if invert else "revert", order["_id"], location_message_id
                 ),
@@ -395,18 +388,19 @@ async def show_order(
 
         keyboard.row(
             types.InlineKeyboardButton(
-                _("Similar", locale=locale),
+                i18n("similar", locale=locale),
                 callback_data="similar {}".format(order["_id"]),
             ),
             types.InlineKeyboardButton(
-                _("Match", locale=locale), callback_data="match {}".format(order["_id"])
+                i18n("match", locale=locale),
+                callback_data="match {}".format(order["_id"]),
             ),
         )
 
         if creator["id"] == user_id:
             keyboard.row(
                 types.InlineKeyboardButton(
-                    _("Edit", locale=locale),
+                    i18n("edit", locale=locale),
                     callback_data="{} {} {} 1".format(
                         "invert" if invert else "revert",
                         order["_id"],
@@ -414,7 +408,7 @@ async def show_order(
                     ),
                 ),
                 types.InlineKeyboardButton(
-                    _("Delete", locale=locale),
+                    i18n("delete", locale=locale),
                     callback_data="delete {} {}".format(
                         order["_id"], location_message_id
                     ),
@@ -423,7 +417,7 @@ async def show_order(
             if "duration" in order:
                 keyboard.row(
                     types.InlineKeyboardButton(
-                        _("Change duration", locale=locale),
+                        i18n("change_duration", locale=locale),
                         callback_data="edit {} duration {}".format(
                             order["_id"], location_message_id
                         ),
@@ -436,14 +430,14 @@ async def show_order(
             ):
                 keyboard.row(
                     types.InlineKeyboardButton(
-                        _("Escrow", locale=locale),
+                        i18n("escrow", locale=locale),
                         callback_data="escrow {} sum_buy 0".format(order["_id"]),
                     )
                 )
 
         keyboard.row(
             types.InlineKeyboardButton(
-                _("Hide", locale=locale),
+                i18n("hide", locale=locale),
                 callback_data="hide {}".format(location_message_id),
             )
         )
@@ -461,7 +455,9 @@ async def show_order(
         )
         if new_edit_msg is not None:
             keyboard = types.InlineKeyboardMarkup()
-            keyboard.row(types.InlineKeyboardButton(_("Unset"), callback_data="unset"))
+            keyboard.row(
+                types.InlineKeyboardButton(i18n("unset"), callback_data="unset")
+            )
             await tg.edit_message_text(
                 new_edit_msg,
                 chat_id,

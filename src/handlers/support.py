@@ -25,7 +25,7 @@ from src.config import Config
 from src.handlers.base import private_handler
 from src.handlers.base import start_keyboard
 from src.handlers.base import tg
-from src.i18n import _
+from src.i18n import i18n
 from src.states import asking_support
 
 
@@ -37,9 +37,7 @@ async def unhelp_button(call: types.CallbackQuery, state: FSMContext):
     await state.finish()
     await call.answer()
     await tg.send_message(
-        call.message.chat.id,
-        _("Your request is cancelled."),
-        reply_markup=start_keyboard(),
+        call.message.chat.id, i18n("request_cancelled"), reply_markup=start_keyboard(),
     )
 
 
@@ -62,7 +60,7 @@ async def send_message_to_support(message: types.Message):
     )
     await tg.send_message(
         message.chat.id,
-        _("Your message was forwarded. We'll respond to you within 24 hours."),
+        i18n("support_response_promise"),
         reply_markup=start_keyboard(),
     )
 
@@ -107,7 +105,7 @@ async def answer_support_ticket(message: types.Message):
             emojize(":speech_balloon:") + message.text,
             reply_to_message_id=reply_to_message_id,
         )
-        await tg.send_message(message.chat.id, _("Reply is sent."))
+        await tg.send_message(message.chat.id, i18n("reply_sent"))
 
 
 @dp.message_handler(
@@ -121,6 +119,6 @@ async def toggle_escrow(message: types.Message):
     """
     Config.ESCROW_ENABLED = not Config.ESCROW_ENABLED
     if Config.ESCROW_ENABLED:
-        await tg.send_message(message.chat.id, _("Escrow was enabled."))
+        await tg.send_message(message.chat.id, i18n("escrow_enabled"))
     else:
-        await tg.send_message(message.chat.id, _("Escrow was disabled."))
+        await tg.send_message(message.chat.id, i18n("escrow_disabled"))
