@@ -166,11 +166,12 @@ async def set_escrow_sum(message: types.Message, offer: EscrowOffer):
         normalize(offer_sum * order[f"price_{new_currency}"].to_decimal())
     )
     escrow_sum = update_dict[f"sum_{offer.type}"]
+    escrow_fee = Decimal(Config.ESCROW_FEE_PERCENTS) / Decimal("100")
     update_dict["sum_fee_up"] = Decimal128(
-        normalize(escrow_sum.to_decimal() * Decimal("1.05"))
+        normalize(escrow_sum.to_decimal() * (Decimal("1") + escrow_fee))
     )
     update_dict["sum_fee_down"] = Decimal128(
-        normalize(escrow_sum.to_decimal() * Decimal("0.95"))
+        normalize(escrow_sum.to_decimal() * (Decimal("1") - escrow_fee))
     )
     offer = replace(offer, **update_dict)  # type: ignore
 
