@@ -660,7 +660,7 @@ async def text_location(message: types.Message, state: FSMContext):
         await OrderCreation.duration.set()
         await tg.send_message(
             message.chat.id,
-            i18n("ask_duration"),
+            i18n("ask_duration {limit}").format(limit=Config.ORDER_DURATION_LIMIT),
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=await inline_control_buttons()
             ),
@@ -710,7 +710,7 @@ async def choose_location(message: types.Message, state: FSMContext):
     await OrderCreation.duration.set()
     await tg.send_message(
         message.chat.id,
-        i18n("ask_duration"),
+        i18n("ask_duration {limit}").format(limit=Config.ORDER_DURATION_LIMIT),
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=await inline_control_buttons()
         ),
@@ -721,7 +721,7 @@ async def choose_location(message: types.Message, state: FSMContext):
 async def duration_handler(call: types.CallbackQuery):
     """Ask for duration."""
     await tg.edit_message_text(
-        i18n("ask_duration"),
+        i18n("ask_duration {limit}").format(limit=Config.ORDER_DURATION_LIMIT),
         call.message.chat.id,
         call.message.message_id,
         reply_markup=InlineKeyboardMarkup(
@@ -741,10 +741,18 @@ async def choose_duration(message: types.Message, state: FSMContext):
         await tg.send_message(message.chat.id, i18n("send_natural_number"))
         return
 
-    if duration <= 100000:  # More than ~274 years is practically non-expiring
-        await database.creation.update_one(
-            {"user_id": message.from_user.id}, {"$set": {"duration": duration}}
+    if duration > Config.ORDER_DURATION_LIMIT:
+        await tg.send_message(
+            message.chat.id,
+            i18n("exceeded_duration_limit {limit}").format(
+                limit=Config.ORDER_DURATION_LIMIT
+            ),
         )
+        return
+
+    await database.creation.update_one(
+        {"user_id": message.from_user.id}, {"$set": {"duration": duration}}
+    )
 
     await OrderCreation.comments.set()
     await tg.send_message(
@@ -759,9 +767,10 @@ async def choose_duration(message: types.Message, state: FSMContext):
 async def set_order(order: MutableMapping[str, Any], chat_id: int):
     """Set missing values and finish order creation."""
     order["start_time"] = time()
-    if "duration" in order:
-        order["expiration_time"] = time() + order["duration"] * 24 * 60 * 60
-        order["notify"] = True
+    if "duration" not in order:
+        order["duration"] = Config.ORDER_DURATION_LIMIT
+    order["expiration_time"] = time() + order["duration"] * 24 * 60 * 60
+    order["notify"] = True
     if "price_sell" not in order and "sum_buy" in order and "sum_sell" in order:
         order["price_sell"] = Decimal128(
             normalize(order["sum_sell"].to_decimal() / order["sum_buy"].to_decimal())

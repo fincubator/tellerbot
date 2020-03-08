@@ -43,6 +43,7 @@ from src.handlers.base import orders_list
 from src.handlers.base import private_handler
 from src.handlers.base import show_order
 from src.i18n import i18n
+from src.i18n import plural_i18n
 
 OrderType = typing.Mapping[str, typing.Any]
 
@@ -385,10 +386,15 @@ async def edit_button(call: types.CallbackQuery):
 
     field = args[2]
 
+    keyboard = types.InlineKeyboardMarkup()
+    unset_button = types.InlineKeyboardButton(i18n("unset"), callback_data="unset")
+
     if field == "sum_buy":
         answer = i18n("send_new_buy_amount")
+        keyboard.row(unset_button)
     elif field == "sum_sell":
         answer = i18n("send_new_sell_amount")
+        keyboard.row(unset_button)
     elif field == "price":
         user = await database.users.find_one({"id": call.from_user.id})
         answer = i18n("new_price {of_currency} {per_currency}")
@@ -396,39 +402,53 @@ async def edit_button(call: types.CallbackQuery):
             answer = answer.format(of_currency=order["buy"], per_currency=order["sell"])
         else:
             answer = answer.format(of_currency=order["sell"], per_currency=order["buy"])
+        keyboard.row(unset_button)
     elif field == "payment_system":
         answer = i18n("send_new_payment_system")
+        keyboard.row(unset_button)
     elif field == "duration":
-        answer = i18n("send_new_duration")
+        answer = i18n("send_new_duration {limit}").format(
+            limit=Config.ORDER_DURATION_LIMIT
+        )
+        keyboard.row(
+            types.InlineKeyboardButton(
+                plural_i18n(
+                    "repeat_duration_singular {days}",
+                    "repeat_duration_plural {days}",
+                    order["duration"],
+                ).format(days=order["duration"]),
+                callback_data="default_duration",
+            )
+        )
     elif field == "comments":
         answer = i18n("send_new_comments")
+        keyboard.row(unset_button)
     else:
         answer = None
 
     await call.answer()
-    if answer:
-        keyboard = types.InlineKeyboardMarkup()
-        keyboard.row(types.InlineKeyboardButton(i18n("unset"), callback_data="unset"))
-        user = await database.users.find_one({"id": call.from_user.id})
-        if "edit" in user:
-            await tg.delete_message(call.message.chat.id, user["edit"]["message_id"])
-        result = await tg.send_message(
-            call.message.chat.id, answer, reply_markup=keyboard,
-        )
-        await database.users.update_one(
-            {"_id": user["_id"]},
-            {
-                "$set": {
-                    "edit.order_message_id": call.message.message_id,
-                    "edit.message_id": result.message_id,
-                    "edit.order_id": order["_id"],
-                    "edit.field": field,
-                    "edit.location_message_id": int(args[3]),
-                    "edit.show_id": call.message.text.startswith("ID"),
-                    STATE_KEY: states.field_editing.state,
-                }
-            },
-        )
+    if not answer:
+        return
+
+    user = await database.users.find_one({"id": call.from_user.id})
+    if "edit" in user:
+        await tg.delete_message(call.message.chat.id, user["edit"]["message_id"])
+    result = await tg.send_message(call.message.chat.id, answer, reply_markup=keyboard,)
+    await database.users.update_one(
+        {"_id": user["_id"]},
+        {
+            "$set": {
+                "edit.order_message_id": call.message.message_id,
+                "edit.message_id": result.message_id,
+                "edit.order_id": order["_id"],
+                "edit.field": field,
+                "edit.location_message_id": int(args[3]),
+                "edit.one_time": bool(int(args[4])),
+                "edit.show_id": call.message.text.startswith("ID"),
+                STATE_KEY: states.field_editing.state,
+            }
+        },
+    )
 
 
 async def finish_edit(user, update_dict):
@@ -437,18 +457,44 @@ async def finish_edit(user, update_dict):
     result = await database.orders.update_one({"_id": edit["order_id"]}, update_dict)
     if result.modified_count:
         order = await database.orders.find_one({"_id": edit["order_id"]})
-        await show_order(
-            order,
-            user["chat"],
-            user["id"],
-            message_id=edit["order_message_id"],
-            location_message_id=edit["location_message_id"],
-            show_id=edit["show_id"],
-            edit=True,
-        )
+        try:
+            await show_order(
+                order,
+                user["chat"],
+                user["id"],
+                message_id=edit["order_message_id"],
+                location_message_id=edit["location_message_id"],
+                show_id=edit["show_id"],
+                edit=not edit["one_time"],
+            )
+        except MessageNotModified:
+            pass
     await database.users.update_one(
         {"_id": user["_id"]}, {"$unset": {"edit": True, STATE_KEY: True}}
     )
+
+
+@dp.callback_query_handler(
+    lambda call: call.data == "default_duration", state=states.field_editing
+)
+async def default_duration(call: types.CallbackQuery, state: FSMContext):
+    """React to "Unset" button by unsetting the edit field."""
+    user = await database.users.find_one({"id": call.from_user.id})
+    order = await database.orders.find_one({"_id": user["edit"]["order_id"]})
+    await call.answer()
+    await finish_edit(
+        user,
+        {
+            "$set": {
+                "expiration_time": time() + order["duration"] * 24 * 60 * 60,
+                "notify": True,
+            }
+        },
+    )
+    try:
+        await tg.delete_message(user["chat"], user["edit"]["message_id"])
+    except MessageCantBeDeleted:
+        return
 
 
 @dp.callback_query_handler(
@@ -462,9 +508,6 @@ async def unset_button(call: types.CallbackQuery, state: FSMContext):
         unset_dict = {"price_buy": True, "price_sell": True}
     else:
         unset_dict = {field: True}
-        if field == "duration":
-            unset_dict["expiration_time"] = True
-            unset_dict["notify"] = True
     await call.answer()
     await finish_edit(user, {"$unset": unset_dict})
     try:
@@ -564,12 +607,15 @@ async def edit_field(message: types.Message, state: FSMContext):
         except ValueError:
             error = i18n("send_natural_number")
         else:
-            if duration <= 100000:
+            if duration > Config.ORDER_DURATION_LIMIT:
+                error = i18n("exceeded_duration_limit {limit}").format(
+                    limit=Config.ORDER_DURATION_LIMIT
+                )
+            else:
                 order = await database.orders.find_one({"_id": edit["order_id"]})
                 set_dict["duration"] = duration
-                expiration_time = order["start_time"] + duration * 24 * 60 * 60
-                set_dict["expiration_time"] = expiration_time
-                set_dict["notify"] = expiration_time > time()
+                set_dict["expiration_time"] = time() + duration * 24 * 60 * 60
+                set_dict["notify"] = True
 
     elif field == "comments":
         comments = message.text

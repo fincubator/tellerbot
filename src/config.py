@@ -55,8 +55,9 @@ class Config:
     ORDERS_COUNT: int
     ORDERS_LIMIT_HOURS: int
     ORDERS_LIMIT_COUNT: int
+    ORDER_DURATION_LIMIT: int
 
-    ESCROW_FEE_PERCENTS: int = 5
+    ESCROW_FEE_PERCENTS: int
     ESCROW_ENABLED: bool = True
     WIF_FILENAME: str
     OP_CHECK_TIMEOUT_HOURS: int

@@ -365,7 +365,7 @@ async def show_order(
             buttons.append(
                 types.InlineKeyboardButton(
                     f"{i + 1}",
-                    callback_data="edit {} {} {}".format(
+                    callback_data="edit {} {} {} 0".format(
                         order["_id"], field, location_message_id
                     ),
                 )
@@ -414,15 +414,14 @@ async def show_order(
                     ),
                 ),
             )
-            if "duration" in order:
-                keyboard.row(
-                    types.InlineKeyboardButton(
-                        i18n("change_duration", locale=locale),
-                        callback_data="edit {} duration {}".format(
-                            order["_id"], location_message_id
-                        ),
-                    )
+            keyboard.row(
+                types.InlineKeyboardButton(
+                    i18n("change_duration", locale=locale),
+                    callback_data="edit {} duration {} 1".format(
+                        order["_id"], location_message_id
+                    ),
                 )
+            )
         elif "price_sell" in order:
             if (
                 get_escrow_instance(order["buy"]) is not None

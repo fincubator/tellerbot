@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
-"POT-Creation-Date: 2020-03-05 03:12+0300\n"
+"POT-Creation-Date: 2020-03-08 10:18+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -297,8 +297,8 @@ msgid "location_not_found"
 msgstr "Локация не найдена."
 
 #: src/handlers/creation.py
-msgid "ask_duration"
-msgstr "Отправьте продолжительность заказа в днях."
+msgid "ask_duration {limit}"
+msgstr "Отправьте продолжительность заказа до {limit} дней."
 
 #: src/handlers/creation.py
 msgid "choose_location"
@@ -307,6 +307,10 @@ msgstr "Выберите одну из этих локаций:"
 #: src/handlers/creation.py src/handlers/order.py
 msgid "send_natural_number"
 msgstr "Отправьте натуральное число."
+
+#: src/handlers/creation.py src/handlers/order.py
+msgid "exceeded_duration_limit {limit}"
+msgstr "Отправьте число меньшее, чем {limit}."
 
 #: src/handlers/creation.py
 msgid "ask_comments"
@@ -538,8 +542,16 @@ msgid "send_new_payment_system"
 msgstr "Отправьте новую систему оплаты."
 
 #: src/handlers/order.py
-msgid "send_new_duration"
-msgstr "Отправьте новую продолжительность."
+msgid "send_new_duration {limit}"
+msgstr "Отправьте новую продолжительность до {limit} дней."
+
+#: src/handlers/order.py
+msgid "repeat_duration_singular {days}"
+msgid_plural "repeat_duration_plural {days}"
+msgstr[0] "Повторить {days} день"
+msgstr[1] "Повторить {days} дня"
+msgstr[2] "Повторить {days} дней"
+
 
 #: src/handlers/order.py
 msgid "send_new_comments"

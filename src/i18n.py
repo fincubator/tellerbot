@@ -63,4 +63,4 @@ class I18nMiddlewareManual(I18nMiddleware):
             return user.language_code
 
 
-i18n = I18nMiddlewareManual("bot", Path(__file__).parents[1] / "locale")
+i18n = plural_i18n = I18nMiddlewareManual("bot", Path(__file__).parents[1] / "locale")
