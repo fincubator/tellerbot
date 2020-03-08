@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
-"POT-Creation-Date: 2020-03-08 10:18+0300\n"
+"POT-Creation-Date: 2020-03-08 11:51+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: en\n"
@@ -154,6 +154,10 @@ msgid "new_price {of_currency} {per_currency}"
 msgstr "Send new price in {of_currency}/{per_currency}."
 
 #: src/handlers/base.py
+msgid "archived"
+msgstr "Archived"
+
+#: src/handlers/base.py
 msgid "sells {sell_currency} {buy_currency}"
 msgstr "sells {sell_currency} for {buy_currency}"
 
@@ -180,6 +184,14 @@ msgstr "Edit"
 #: src/handlers/base.py
 msgid "delete"
 msgstr "Delete"
+
+#: src/handlers/base.py
+msgid "unarchive"
+msgstr "Unarchive"
+
+#: src/handlers/base.py
+msgid "archive"
+msgstr "Archive"
 
 #: src/handlers/base.py
 msgid "change_duration"
@@ -551,6 +563,14 @@ msgstr[1] "Repeat {days} days"
 #: src/handlers/order.py
 msgid "send_new_comments"
 msgstr "Send new comments."
+
+#: src/handlers/order.py
+msgid "unarchive_order_error"
+msgstr "Couldn't unarchive order."
+
+#: src/handlers/order.py
+msgid "archive_order_error"
+msgstr "Couldn't archive order."
 
 #: src/handlers/order.py
 msgid "totally_sure"

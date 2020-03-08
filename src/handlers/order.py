@@ -170,10 +170,8 @@ async def aggregate_orders(buy: str, sell: str) -> typing.Tuple[Cursor, int]:
     query = {
         "buy": money.gateway_currency_regexp(buy),
         "sell": money.gateway_currency_regexp(sell),
-        "$or": [
-            {"expiration_time": {"$exists": False}},
-            {"expiration_time": {"$gt": time()}},
-        ],
+        "$or": [{"archived": {"$exists": False}}, {"archived": False}],
+        "expiration_time": {"$gt": time()},
     }
     cursor = database.orders.aggregate(
         [
@@ -639,6 +637,36 @@ async def edit_field(message: types.Message, state: FSMContext):
     elif error:
         await message.delete()
         await tg.edit_message_text(error, message.chat.id, edit["message_id"])
+
+
+@dp.callback_query_handler(
+    lambda call: call.data.startswith("archive "), state=any_state
+)
+@order_handler
+async def archive_button(call: types.CallbackQuery, order: OrderType):
+    """React to "Archive" or "Unarchive" button by flipping archived flag."""
+    args = call.data.split()
+
+    archived = order.get("archived")
+    order = await database.orders.find_one_and_update(
+        {"_id": ObjectId(args[1]), "user_id": call.from_user.id},
+        {"$unset" if archived else "$set": {"archived": True}},
+        return_document=pymongo.ReturnDocument.AFTER,
+    )
+    if not order:
+        await call.answer(
+            i18n("unarchive_order_error") if archived else i18n("archive_order_error")
+        )
+        return
+
+    await show_order(
+        order,
+        call.message.chat.id,
+        call.from_user.id,
+        message_id=call.message.message_id,
+        location_message_id=int(args[2]),
+        show_id=call.message.text.startswith("ID"),
+    )
 
 
 @dp.callback_query_handler(

@@ -146,10 +146,7 @@ async def orders_list(
         line = ""
 
         if user_id is None:
-            if (
-                "expiration_time" not in order
-                or order["expiration_time"] > current_time
-            ):
+            if not order.get("archived") and order["expiration_time"] > current_time:
                 line += emojize(":arrow_forward: ")
             else:
                 line += emojize(":pause_button: ")
@@ -301,6 +298,9 @@ async def show_order(
     if show_id:
         header += "ID: {}\n".format(markdown.code(order["_id"]))
 
+    if order.get("archived"):
+        header += markdown.bold(i18n("archived", locale=locale)) + "\n"
+
     creator = await database.users.find_one({"id": order["user_id"]})
     header += "{} ({}) ".format(
         markdown.link(creator["mention"], types.User(id=creator["id"]).url),
@@ -410,6 +410,16 @@ async def show_order(
                 types.InlineKeyboardButton(
                     i18n("delete", locale=locale),
                     callback_data="delete {} {}".format(
+                        order["_id"], location_message_id
+                    ),
+                ),
+            )
+            keyboard.row(
+                types.InlineKeyboardButton(
+                    i18n("unarchive", locale=locale)
+                    if order.get("archived")
+                    else i18n("archive", locale=locale),
+                    callback_data="archive {} {}".format(
                         order["_id"], location_message_id
                     ),
                 ),

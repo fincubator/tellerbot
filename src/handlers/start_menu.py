@@ -153,10 +153,8 @@ async def handle_book(
 
     """
     query = {
-        "$or": [
-            {"expiration_time": {"$exists": False}},
-            {"expiration_time": {"$gt": time()}},
-        ]
+        "$or": [{"archived": {"$exists": False}}, {"archived": False}],
+        "expiration_time": {"$gt": time()},
     }
 
     if command is not None:
@@ -240,10 +238,8 @@ async def search_by_creator(message: types.Message, state: FSMContext):
     therefore not supported.
     """
     query: typing.Dict[str, typing.Any] = {
-        "$or": [
-            {"expiration_time": {"$exists": False}},
-            {"expiration_time": {"$gt": time()}},
-        ],
+        "$or": [{"archived": {"$exists": False}}, {"archived": False}],
+        "expiration_time": {"$gt": time()},
     }
     source = message.text.split()
     try:
