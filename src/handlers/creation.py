@@ -317,10 +317,18 @@ async def choose_sell(message: types.Message, state: FSMContext):
         return
 
     order = await database.creation.find_one_and_update(
-        {"user_id": message.from_user.id},
+        {"user_id": message.from_user.id, "buy": {"$ne": match}},
         {"$set": {"sell": match, "price_currency": "sell"}},
         return_document=ReturnDocument.AFTER,
     )
+    if not order:
+        await tg.send_message(
+            message.chat.id,
+            i18n("same_currency_error"),
+            reply_markup=whitelist.currency_keyboard(one_time_keyboard=True),
+        )
+        return
+
     await set_price_state(message, order)
 
 
