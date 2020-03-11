@@ -659,6 +659,7 @@ async def archive_button(call: types.CallbackQuery, order: OrderType):
         )
         return
 
+    await call.answer()
     await show_order(
         order,
         call.message.chat.id,
