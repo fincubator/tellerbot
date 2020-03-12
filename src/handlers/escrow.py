@@ -16,12 +16,14 @@
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 """Handlers for escrow exchange."""
 import asyncio
+import datetime
 import typing
 from dataclasses import replace
 from decimal import Decimal
 from functools import wraps
 from time import time
 
+import pytz
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import any_state
@@ -166,13 +168,25 @@ async def set_escrow_sum(message: types.Message, offer: EscrowOffer):
         normalize(offer_sum * order[f"price_{new_currency}"].to_decimal())
     )
     escrow_sum = update_dict[f"sum_{offer.type}"]
-    escrow_fee = Decimal(Config.ESCROW_FEE_PERCENTS) / Decimal("100")
+
+    stress_test_start = (
+        pytz.timezone("Europe/Moscow")
+        .localize(datetime.datetime(2020, 3, 13, 13, 0, 0))
+        .astimezone(pytz.utc)
+    )
+    stress_test_end = stress_test_start + datetime.timedelta(hours=1)
+    if stress_test_start <= datetime.datetime.now(tz=pytz.utc) <= stress_test_end:
+        escrow_fee = -Decimal(Config.STRESS_TEST_BONUS_PERCENTS) / Decimal("100")
+        update_dict["stress_test"] = True
+    else:
+        escrow_fee = Decimal(Config.ESCROW_FEE_PERCENTS) / Decimal("100")
     update_dict["sum_fee_up"] = Decimal128(
         normalize(escrow_sum.to_decimal() * (Decimal("1") + escrow_fee))
     )
     update_dict["sum_fee_down"] = Decimal128(
         normalize(escrow_sum.to_decimal() * (Decimal("1") - escrow_fee))
     )
+
     offer = replace(offer, **update_dict)  # type: ignore
 
     if offer.sum_currency == offer.type:
@@ -201,10 +215,15 @@ async def set_escrow_sum(message: types.Message, offer: EscrowOffer):
 
 async def ask_fee(user_id: int, chat_id: int, offer: EscrowOffer):
     """Ask fee of any party."""
-    answer = (
-        i18n("ask_fee {fee_percents}".format(fee_percents=Config.ESCROW_FEE_PERCENTS))
-        + " "
-    )
+    if not offer.stress_test:
+        answer = i18n("ask_fee {fee_percents}").format(
+            fee_percents=Config.ESCROW_FEE_PERCENTS
+        )
+    else:
+        answer = i18n("ask_bonus_stress_test {bonus_percents}").format(
+            bonus_percents=Config.STRESS_TEST_BONUS_PERCENTS
+        )
+    answer += " "
     if (user_id == offer.init["id"]) == (offer.type == "buy"):
         answer += i18n("will_pay {amount} {currency}")
         sum_fee_field = "sum_fee_up"

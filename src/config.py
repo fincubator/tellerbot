@@ -58,6 +58,7 @@ class Config:
     ORDER_DURATION_LIMIT: int
 
     ESCROW_FEE_PERCENTS: int
+    STRESS_TEST_BONUS_PERCENTS: int
     ESCROW_ENABLED: bool = True
     WIF_FILENAME: str
     OP_CHECK_TIMEOUT_HOURS: int

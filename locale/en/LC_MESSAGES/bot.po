@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
-"POT-Creation-Date: 2020-03-11 15:17+0300\n"
+"POT-Creation-Date: 2020-03-12 20:26+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: en\n"
@@ -371,6 +371,10 @@ msgstr ""
 #: src/handlers/escrow.py
 msgid "ask_fee {fee_percents}"
 msgstr "Do you agree to pay a fee of {fee_percents}%?"
+
+#: src/handlers/escrow.py
+msgid "ask_bonus_stress_test {bonus_percents}"
+msgstr "Do you agree to get a bonus of {bonus_percents}%?"
 
 #: src/handlers/escrow.py
 msgid "will_pay {amount} {currency}"
