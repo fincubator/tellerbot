@@ -55,7 +55,7 @@ async def send_message_to_support(message: types.Message):
         Config.SUPPORT_CHAT_ID,
         emojize(":envelope:")
         + f" #chat\\_{message.chat.id} {message.message_id}\n{username}:\n"
-        + message.text,
+        + markdown.escape_md(message.text),
         parse_mode=types.ParseMode.MARKDOWN,
     )
     await tg.send_message(
