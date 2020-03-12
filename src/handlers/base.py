@@ -259,6 +259,9 @@ async def show_order(
     :param edit: Enter edit mode.
     :param locale: Locale of message receiver.
     """
+    if locale is None:
+        locale = i18n.ctx_locale.get()
+
     new_edit_msg = None
     if invert is None:
         user = await database.users.find_one({"id": user_id})
