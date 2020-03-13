@@ -301,7 +301,7 @@ msgstr "Choose currency of sum with buttons."
 
 #: src/handlers/creation.py
 msgid "cashless_payment_system"
-msgstr "Отправьте систему безналичной оплаты."
+msgstr "Send cashless payment system."
 
 #: src/handlers/creation.py
 msgid "ask_location"
