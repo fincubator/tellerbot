@@ -116,7 +116,7 @@ async def handle_create(message: types.Message, state: FSMContext):
     await tg.send_message(
         message.chat.id,
         i18n("ask_buy_currency"),
-        reply_markup=whitelist.currency_keyboard(),
+        reply_markup=whitelist.currency_keyboard("buy"),
     )
 
 

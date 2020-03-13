@@ -93,22 +93,27 @@ async def change_state(call: types.CallbackQuery, state: FSMContext):
     return await call.answer(answer)
 
 
-@dp.callback_query_handler(lambda call: call.data == "cancel", state=any_state)
-async def cancel_order_creation(call: types.CallbackQuery, state: FSMContext):
+async def cancel_order_creation(user_id: int, chat_id: int):
     """Cancel order creation."""
-    await state.finish()
-    await call.answer()
+    await dp.get_current().current_state().finish()
 
-    order = await database.creation.delete_one({"user_id": call.from_user.id})
+    order = await database.creation.delete_one({"user_id": user_id})
     if not order.deleted_count:
         await tg.send_message(
-            call.message.chat.id, i18n("no_creation"), reply_markup=start_keyboard(),
+            chat_id, i18n("no_creation"), reply_markup=start_keyboard(),
         )
         return True
 
     await tg.send_message(
-        call.message.chat.id, i18n("order_cancelled"), reply_markup=start_keyboard()
+        chat_id, i18n("order_cancelled"), reply_markup=start_keyboard()
     )
+
+
+@dp.callback_query_handler(lambda call: call.data == "cancel", state=any_state)
+async def cancel_button(call: types.CallbackQuery, state: FSMContext):
+    """React to cancel button."""
+    await call.answer()
+    await cancel_order_creation(call.from_user.id, call.message.chat.id)
 
 
 async def set_gateway(currency_type: str, message: types.Message):
@@ -192,9 +197,7 @@ async def match_currency(currency_type: str, message: types.Message):
                 await tg.send_message(
                     message.chat.id,
                     i18n("choose_gateway {currency}").format(currency=currency),
-                    reply_markup=whitelist.gateway_keyboard(
-                        currency, one_time_keyboard=currency_type == "sell"
-                    ),
+                    reply_markup=whitelist.gateway_keyboard(currency, currency_type),
                 )
                 await OrderCreation.next()
                 return None
@@ -264,6 +267,10 @@ async def whitelisting_request(call: types.CallbackQuery):
 @private_handler(state=OrderCreation.buy)
 async def choose_buy(message: types.Message, state: FSMContext):
     """Set currency user wants to buy and ask for one they want to sell."""
+    if message.text.startswith(emojize(":x:")):
+        await cancel_order_creation(message.from_user.id, message.chat.id)
+        return
+
     match = await match_currency("buy", message)
     if not match:
         return
@@ -275,14 +282,25 @@ async def choose_buy(message: types.Message, state: FSMContext):
     await tg.send_message(
         message.chat.id,
         i18n("ask_sell_currency"),
-        reply_markup=whitelist.currency_keyboard(one_time_keyboard=True),
+        reply_markup=whitelist.currency_keyboard("sell"),
     )
 
 
 @private_handler(state=OrderCreation.buy_gateway)
 async def choose_buy_gateway(message: types.Message, state: FSMContext):
     """Set gateway of buy currency and ask for sell currency."""
-    if not message.text.startswith(emojize(":fast_forward:")):
+    if message.text.startswith(emojize(":fast_reverse_button:")):
+        await OrderCreation.previous()
+        await tg.send_message(
+            message.chat.id,
+            i18n("ask_buy_currency"),
+            reply_markup=whitelist.currency_keyboard("buy"),
+        )
+        return
+    elif message.text.startswith(emojize(":x:")):
+        await cancel_order_creation(message.from_user.id, message.chat.id)
+        return
+    elif not message.text.startswith(emojize(":fast_forward:")):
         order = await set_gateway("buy", message)
         if not order:
             return
@@ -291,7 +309,7 @@ async def choose_buy_gateway(message: types.Message, state: FSMContext):
     await tg.send_message(
         message.chat.id,
         i18n("ask_sell_currency"),
-        reply_markup=whitelist.currency_keyboard(one_time_keyboard=True),
+        reply_markup=whitelist.currency_keyboard("sell"),
     )
 
 
@@ -312,6 +330,18 @@ async def set_price_state(message: types.Message, order: Mapping[str, Any]):
 @private_handler(state=OrderCreation.sell)
 async def choose_sell(message: types.Message, state: FSMContext):
     """Set currency user wants to sell and ask for price."""
+    if message.text.startswith(emojize(":fast_reverse_button:")):
+        await OrderCreation.buy.set()
+        await tg.send_message(
+            message.chat.id,
+            i18n("ask_buy_currency"),
+            reply_markup=whitelist.currency_keyboard("buy"),
+        )
+        return
+    elif message.text.startswith(emojize(":x:")):
+        await cancel_order_creation(message.from_user.id, message.chat.id)
+        return
+
     match = await match_currency("sell", message)
     if not match:
         return
@@ -325,7 +355,7 @@ async def choose_sell(message: types.Message, state: FSMContext):
         await tg.send_message(
             message.chat.id,
             i18n("same_currency_error"),
-            reply_markup=whitelist.currency_keyboard(one_time_keyboard=True),
+            reply_markup=whitelist.currency_keyboard("sell"),
         )
         return
 
@@ -335,7 +365,18 @@ async def choose_sell(message: types.Message, state: FSMContext):
 @private_handler(state=OrderCreation.sell_gateway)
 async def choose_sell_gateway(message: types.Message, state: FSMContext):
     """Set gateway of sell currency and ask for price."""
-    if not message.text.startswith(emojize(":fast_forward:")):
+    if message.text.startswith(emojize(":fast_reverse_button:")):
+        await OrderCreation.previous()
+        await tg.send_message(
+            message.chat.id,
+            i18n("ask_sell_currency"),
+            reply_markup=whitelist.currency_keyboard("sell"),
+        )
+        return
+    elif message.text.startswith(emojize(":x:")):
+        await cancel_order_creation(message.from_user.id, message.chat.id)
+        return
+    elif not message.text.startswith(emojize(":fast_forward:")):
         order = await set_gateway("sell", message)
         if not order:
             return

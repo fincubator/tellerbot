@@ -39,19 +39,33 @@ CRYPTOCURRENCY: Mapping[str, Tuple[str, ...]] = {
 }
 
 
-def currency_keyboard(one_time_keyboard: bool = False) -> ReplyKeyboardMarkup:
+def currency_keyboard(currency_type: str) -> ReplyKeyboardMarkup:
     """Get keyboard with currencies from whitelists."""
-    keyboard = ReplyKeyboardMarkup(row_width=6, one_time_keyboard=one_time_keyboard)
+    keyboard = ReplyKeyboardMarkup(
+        row_width=6, one_time_keyboard=currency_type == "sell"
+    )
     keyboard.row(*[KeyboardButton(c) for c in FIAT])
     keyboard.add(*[KeyboardButton(c) for c in CRYPTOCURRENCY])
+    cancel_button = KeyboardButton(emojize(":x: ") + i18n("cancel"))
+    if currency_type == "sell":
+        keyboard.row(
+            KeyboardButton(emojize(":fast_reverse_button: ") + i18n("back")),
+            cancel_button,
+        )
+    else:
+        keyboard.row(cancel_button)
     return keyboard
 
 
-def gateway_keyboard(
-    currency: str, one_time_keyboard: bool = False
-) -> ReplyKeyboardMarkup:
+def gateway_keyboard(currency: str, currency_type: str) -> ReplyKeyboardMarkup:
     """Get keyboard with gateways of ``currency`` from whitelist."""
-    keyboard = ReplyKeyboardMarkup(row_width=6, one_time_keyboard=one_time_keyboard)
+    keyboard = ReplyKeyboardMarkup(
+        row_width=6, one_time_keyboard=currency_type == "sell"
+    )
     keyboard.add(*[KeyboardButton(g) for g in CRYPTOCURRENCY[currency]])
-    keyboard.row(KeyboardButton(emojize(":fast_forward: ") + i18n("without_gateway")))
+    keyboard.row(
+        KeyboardButton(emojize(":fast_reverse_button: ") + i18n("back")),
+        KeyboardButton(emojize(":fast_forward: ") + i18n("without_gateway")),
+        KeyboardButton(emojize(":x: ") + i18n("cancel")),
+    )
     return keyboard
