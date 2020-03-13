@@ -44,7 +44,7 @@ from pymongo import ReturnDocument
 from src import whitelist
 from src.bot import dp
 from src.bot import tg
-from src.config import Config
+from src.config import config
 from src.database import database
 from src.handlers.base import inline_control_buttons
 from src.handlers.base import private_handler
@@ -244,14 +244,14 @@ async def whitelisting_request(call: types.CallbackQuery):
                 currency, len(request["users"]) + 1
             )
             if len(request["users"]) == 1:
-                message = await tg.send_message(Config.SUPPORT_CHAT_ID, support_text)
+                message = await tg.send_message(config.SUPPORT_CHAT_ID, support_text)
                 await database.whitelisting_requests.update_one(
                     {"_id": request["_id"]},
                     {"$set": {"message_id": message.message_id}},
                 )
             else:
                 await tg.edit_message_text(
-                    support_text, Config.SUPPORT_CHAT_ID, request["message_id"],
+                    support_text, config.SUPPORT_CHAT_ID, request["message_id"],
                 )
 
     await call.answer()
@@ -668,7 +668,7 @@ async def text_location(message: types.Message, state: FSMContext):
         await OrderCreation.duration.set()
         await tg.send_message(
             message.chat.id,
-            i18n("ask_duration {limit}").format(limit=Config.ORDER_DURATION_LIMIT),
+            i18n("ask_duration {limit}").format(limit=config.ORDER_DURATION_LIMIT),
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=await inline_control_buttons()
             ),
@@ -718,7 +718,7 @@ async def choose_location(message: types.Message, state: FSMContext):
     await OrderCreation.duration.set()
     await tg.send_message(
         message.chat.id,
-        i18n("ask_duration {limit}").format(limit=Config.ORDER_DURATION_LIMIT),
+        i18n("ask_duration {limit}").format(limit=config.ORDER_DURATION_LIMIT),
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=await inline_control_buttons()
         ),
@@ -729,7 +729,7 @@ async def choose_location(message: types.Message, state: FSMContext):
 async def duration_handler(call: types.CallbackQuery):
     """Ask for duration."""
     await tg.edit_message_text(
-        i18n("ask_duration {limit}").format(limit=Config.ORDER_DURATION_LIMIT),
+        i18n("ask_duration {limit}").format(limit=config.ORDER_DURATION_LIMIT),
         call.message.chat.id,
         call.message.message_id,
         reply_markup=InlineKeyboardMarkup(
@@ -749,11 +749,11 @@ async def choose_duration(message: types.Message, state: FSMContext):
         await tg.send_message(message.chat.id, i18n("send_natural_number"))
         return
 
-    if duration > Config.ORDER_DURATION_LIMIT:
+    if duration > config.ORDER_DURATION_LIMIT:
         await tg.send_message(
             message.chat.id,
             i18n("exceeded_duration_limit {limit}").format(
-                limit=Config.ORDER_DURATION_LIMIT
+                limit=config.ORDER_DURATION_LIMIT
             ),
         )
         return
@@ -776,7 +776,7 @@ async def set_order(order: MutableMapping[str, Any], chat_id: int):
     """Set missing values and finish order creation."""
     order["start_time"] = time()
     if "duration" not in order:
-        order["duration"] = Config.ORDER_DURATION_LIMIT
+        order["duration"] = config.ORDER_DURATION_LIMIT
     order["expiration_time"] = time() + order["duration"] * 24 * 60 * 60
     order["notify"] = True
     if "price_sell" not in order and "sum_buy" in order and "sum_sell" in order:

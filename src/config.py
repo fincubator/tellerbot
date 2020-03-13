@@ -17,58 +17,52 @@
 from os import getenv
 
 
-def getenv_int(key, default=None):
-    """Convert the value of the environment variable key to an integer."""
+DEFAULT_VALUES = {
+    "INTERNAL_HOST": "127.0.0.1",
+    "DATABASE_HOST": "127.0.0.1",
+    "DATABASE_PORT": 27017,
+    "DATABASE_NAME": "tellerbot",
+    "ESCROW_ENABLED": True,
+}
+
+
+def get_typed_env(key):
+    """Get an environment variable with inferred type."""
     env = getenv(key)
+    if env is None:
+        return None
+    elif env == "true":
+        return True
+    elif env == "false":
+        return False
     try:
         return int(env)
-    except (TypeError, ValueError):
-        return default
-
-
-def getenv_bool(key, default=None):
-    """Convert the value of the environment variable key to a boolean."""
-    env = getenv(key)
-    return env == "true" if env in ("true", "false") else default
+    except ValueError:
+        return env
 
 
 class Config:
-    """Data holder for configuration values."""
+    """Lazy interface to configuration values."""
 
-    TOKEN_FILENAME: str
-    INTERNAL_HOST: str = "127.0.0.1"
-    SERVER_HOST: str
-    SERVER_PORT: int
-    WEBHOOK_PATH: str
-    DATABASE_HOST: str = "127.0.0.1"
-    DATABASE_PORT: int = 27017
-    DATABASE_USERNAME: str
-    DATABASE_PASSWORD_FILENAME: str
-    DATABASE_NAME: str = "tellerbot"
+    def __setattr__(self, name, value):
+        """Set configuration value."""
+        super().__setattr__(name, value)
 
-    LOGGER_LEVEL: str
-    LOG_FILENAME: str
+    def __getattr__(self, name):
+        """Get configuration value.
 
-    SUPPORT_CHAT_ID: int
-    EXCEPTIONS_CHAT_ID: int
-
-    ORDERS_COUNT: int
-    ORDERS_LIMIT_HOURS: int
-    ORDERS_LIMIT_COUNT: int
-    ORDER_DURATION_LIMIT: int
-
-    ESCROW_FEE_PERCENTS: int
-    ESCROW_ENABLED: bool = True
-    WIF_FILENAME: str
-    OP_CHECK_TIMEOUT_HOURS: int
+        Return value of environment variable ``name`` if it is set or
+        default value otherwise.
+        """
+        env = get_typed_env(name)
+        if env is not None:
+            value = env
+        elif name not in DEFAULT_VALUES:
+            raise AttributeError(f"config has no option '{name}'")
+        else:
+            value = DEFAULT_VALUES[name]
+        setattr(self, name, value)
+        return value
 
 
-for name, annotation in Config.__annotations__.items():
-    if annotation == int:
-        value = getenv_int(name)
-    elif annotation == bool:
-        value = getenv_bool(name)
-    else:
-        value = getenv(name)
-    if value is not None:
-        setattr(Config, name, value)
+config = Config()

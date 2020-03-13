@@ -19,20 +19,20 @@ import typing
 from aiogram.dispatcher.storage import BaseStorage
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from src.config import Config
+from src.config import config
 
 
 try:
-    with open(Config.DATABASE_PASSWORD_FILENAME, "r") as password_file:
+    with open(config.DATABASE_PASSWORD_FILENAME, "r") as password_file:
         client = AsyncIOMotorClient(
-            Config.DATABASE_HOST,
-            Config.DATABASE_PORT,
-            username=Config.DATABASE_USERNAME,
+            config.DATABASE_HOST,
+            config.DATABASE_PORT,
+            username=config.DATABASE_USERNAME,
             password=password_file.read(),
         )
 except (AttributeError, FileNotFoundError):
-    client = AsyncIOMotorClient(Config.DATABASE_HOST)
-database = client[Config.DATABASE_NAME]
+    client = AsyncIOMotorClient(config.DATABASE_HOST)
+database = client[config.DATABASE_NAME]
 
 STATE_KEY = "state"
 

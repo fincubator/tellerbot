@@ -36,7 +36,7 @@ from bson.objectid import ObjectId
 from src import states
 from src.bot import dp
 from src.bot import tg
-from src.config import Config
+from src.config import config
 from src.database import database
 from src.escrow import get_escrow_instance
 from src.escrow import SUPPORTED_BANKS
@@ -166,7 +166,7 @@ async def set_escrow_sum(message: types.Message, offer: EscrowOffer):
         normalize(offer_sum * order[f"price_{new_currency}"].to_decimal())
     )
     escrow_sum = update_dict[f"sum_{offer.type}"]
-    escrow_fee = Decimal(Config.ESCROW_FEE_PERCENTS) / Decimal("100")
+    escrow_fee = Decimal(config.ESCROW_FEE_PERCENTS) / Decimal("100")
     update_dict["sum_fee_up"] = Decimal128(
         normalize(escrow_sum.to_decimal() * (Decimal("1") + escrow_fee))
     )
@@ -202,7 +202,7 @@ async def set_escrow_sum(message: types.Message, offer: EscrowOffer):
 async def ask_fee(user_id: int, chat_id: int, offer: EscrowOffer):
     """Ask fee of any party."""
     answer = (
-        i18n("ask_fee {fee_percents}".format(fee_percents=Config.ESCROW_FEE_PERCENTS))
+        i18n("ask_fee {fee_percents}".format(fee_percents=config.ESCROW_FEE_PERCENTS))
         + " "
     )
     if (user_id == offer.init["id"]) == (offer.type == "buy"):
@@ -888,7 +888,7 @@ async def validate_offer(call: types.CallbackQuery, offer: EscrowOffer):
         offer.bank,
         markdown.code(offer.memo),
     )
-    await tg.send_message(Config.SUPPORT_CHAT_ID, answer, parse_mode=ParseMode.MARKDOWN)
+    await tg.send_message(config.SUPPORT_CHAT_ID, answer, parse_mode=ParseMode.MARKDOWN)
     await offer.delete_document()
     await call.answer()
     await tg.send_message(

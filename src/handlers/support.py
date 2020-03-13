@@ -21,7 +21,7 @@ from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
 
 from src.bot import dp
-from src.config import Config
+from src.config import config
 from src.handlers.base import private_handler
 from src.handlers.base import start_keyboard
 from src.handlers.base import tg
@@ -52,7 +52,7 @@ async def send_message_to_support(message: types.Message):
         username = markdown.link(message.from_user.full_name, message.from_user.url)
 
     await tg.send_message(
-        Config.SUPPORT_CHAT_ID,
+        config.SUPPORT_CHAT_ID,
         emojize(":envelope:")
         + f" #chat\\_{message.chat.id} {message.message_id}\n{username}:\n"
         + markdown.escape_md(message.text),
@@ -84,7 +84,7 @@ async def handle_reply(message: types.Message):
 
 
 @dp.message_handler(
-    lambda msg: msg.chat.id == Config.SUPPORT_CHAT_ID
+    lambda msg: msg.chat.id == config.SUPPORT_CHAT_ID
     and msg.reply_to_message is not None
     and msg.reply_to_message.text.startswith(emojize(":envelope: "))
 )
@@ -109,7 +109,7 @@ async def answer_support_ticket(message: types.Message):
 
 
 @dp.message_handler(
-    lambda msg: msg.chat.id == Config.SUPPORT_CHAT_ID, commands=["toggle_escrow"]
+    lambda msg: msg.chat.id == config.SUPPORT_CHAT_ID, commands=["toggle_escrow"]
 )
 async def toggle_escrow(message: types.Message):
     """Toggle escrow availability.
@@ -117,8 +117,8 @@ async def toggle_escrow(message: types.Message):
     This command makes creation of new escrow offers unavailable if
     escrow is enabled, and makes it available if it's disabled.
     """
-    Config.ESCROW_ENABLED = not Config.ESCROW_ENABLED
-    if Config.ESCROW_ENABLED:
+    config.ESCROW_ENABLED = not config.ESCROW_ENABLED
+    if config.ESCROW_ENABLED:
         await tg.send_message(message.chat.id, i18n("escrow_enabled"))
     else:
         await tg.send_message(message.chat.id, i18n("escrow_disabled"))

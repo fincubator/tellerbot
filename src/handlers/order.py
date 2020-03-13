@@ -34,7 +34,7 @@ from src import money
 from src import states
 from src.bot import dp
 from src.bot import tg
-from src.config import Config
+from src.config import config
 from src.database import database
 from src.database import STATE_KEY
 from src.escrow import get_escrow_instance
@@ -293,7 +293,7 @@ async def match_button(call: types.CallbackQuery, order: OrderType):
 @order_handler
 async def escrow_button(call: types.CallbackQuery, order: OrderType):
     """React to "Escrow" button by starting escrow exchange."""
-    if not Config.ESCROW_ENABLED:
+    if not config.ESCROW_ENABLED:
         await call.answer(i18n("escrow_unavailable"))
         return
     args = call.data.split()
@@ -406,7 +406,7 @@ async def edit_button(call: types.CallbackQuery):
         keyboard.row(unset_button)
     elif field == "duration":
         answer = i18n("send_new_duration {limit}").format(
-            limit=Config.ORDER_DURATION_LIMIT
+            limit=config.ORDER_DURATION_LIMIT
         )
         keyboard.row(
             types.InlineKeyboardButton(
@@ -605,9 +605,9 @@ async def edit_field(message: types.Message, state: FSMContext):
         except ValueError:
             error = i18n("send_natural_number")
         else:
-            if duration > Config.ORDER_DURATION_LIMIT:
+            if duration > config.ORDER_DURATION_LIMIT:
                 error = i18n("exceeded_duration_limit {limit}").format(
-                    limit=Config.ORDER_DURATION_LIMIT
+                    limit=config.ORDER_DURATION_LIMIT
                 )
             else:
                 order = await database.orders.find_one({"_id": edit["order_id"]})

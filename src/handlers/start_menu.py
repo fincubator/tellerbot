@@ -33,7 +33,7 @@ from src import states
 from src import whitelist
 from src.bot import dp
 from src.bot import tg
-from src.config import Config
+from src.config import config
 from src.database import database
 from src.handlers.base import orders_list
 from src.handlers.base import private_handler
@@ -97,14 +97,14 @@ async def handle_create(message: types.Message, state: FSMContext):
     user_orders = await database.orders.count_documents(
         {
             "user_id": message.from_user.id,
-            "start_time": {"$gt": current_time - Config.ORDERS_LIMIT_HOURS * 3600},
+            "start_time": {"$gt": current_time - config.ORDERS_LIMIT_HOURS * 3600},
         }
     )
-    if user_orders >= Config.ORDERS_LIMIT_COUNT:
+    if user_orders >= config.ORDERS_LIMIT_COUNT:
         await tg.send_message(
             message.chat.id,
             i18n("exceeded_order_creation_time_limit {orders} {hours}").format(
-                orders=Config.ORDERS_LIMIT_COUNT, hours=Config.ORDERS_LIMIT_HOURS
+                orders=config.ORDERS_LIMIT_COUNT, hours=config.ORDERS_LIMIT_HOURS
             ),
         )
         return

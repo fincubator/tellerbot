@@ -25,7 +25,7 @@ from aiogram.utils.exceptions import MessageNotModified
 
 from src.bot import dp
 from src.bot import tg
-from src.config import Config
+from src.config import config
 from src.handlers import escrow  # noqa: F401, noreorder
 from src.handlers import start_menu  # noqa: F401, noreorder
 from src.handlers import creation  # noqa: F401
@@ -80,7 +80,7 @@ async def errors_handler(update: types.Update, exception: Exception):
 
     if chat_id is not None:
         try:
-            exceptions_chat_id = Config.EXCEPTIONS_CHAT_ID
+            exceptions_chat_id = config.EXCEPTIONS_CHAT_ID
         except AttributeError:
             pass
         else:
