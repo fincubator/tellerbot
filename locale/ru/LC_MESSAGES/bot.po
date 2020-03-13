@@ -375,7 +375,7 @@ msgstr "Вы согласны заплатить комиссию {fee_percents}
 
 #: src/handlers/escrow.py
 msgid "ask_bonus_stress_test {bonus_percents}"
-msgstr "Вы согласны получить бонус {fee_percents}%?"
+msgstr "Вы согласны получить бонус {bonus_percents}%?"
 
 #: src/handlers/escrow.py
 msgid "will_pay {amount} {currency}"
