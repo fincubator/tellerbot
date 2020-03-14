@@ -320,11 +320,9 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
     )
     answer = i18n("send_exchange_sum {currency}").format(currency=sum_currency)
     if edit:
+        cancel_data = call.message.reply_markup.inline_keyboard[1][0].callback_data
         keyboard.row(
-            types.InlineKeyboardButton(
-                i18n("cancel"),
-                callback_data=call.message.reply_markup[1][1].callback_data,
-            )
+            types.InlineKeyboardButton(i18n("cancel"), callback_data=cancel_data)
         )
         await database.escrow.update_one(
             {"pending_input_from": call.from_user.id},
