@@ -297,7 +297,9 @@ async def ask_credentials(
             )
             state = FSMContext(dp.storage, request_user["id"], request_user["id"])
             await state.set_state(states.Escrow.full_card.state)
-            answer = i18n("asked_full_card_number {user}").format(
+            answer = i18n(
+                "asked_full_card_number {user}", locale=answer_user["locale"]
+            ).format(
                 user=markdown.link(
                     request_user["mention"], User(id=request_user["id"]).url
                 )
