@@ -585,7 +585,7 @@ async def set_init_send_address(
         buy_currency=offer.buy,
     )
     if offer.bank:
-        answer += " " + i18n("using {bank}").format(bank=offer.bank)
+        answer += " " + i18n("using {bank}", locale=locale).format(bank=offer.bank)
     answer += "."
     update_dict = {"init.send_address": address}
     if offer.type == "sell":
