@@ -638,35 +638,39 @@ async def decline_offer(call: types.CallbackQuery, offer: EscrowOffer):
     await tg.send_message(call.message.chat.id, i18n("offer_declined"))
 
 
-async def set_counter_send_address(
-    address: str, message: types.Message, offer: EscrowOffer
+def create_memo(
+    offer: EscrowOffer,
+    *,
+    transfer: bool,
+    counter_send_address: typing.Optional[str] = None,
 ):
-    """Set ``address`` as sender's address of counteragent.
-
-    Ask for escrow asset transfer.
-    """
-    template = (
-        "to {escrow_receive_address} "
+    """Create memo for transfer."""
+    if transfer:
+        template = "from {escrow_send_address} "
+    else:
+        template = "to {escrow_receive_address} "
+    template += (
         "for {not_escrow_amount} {not_escrow_currency} "
         "from {not_escrow_send_address} to {not_escrow_receive_address} "
         "via escrow service on https://t.me/TellerBot"
     )
+    if counter_send_address is None:
+        counter_send_address = offer.counter["send_address"]
     if offer.type == "buy":
-        memo = template.format(
+        return template.format(
             **{
+                "escrow_send_address": offer.init["send_address"],
                 "escrow_receive_address": offer.counter["receive_address"],
                 "not_escrow_amount": offer.sum_sell,
                 "not_escrow_currency": offer.sell,
-                "not_escrow_send_address": address,
+                "not_escrow_send_address": counter_send_address,
                 "not_escrow_receive_address": offer.init["receive_address"],
             }
         )
-        escrow_user = offer.init
-        from_address = offer.init["send_address"]
-        send_reply = True
     elif offer.type == "sell":
-        memo = template.format(
+        return template.format(
             **{
+                "escrow_send_address": counter_send_address,
                 "escrow_receive_address": offer.init["receive_address"],
                 "not_escrow_amount": offer.sum_buy,
                 "not_escrow_currency": offer.buy,
@@ -674,10 +678,24 @@ async def set_counter_send_address(
                 "not_escrow_receive_address": offer.counter["receive_address"],
             }
         )
+
+
+async def set_counter_send_address(
+    address: str, message: types.Message, offer: EscrowOffer
+):
+    """Set ``address`` as sender's address of counteragent.
+
+    Ask for escrow asset transfer.
+    """
+    memo = create_memo(offer, transfer=False, counter_send_address=address)
+    if offer.type == "buy":
+        escrow_user = offer.init
+        from_address = offer.init["send_address"]
+        send_reply = True
+    elif offer.type == "sell":
         escrow_user = offer.counter
         from_address = address
         send_reply = False
-
     transaction_time = time()
     await get_escrow_instance(offer[offer.type]).check_transaction(
         offer._id,
@@ -851,6 +869,7 @@ async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
         recipient_user["receive_address"],
         offer.sum_fee_down.to_decimal(),  # type: ignore
         offer[offer.type],
+        memo=create_memo(offer, transfer=True),
     )
     answer = i18n("escrow_completed", locale=other_user["locale"])
     recipient_answer = i18n("escrow_completed", locale=recipient_user["locale"])
