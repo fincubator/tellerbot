@@ -426,14 +426,12 @@ async def show_order(
                         order["_id"], location_message_id
                     ),
                 ),
-            )
-            keyboard.row(
                 types.InlineKeyboardButton(
                     i18n("change_duration", locale=locale),
                     callback_data="edit {} duration {} 1".format(
                         order["_id"], location_message_id
                     ),
-                )
+                ),
             )
         elif "price_sell" in order:
             if (

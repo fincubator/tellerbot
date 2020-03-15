@@ -199,7 +199,7 @@ msgstr "Archive"
 
 #: src/handlers/base.py
 msgid "change_duration"
-msgstr "Change duration"
+msgstr "Prolong"
 
 #: src/handlers/base.py
 msgid "escrow"

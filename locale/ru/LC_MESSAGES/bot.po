@@ -200,7 +200,7 @@ msgstr "Архивировать"
 
 #: src/handlers/base.py
 msgid "change_duration"
-msgstr "Изменить длительность"
+msgstr "Продлить"
 
 #: src/handlers/base.py
 msgid "escrow"
