@@ -84,7 +84,7 @@ class GolosBlockchain(BaseBlockchain):
                 transaction_time=offer["transaction_time"],
             )
             if queue_member is not None:
-                queue.append()
+                queue.append(queue_member)
                 if min_time is None or offer["transaction_time"] < min_time:
                     min_time = offer["transaction_time"]
         if not queue:
