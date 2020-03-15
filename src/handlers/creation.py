@@ -593,6 +593,16 @@ async def choose_sum(message: types.Message, state: FSMContext):
         return
 
     await database.creation.update_one({"_id": order["_id"]}, {"$set": update_dict})
+    if order["buy"] not in whitelist.FIAT and order["sell"] not in whitelist.FIAT:
+        await OrderCreation.location.set()
+        await tg.send_message(
+            message.chat.id,
+            i18n("ask_location"),
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=await inline_control_buttons()
+            ),
+        )
+        return
     await OrderCreation.payment_system.set()
     await tg.send_message(
         message.chat.id,
@@ -606,6 +616,14 @@ async def choose_sum(message: types.Message, state: FSMContext):
 @state_handler(OrderCreation.payment_system)
 async def payment_system_handler(call: types.CallbackQuery):
     """Ask for cashless payment system."""
+    direction = call.data.split()[2]
+    order = await database.creation.find_one({"user_id": call.from_user.id})
+    if order["buy"] not in whitelist.FIAT and order["sell"] not in whitelist.FIAT:
+        if direction == "back":
+            state = await OrderCreation.previous()
+        elif direction == "skip":
+            state = await OrderCreation.next()
+        return await state_handlers[state](call)
     await tg.edit_message_text(
         i18n("cashless_payment_system"),
         call.message.chat.id,
