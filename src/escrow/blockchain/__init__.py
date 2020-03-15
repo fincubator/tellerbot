@@ -21,15 +21,12 @@ from asyncio import create_task  # type: ignore
 from decimal import Decimal
 from time import time
 
-from aiogram.dispatcher import FSMContext
 from aiogram.types import InlineKeyboardButton
 from aiogram.types import InlineKeyboardMarkup
 from aiogram.types import ParseMode
 from aiogram.utils import markdown
 from bson.objectid import ObjectId
 
-from src import states
-from src.bot import dp
 from src.bot import tg
 from src.database import database
 from src.i18n import i18n
@@ -185,7 +182,7 @@ class BaseBlockchain(ABC):
         is_confirmed = await create_task(self.is_block_confirmed(block_num, op))
         if is_confirmed:
             await database.escrow.update_one(
-                {"_id": offer["_id"]}, {"$set": {"trx_id": trx_id}}
+                {"_id": offer["_id"]}, {"$set": {"trx_id": trx_id, "unsent": True}}
             )
             keyboard = InlineKeyboardMarkup()
             keyboard.add(
@@ -212,8 +209,6 @@ class BaseBlockchain(ABC):
                 reply_markup=keyboard,
                 parse_mode=ParseMode.MARKDOWN,
             )
-            state = FSMContext(dp.storage, other_user["id"], other_user["id"])
-            await state.set_state(states.Escrow.final_confirmation.state)
             return True
 
         await database.escrow.update_one(

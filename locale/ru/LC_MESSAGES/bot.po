@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
-"POT-Creation-Date: 2020-03-11 15:17+0300\n"
+"POT-Creation-Date: 2020-03-15 18:25+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -101,7 +101,7 @@ msgstr "Язык"
 msgid "support"
 msgstr "Поддержка"
 
-#: src/handlers/base.py
+#: src/handlers/base.py src/whitelist.py
 msgid "back"
 msgstr "Назад"
 
@@ -110,7 +110,7 @@ msgid "skip"
 msgstr "Пропустить"
 
 #: src/handlers/base.py src/handlers/creation.py src/handlers/escrow.py
-#: src/handlers/order.py src/handlers/start_menu.py
+#: src/handlers/order.py src/handlers/start_menu.py src/whitelist.py
 msgid "cancel"
 msgstr "Отменить"
 
@@ -276,6 +276,10 @@ msgstr "Запрос отправлен."
 msgid "ask_sell_currency"
 msgstr "Какую валюту вы хотите продать?"
 
+#: src/handlers/creation.py src/handlers/start_menu.py
+msgid "ask_buy_currency"
+msgstr "Какую валюту вы хотите купить?"
+
 #: src/handlers/creation.py
 msgid "ask_buy_price {of_currency} {per_currency}"
 msgstr "По какой цене (в {of_currency}/{per_currency}) вы хотите купить?"
@@ -394,12 +398,12 @@ msgid "escrow_cancelled"
 msgstr "Эскроу отменено."
 
 #: src/handlers/escrow.py
-msgid "request_full_card_number {currency} {user}"
-msgstr "Отправьте {user} полный номер вашей карты {currency}."
-
-#: src/handlers/escrow.py
 msgid "choose_bank"
 msgstr "Выберите банк."
+
+#: src/handlers/escrow.py
+msgid "request_full_card_number {currency} {user}"
+msgstr "Отправьте {user} полный номер вашей карты {currency}."
 
 #: src/handlers/escrow.py
 msgid "asked_full_card_number {user}"
@@ -492,6 +496,10 @@ msgid "cancel_before_verification"
 msgstr ""
 "Вы не можете отменить это предложение пока транзакция не будет "
 "подтверждена."
+
+#: src/handlers/escrow.py
+msgid "transfer_already_confirmed"
+msgstr "Вы уже подтвердили этот перевод."
 
 #: src/handlers/escrow.py
 msgid "receiving_confirmation {currency} {user}"
@@ -615,10 +623,6 @@ msgstr ""
 #: src/handlers/start_menu.py
 msgid "exceeded_order_creation_time_limit {orders} {hours}"
 msgstr "Вы не можете создать больше чем {orders} заказов за {hours} часа."
-
-#: src/handlers/start_menu.py
-msgid "ask_buy_currency"
-msgstr "Какую валюту вы хотите купить?"
 
 #: src/handlers/start_menu.py
 msgid "choose_your_language"

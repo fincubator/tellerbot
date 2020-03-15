@@ -77,6 +77,8 @@ class EscrowOffer:
     memo: typing.Optional[str] = None
     #: ID of verified transaction.
     trx_id: typing.Optional[str] = None
+    #: True if non-escrow token sender hasn't confirmed their transfer.
+    unsent: typing.Optional[bool] = None
 
     def __getitem__(self, key: str) -> typing.Any:
         """Allow to use class as dictionary."""

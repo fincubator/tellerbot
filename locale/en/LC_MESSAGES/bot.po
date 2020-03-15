@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
-"POT-Creation-Date: 2020-03-11 15:17+0300\n"
+"POT-Creation-Date: 2020-03-15 18:25+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: en\n"
@@ -100,7 +100,7 @@ msgstr "Language"
 msgid "support"
 msgstr "Support"
 
-#: src/handlers/base.py
+#: src/handlers/base.py src/whitelist.py
 msgid "back"
 msgstr "Back"
 
@@ -109,7 +109,7 @@ msgid "skip"
 msgstr "Skip"
 
 #: src/handlers/base.py src/handlers/creation.py src/handlers/escrow.py
-#: src/handlers/order.py src/handlers/start_menu.py
+#: src/handlers/order.py src/handlers/start_menu.py src/whitelist.py
 msgid "cancel"
 msgstr "Cancel"
 
@@ -275,6 +275,10 @@ msgstr "Request sent."
 msgid "ask_sell_currency"
 msgstr "What currency do you want to sell?"
 
+#: src/handlers/creation.py src/handlers/start_menu.py
+msgid "ask_buy_currency"
+msgstr "What currency do you want to buy?"
+
 #: src/handlers/creation.py
 msgid "ask_buy_price {of_currency} {per_currency}"
 msgstr "At what price (in {of_currency}/{per_currency}) do you want to buy?"
@@ -393,12 +397,12 @@ msgid "escrow_cancelled"
 msgstr "Escrow was cancelled."
 
 #: src/handlers/escrow.py
-msgid "request_full_card_number {currency} {user}"
-msgstr "Send your full {currency} card number to {user}."
-
-#: src/handlers/escrow.py
 msgid "choose_bank"
 msgstr "Choose bank."
+
+#: src/handlers/escrow.py
+msgid "request_full_card_number {currency} {user}"
+msgstr "Send your full {currency} card number to {user}."
 
 #: src/handlers/escrow.py
 msgid "asked_full_card_number {user}"
@@ -489,6 +493,10 @@ msgstr "You can't cancel offer after transfer to escrow."
 #: src/handlers/escrow.py
 msgid "cancel_before_verification"
 msgstr "You can't cancel this offer until transaction will be verified."
+
+#: src/handlers/escrow.py
+msgid "transfer_already_confirmed"
+msgstr "You've already confirmed this transfer."
 
 #: src/handlers/escrow.py
 msgid "receiving_confirmation {currency} {user}"
@@ -611,10 +619,6 @@ msgstr ""
 #: src/handlers/start_menu.py
 msgid "exceeded_order_creation_time_limit {orders} {hours}"
 msgstr "You can't create more than {orders} orders in {hours} hours."
-
-#: src/handlers/start_menu.py
-msgid "ask_buy_currency"
-msgstr "What currency do you want to buy?"
 
 #: src/handlers/start_menu.py
 msgid "choose_your_language"
