@@ -767,7 +767,8 @@ async def cancel_offer(call: types.CallbackQuery, offer: EscrowOffer):
             escrow_user = offer.counter
         if call.from_user.id != escrow_user["id"]:
             return await call.answer(i18n("cancel_before_verification"))
-        get_escrow_instance(offer[offer.type]).remove_from_queue(offer._id)
+        req = get_escrow_instance(offer[offer.type]).remove_from_queue(offer._id)
+        req["timeout_handler"].cancel()
 
     sell_answer = i18n("escrow_cancelled", locale=offer.init["locale"])
     buy_answer = i18n("escrow_cancelled", locale=offer.counter["locale"])

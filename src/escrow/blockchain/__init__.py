@@ -152,7 +152,9 @@ class BaseBlockchain(ABC):
         if len(self._queue) == 1:
             await self.start_streaming()
 
-    def remove_from_queue(self, offer_id: ObjectId) -> bool:
+    def remove_from_queue(
+        self, offer_id: ObjectId
+    ) -> typing.Optional[typing.Mapping[str, typing.Any]]:
         """Remove transaction with specified ``offer_id`` value from ``self._queue``.
 
         :param offer_id: ``_id`` of escrow offer.
@@ -161,8 +163,8 @@ class BaseBlockchain(ABC):
         for queue_member in self._queue:
             if queue_member["offer_id"] == offer_id:
                 self._queue.remove(queue_member)
-                return True
-        return False
+                return queue_member
+        return None
 
     async def check_timeout(self, offer_id: ObjectId) -> None:
         """Timeout transaction check.
