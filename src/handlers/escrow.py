@@ -244,27 +244,6 @@ async def init_cancel(call: types.CallbackQuery, offer: EscrowOffer):
 
 async def full_card_number_request(chat_id: int, offer: EscrowOffer):
     """Ask to send full card number."""
-    keyboard = InlineKeyboardMarkup()
-    keyboard.add(
-        InlineKeyboardButton(i18n("sent"), callback_data=f"card_sent {offer._id}")
-    )
-    if offer.type == "buy":
-        user = offer.counter
-        currency = offer.sell
-    else:
-        user = offer.init
-        currency = offer.buy
-    mention = markdown.link(user["mention"], User(id=user["id"]).url)
-    await tg.send_message(
-        chat_id,
-        i18n("request_full_card_number {currency} {user}").format(
-            currency=currency, user=mention
-        ),
-        reply_markup=keyboard,
-        parse_mode=ParseMode.MARKDOWN,
-    )
-    state = FSMContext(dp.storage, chat_id, chat_id)
-    await state.set_state(states.Escrow.full_card.state)
 
 
 async def ask_credentials(
@@ -293,10 +272,31 @@ async def ask_credentials(
             if offer.type == "buy":
                 request_user = offer.init
                 answer_user = offer.counter
+                currency = offer.sell
             else:
                 request_user = offer.counter
                 answer_user = offer.init
-            await full_card_number_request(request_user["id"], offer)
+                currency = offer.buy
+            keyboard = InlineKeyboardMarkup()
+            keyboard.add(
+                InlineKeyboardButton(
+                    i18n("sent"), callback_data=f"card_sent {offer._id}"
+                )
+            )
+            mention = markdown.link(
+                answer_user["mention"], User(id=answer_user["id"]).url
+            )
+            await tg.send_message(
+                request_user["id"],
+                i18n(
+                    "request_full_card_number {currency} {user}",
+                    locale=request_user["locale"],
+                ).format(currency=currency, user=mention),
+                reply_markup=keyboard,
+                parse_mode=ParseMode.MARKDOWN,
+            )
+            state = FSMContext(dp.storage, request_user["id"], request_user["id"])
+            await state.set_state(states.Escrow.full_card.state)
             answer = i18n("asked_full_card_number {user}").format(
                 user=markdown.link(
                     request_user["mention"], User(id=request_user["id"]).url
