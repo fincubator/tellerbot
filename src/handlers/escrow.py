@@ -202,7 +202,7 @@ async def set_escrow_sum(message: types.Message, offer: EscrowOffer):
 async def ask_fee(user_id: int, chat_id: int, offer: EscrowOffer):
     """Ask fee of any party."""
     answer = (
-        i18n("ask_fee {fee_percents}".format(fee_percents=config.ESCROW_FEE_PERCENTS))
+        i18n("ask_fee {fee_percents}").format(fee_percents=config.ESCROW_FEE_PERCENTS)
         + " "
     )
     if (user_id == offer.init["id"]) == (offer.type == "buy"):
