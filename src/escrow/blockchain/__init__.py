@@ -17,7 +17,8 @@
 import typing
 from abc import ABC
 from abc import abstractmethod
-from asyncio import create_task  # type: ignore
+from asyncio import create_task
+from asyncio import get_running_loop
 from decimal import Decimal
 from time import time
 
@@ -28,6 +29,7 @@ from aiogram.utils import markdown
 from bson.objectid import ObjectId
 
 from src.bot import tg
+from src.config import config
 from src.database import database
 from src.i18n import i18n
 
@@ -105,6 +107,24 @@ class BaseBlockchain(ABC):
         """Get URL on transaction with ID ``trx_id`` on explorer."""
         return self.explorer.format(trx_id)
 
+    def create_queue_member(
+        self, **kwargs
+    ) -> typing.Optional[typing.Mapping[str, typing.Any]]:
+        """Create queue member from keyword arguments if it is not timeouted.
+
+        Schedule timeout handler and add it to queue member, return None if
+        queue member is timeouted.
+        """
+        loop = get_running_loop()
+        timedelta = kwargs["transaction_time"] - time()
+        delay = timedelta + config.CHECK_TIMEOUT_HOURS * 60 * 60
+        callback = self.check_timeout(kwargs["offer_id"])
+        if delay <= 0:
+            create_task(callback)
+            return None
+        kwargs["timeout_handler"] = loop.call_later(delay, create_task, callback)
+        return kwargs
+
     async def check_transaction(
         self,
         offer_id: ObjectId,
@@ -116,32 +136,45 @@ class BaseBlockchain(ABC):
         transaction_time: float,
     ):
         """Add transaction in ``self._queue`` to be checked."""
-        self._queue.append(
-            {
-                "offer_id": offer_id,
-                "from_address": from_address,
-                "amount_with_fee": amount_with_fee,
-                "amount_without_fee": amount_without_fee,
-                "asset": asset,
-                "memo": memo,
-                "transaction_time": transaction_time,
-            }
+        queue_member = self.create_queue_member(
+            offer_id=offer_id,
+            from_address=from_address,
+            amount_with_fee=amount_with_fee,
+            amount_without_fee=amount_without_fee,
+            asset=asset,
+            memo=memo,
+            transaction_time=transaction_time,
         )
+        if not queue_member:
+            return
+        self._queue.append(queue_member)
         # Start streaming if not already streaming
         if len(self._queue) == 1:
             await self.start_streaming()
 
-    def remove_from_queue(self, offer_id: ObjectId) -> bool:
-        """Remove transaction with specified ``offer_id`` value from ``self._queue``.
+    async def check_timeout(self, offer_id: ObjectId) -> None:
+        """Timeout transaction check.
 
         :param offer_id: ``_id`` of escrow offer.
-        :return: True if transaction was found and False otherwise.
         """
         for queue_member in self._queue:
             if queue_member["offer_id"] == offer_id:
                 self._queue.remove(queue_member)
-                return True
-        return False
+                break
+        offer = await database.escrow.find_one_and_delete({"_id": offer_id})
+        await database.escrow_archive.insert_one(offer)
+        await tg.send_message(
+            offer["init"]["id"],
+            i18n("check_timeout {hours}", locale=offer["init"]["locale"]).format(
+                hours=config.CHECK_TIMEOUT_HOURS
+            ),
+        )
+        await tg.send_message(
+            offer["counter"]["id"],
+            i18n("check_timeout {hours}", locale=offer["counter"]["locale"]).format(
+                hours=config.CHECK_TIMEOUT_HOURS
+            ),
+        )
 
     async def _confirmation_callback(
         self,

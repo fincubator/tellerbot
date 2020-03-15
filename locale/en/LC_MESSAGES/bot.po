@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
-"POT-Creation-Date: 2020-03-15 18:25+0300\n"
+"POT-Creation-Date: 2020-03-15 19:18+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: en\n"
@@ -17,6 +17,10 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.8.0\n"
+
+#: src/escrow/blockchain/__init__.py
+msgid "check_timeout {hours}"
+msgstr "Transaction check took longer than {hours} hours, so escrow was cancelled."
 
 #: src/escrow/blockchain/__init__.py
 msgid "transaction_passed {currency}"

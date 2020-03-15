@@ -17,9 +17,9 @@
 import functools
 import json
 import typing
-from asyncio import create_task  # type: ignore
-from asyncio import get_running_loop  # type: ignore
-from asyncio import sleep  # type: ignore
+from asyncio import create_task
+from asyncio import get_running_loop
+from asyncio import sleep
 from calendar import timegm
 from datetime import datetime
 from decimal import Decimal
@@ -74,19 +74,19 @@ class GolosBlockchain(BaseBlockchain):
             else:
                 address = offer["counter"]["send_address"]
                 amount = offer["sum_sell"].to_decimal()
-            queue.append(
-                {
-                    "offer_id": offer["_id"],
-                    "from_address": address,
-                    "amount_with_fee": offer["sum_fee_up"].to_decimal(),
-                    "amount_without_fee": amount,
-                    "asset": offer[offer["type"]],
-                    "memo": offer["memo"],
-                    "transaction_time": offer["transaction_time"],
-                }
+            queue_member = self.create_queue_member(
+                offer_id=offer["_id"],
+                from_address=address,
+                amount_with_fee=offer["sum_fee_up"].to_decimal(),
+                amount_without_fee=amount,
+                asset=offer[offer["type"]],
+                memo=offer["memo"],
+                transaction_time=offer["transaction_time"],
             )
-            if min_time is None or offer["transaction_time"] < min_time:
-                min_time = offer["transaction_time"]
+            if queue_member is not None:
+                queue.append()
+                if min_time is None or offer["transaction_time"] < min_time:
+                    min_time = offer["transaction_time"]
         if not queue:
             return
         func = functools.partial(
@@ -179,9 +179,9 @@ class GolosBlockchain(BaseBlockchain):
                     )
                     if is_confirmed:
                         self._queue.remove(req)
-                        if not self._queue:
-                            await loop.run_in_executor(None, self._stream.rpc.close)
-                            return
+            if not self._queue:
+                await loop.run_in_executor(None, self._stream.rpc.close)
+                return
             response = await loop.run_in_executor(None, self._stream.rpc.ws.recv)
             response_json = json.loads(response)
             if "error" in response_json:
@@ -205,6 +205,7 @@ class GolosBlockchain(BaseBlockchain):
                     continue
             if op["to"] != self.address or op["from"] != req["from_address"]:
                 continue
+            req["timeout_handler"].cancel()
             refund_reasons = set()
             if asset != req["asset"]:
                 refund_reasons.add("asset")
