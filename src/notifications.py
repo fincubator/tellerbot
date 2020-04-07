@@ -45,7 +45,7 @@ async def run_loop():
             except TelegramAPIError:
                 pass
             else:
-                await show_order(order, user["chat"], user["id"])
+                await show_order(order, user["chat"], user["id"], locale=user["locale"])
                 sent = True
             finally:
                 await database.orders.update_one(
