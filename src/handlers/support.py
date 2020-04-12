@@ -19,6 +19,7 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.utils import markdown
 from aiogram.utils.emoji import emojize
+from aiogram.utils.exceptions import BotBlocked
 
 from src.bot import dp
 from src.config import config
@@ -100,12 +101,16 @@ async def answer_support_ticket(message: types.Message):
         chat_id = int(args[1].split("_")[1])
         reply_to_message_id = int(args[2])
 
-        await tg.send_message(
-            chat_id,
-            emojize(":speech_balloon:") + message.text,
-            reply_to_message_id=reply_to_message_id,
-        )
-        await tg.send_message(message.chat.id, i18n("reply_sent"))
+        try:
+            await tg.send_message(
+                chat_id,
+                emojize(":speech_balloon:") + message.text,
+                reply_to_message_id=reply_to_message_id,
+            )
+        except BotBlocked:
+            await tg.send_message(message.chat.id, i18n("reply_error_bot_blocked"))
+        else:
+            await tg.send_message(message.chat.id, i18n("reply_sent"))
 
 
 @dp.message_handler(
