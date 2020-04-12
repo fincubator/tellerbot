@@ -1,4 +1,4 @@
-aiogram==2.6.1
+aiogram==2.7
 emoji==0.5.4
 golos-python==1.1.0
 motor==2.1.0
