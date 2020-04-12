@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
-"POT-Creation-Date: 2020-03-15 19:18+0300\n"
+"POT-Creation-Date: 2020-04-12 21:55+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -309,12 +309,12 @@ msgid "choose_sum_currency_with_buttons"
 msgstr "Выберите валюту суммы кнопками."
 
 #: src/handlers/creation.py
-msgid "cashless_payment_system"
-msgstr "Отправьте систему безналичной оплаты."
-
-#: src/handlers/creation.py
 msgid "ask_location"
 msgstr "Отправьте локацию предпочитаемого места встречи для наличной оплаты."
+
+#: src/handlers/creation.py
+msgid "cashless_payment_system"
+msgstr "Отправьте систему безналичной оплаты."
 
 #: src/handlers/creation.py
 msgid "location_not_found"
@@ -679,6 +679,10 @@ msgstr "Ваш запрос отменён."
 #: src/handlers/support.py
 msgid "support_response_promise"
 msgstr "Ваше сообщение переслано. Мы ответим вам в течение 24 часов."
+
+#: src/handlers/support.py
+msgid "reply_error_bot_blocked"
+msgstr "Не удалось отправить ответ, я заблокирован у пользователя."
 
 #: src/handlers/support.py
 msgid "reply_sent"
