@@ -54,6 +54,7 @@ cd tellerbot
 3. Install requirements:
 ```bash
 pip install -r requirements.txt
+pip install -r requirements-escrow.txt  # If you're going to support escrow
 ```
 4. Create environment file from example:
 ```bash
