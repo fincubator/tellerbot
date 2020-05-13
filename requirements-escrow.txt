@@ -1,0 +1,2 @@
+git+https://github.com/eosnewyork/eospy.git@ed55d652f5dcc9e45917273e6bc14b37791e772d
+golos-python==1.1.0

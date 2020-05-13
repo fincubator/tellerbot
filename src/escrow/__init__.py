@@ -15,12 +15,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 from src.config import config
+from src.escrow.blockchain import StreamBlockchain
 
 
 if config.ESCROW_ENABLED:
     from src.escrow.blockchain.golos_blockchain import GolosBlockchain
+    from src.escrow.blockchain.cyber_blockchain import CyberBlockchain
 
-    SUPPORTED_BLOCKCHAINS = [GolosBlockchain()]
+    SUPPORTED_BLOCKCHAINS = [GolosBlockchain(), CyberBlockchain()]
 else:
     SUPPORTED_BLOCKCHAINS = []
 
@@ -39,3 +41,11 @@ async def connect_to_blockchains():
     """Run ``connect()`` method on every blockchain instance."""
     for bc in SUPPORTED_BLOCKCHAINS:
         await bc.connect()
+        if isinstance(bc, StreamBlockchain) and bc._queue:
+            bc.start_streaming()
+
+
+async def close_blockchains():
+    """Run ``close()`` method on every blockchain instance."""
+    for bc in SUPPORTED_BLOCKCHAINS:
+        await bc.close()

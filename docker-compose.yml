@@ -12,7 +12,7 @@ services:
     volumes:
       - ${DATABASE_PASSWORD_FILENAME}:${DATABASE_PASSWORD_FILENAME}:ro
       - ${TOKEN_FILENAME}:${TOKEN_FILENAME}:ro
-      - ${WIF_FILENAME}:${WIF_FILENAME}:ro
+      - ${ESCROW_FILENAME}:${ESCROW_FILENAME}:ro
     ports:
       - ${SERVER_PORT}:${SERVER_PORT}
 
