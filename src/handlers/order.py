@@ -340,6 +340,7 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
             )
         )
         projection = {"id": True, "locale": True, "mention": True}
+        escrow_type = "buy" if get_escrow_instance(order["buy"]) else "sell"
         init_user = await database.users.find_one(
             {"id": call.from_user.id}, projection=projection
         )
@@ -353,7 +354,8 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
                 "order": order["_id"],
                 "buy": order["buy"],
                 "sell": order["sell"],
-                "type": "buy" if get_escrow_instance(order["buy"]) else "sell",
+                "type": escrow_type,
+                "escrow": order[escrow_type],
                 "time": time(),
                 "sum_currency": currency_arg,
                 "init": init_user,

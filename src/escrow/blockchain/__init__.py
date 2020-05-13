@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+import json
 import typing
 from abc import ABC
 from abc import abstractmethod
@@ -46,6 +47,8 @@ class InsuranceLimits(typing.NamedTuple):
 class BaseBlockchain(ABC):
     """Abstract class to represent blockchain node client for escrow exchange."""
 
+    #: Internal name of blockchain referenced in ``config.ESCROW_FILENAME``.
+    name: str
     #: Frozen set of assets supported by blockchain.
     assets: typing.FrozenSet[str] = frozenset()
     #: Address used by bot.
@@ -53,8 +56,6 @@ class BaseBlockchain(ABC):
     #: Template of URL to transaction in blockchain explorer. Should
     #: contain ``{}`` which gets replaced with transaction id.
     explorer: str = "{}"
-
-    _queue: typing.List[typing.Mapping[str, typing.Any]] = []
 
     @abstractmethod
     async def connect(self) -> None:
@@ -65,6 +66,29 @@ class BaseBlockchain(ABC):
         """Get maximum amounts of ``asset`` which will be insured during escrow exchange.
 
         Escrow offer starts only if sum of it doesn't exceed these limits.
+        """
+
+    async def check_transaction(
+        self,
+        *,
+        offer_id: ObjectId,
+        from_address: str,
+        amount_with_fee: Decimal,
+        amount_without_fee: Decimal,
+        asset: str,
+        memo: str,
+        transaction_time: float,
+    ) -> bool:
+        """Check transaction in history of escrow address.
+
+        :param offer_id: ``_id`` of escrow offer.
+        :param from_address: Address which sent assets.
+        :param amount_with_fee: Amount of transferred asset with fee added.
+        :param amount_without_fee: Amount of transferred asset with fee substracted.
+        :param asset: Transferred asset.
+        :param memo: Memo in blockchain transaction.
+        :param transaction_time: Start of transaction check.
+        :return: Queue member with timeout handler or None if queue member is timeouted.
         """
 
     @abstractmethod
@@ -91,87 +115,84 @@ class BaseBlockchain(ABC):
         :param op: Operation to check.
         """
 
-    @abstractmethod
-    async def start_streaming(self) -> None:
-        """Stream new blocks and check if they contain transactions from ``self._queue``.
+    async def close(self):
+        """Close connection with blockchain node."""
 
-        Use built-in method to subscribe to new blocks if node has it,
-        otherwise get new blocks in blockchain-specific time interval between blocks.
+    @property
+    def nodes(self) -> typing.List[str]:
+        """Get list of node URLs."""
+        with open(config.ESCROW_FILENAME) as escrow_file:
+            return json.load(escrow_file)[self.name]["nodes"]
 
-        If block contains desired transaction, call ``self._confirmation_callback``.
-        If it returns True, remove transaction from ``self._queue`` and stop
-        streaming if ``self._queue`` is empty.
-        """
+    @property
+    def wif(self) -> str:
+        """Get private key encoded to WIF."""
+        with open(config.ESCROW_FILENAME) as escrow_file:
+            return json.load(escrow_file)[self.name]["wif"]
 
     def trx_url(self, trx_id: str) -> str:
         """Get URL on transaction with ID ``trx_id`` on explorer."""
         return self.explorer.format(trx_id)
 
-    def create_queue_member(
-        self, **kwargs
-    ) -> typing.Optional[typing.Mapping[str, typing.Any]]:
-        """Create queue member from keyword arguments if it is not timeouted.
-
-        Schedule timeout handler and add it to queue member, return None if
-        queue member is timeouted.
-        """
-        loop = get_running_loop()
-        timedelta = kwargs["transaction_time"] - time()
-        delay = timedelta + config.CHECK_TIMEOUT_HOURS * 60 * 60
-        callback = self.check_timeout(kwargs["offer_id"])
-        if delay <= 0:
-            create_task(callback)
-            return None
-        kwargs["timeout_handler"] = loop.call_later(delay, create_task, callback)
-        return kwargs
-
-    async def check_transaction(
-        self,
-        offer_id: ObjectId,
-        from_address: str,
-        amount_with_fee: Decimal,
-        amount_without_fee: Decimal,
-        asset: str,
-        memo: str,
-        transaction_time: float,
-    ):
-        """Add transaction in ``self._queue`` to be checked."""
-        queue_member = self.create_queue_member(
-            offer_id=offer_id,
-            from_address=from_address,
-            amount_with_fee=amount_with_fee,
-            amount_without_fee=amount_without_fee,
-            asset=asset,
-            memo=memo,
-            transaction_time=transaction_time,
+    async def create_queue(self) -> typing.List[typing.Dict[str, typing.Any]]:
+        """Create queue from unconfirmed transactions in database."""
+        queue: typing.List[typing.Dict[str, typing.Any]] = []
+        cursor = database.escrow.find(
+            {
+                "escrow": {"$in": list(self.assets)},
+                "memo": {"$exists": True},
+                "trx_id": {"$exists": False},
+            }
         )
-        if not queue_member:
-            return
-        self._queue.append(queue_member)
-        # Start streaming if not already streaming
-        if len(self._queue) == 1:
-            await self.start_streaming()
+        async for offer in cursor:
+            if offer["type"] == "buy":
+                address = offer["init"]["send_address"]
+                amount = offer["sum_buy"].to_decimal()
+            else:
+                address = offer["counter"]["send_address"]
+                amount = offer["sum_sell"].to_decimal()
+            queue_member = {
+                "offer_id": offer["_id"],
+                "from_address": address,
+                "amount_with_fee": offer["sum_fee_up"].to_decimal(),
+                "amount_without_fee": amount,
+                "asset": offer[offer["type"]],
+                "memo": offer["memo"],
+                "transaction_time": offer["transaction_time"],
+            }
+            scheduled_queue_member = await self.schedule_timeout(queue_member)
+            if scheduled_queue_member:
+                queue.append(scheduled_queue_member)
+        return queue
 
-    def remove_from_queue(
-        self, offer_id: ObjectId
-    ) -> typing.Optional[typing.Mapping[str, typing.Any]]:
-        """Remove transaction with specified ``offer_id`` value from ``self._queue``.
+    def get_min_time(self, queue: typing.List[typing.Dict[str, typing.Any]]) -> float:
+        """Get timestamp of earliest transaction from ``queue``."""
+        return min(queue, key=lambda q: q["transaction_time"])["transaction_time"]
+
+    async def schedule_timeout(
+        self, queue_member: typing.Dict[str, typing.Any]
+    ) -> typing.Optional[typing.Dict[str, typing.Any]]:
+        """Schedule timeout of transaction check."""
+        timedelta = queue_member["transaction_time"] - time()
+        delay = timedelta + config.CHECK_TIMEOUT_HOURS * 60 * 60
+        if delay <= 0:
+            await self._check_timeout(queue_member["offer_id"])
+            return None
+        loop = get_running_loop()
+        queue_member["timeout_handler"] = loop.call_later(
+            delay, self.check_timeout, queue_member["offer_id"]
+        )
+        return queue_member
+
+    def check_timeout(self, offer_id: ObjectId) -> None:
+        """Start transaction check timeout asynchronously.
 
         :param offer_id: ``_id`` of escrow offer.
-        :return: True if transaction was found and False otherwise.
         """
-        for queue_member in self._queue:
-            if queue_member["offer_id"] == offer_id:
-                self._queue.remove(queue_member)
-                return queue_member
-        return None
+        create_task(self._check_timeout(offer_id))
 
-    async def check_timeout(self, offer_id: ObjectId) -> None:
-        """Timeout transaction check.
-
-        :param offer_id: ``_id`` of escrow offer.
-        """
-        self.remove_from_queue(offer_id)
+    async def _check_timeout(self, offer_id: ObjectId) -> None:
+        """Timeout transaction check."""
         offer = await database.escrow.find_one_and_delete({"_id": offer_id})
         await database.escrow_archive.insert_one(offer)
         await tg.send_message(
@@ -325,6 +346,49 @@ class BaseBlockchain(ABC):
             answer = i18n("transaction_not_confirmed", locale=user["locale"])
         answer += " " + i18n("try_again", locale=user["locale"])
         await tg.send_message(user["id"], answer, parse_mode=ParseMode.MARKDOWN)
+
+
+class StreamBlockchain(BaseBlockchain):
+    """Blockchain node client supporting continuous stream to check transaction."""
+
+    _queue: typing.List[typing.Dict[str, typing.Any]] = []
+
+    def check_timeout(self, offer_id: ObjectId) -> None:
+        for queue_member in self._queue:
+            if queue_member["offer_id"] == offer_id:
+                if "timeout_handler" in queue_member:
+                    queue_member["timeout_handler"].cancel()
+                self._queue.remove(queue_member)
+        super().check_timeout(offer_id)
+
+    @abstractmethod
+    async def stream(self) -> None:
+        """Stream new blocks and check if they contain transactions from ``self._queue``.
+
+        Use built-in method to subscribe to new blocks if node has it,
+        otherwise get new blocks in blockchain-specific time interval between blocks.
+
+        If block contains desired transaction, call ``self._confirmation_callback``.
+        If it returns True, remove transaction from ``self._queue`` and stop
+        streaming if ``self._queue`` is empty.
+        """
+
+    def start_streaming(self) -> None:
+        """Start streaming in background asynchronous task."""
+        create_task(self.stream())
+
+    async def add_to_queue(self, **kwargs):
+        """Add transaction to self._queue to be checked.
+
+        Same parameters as in ``self.check_transaction``.
+        """
+        queue_member = await self.schedule_timeout(kwargs)
+        if not queue_member:
+            return
+        self._queue.append(queue_member)
+        # Start streaming if not already streaming
+        if len(self._queue) == 1:
+            self.start_streaming()
 
 
 class BlockchainConnectionError(Exception):

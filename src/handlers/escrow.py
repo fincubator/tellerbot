@@ -40,6 +40,7 @@ from src.config import config
 from src.database import database
 from src.escrow import get_escrow_instance
 from src.escrow import SUPPORTED_BANKS
+from src.escrow.blockchain import StreamBlockchain
 from src.escrow.escrow_offer import EscrowOffer
 from src.handlers.base import private_handler
 from src.handlers.base import start_keyboard
@@ -127,7 +128,7 @@ def escrow_message_handler(*args, **kwargs):
 async def get_insurance(offer: EscrowOffer) -> Decimal:
     """Get insurance of escrow asset in ``offer`` taking limits into account."""
     offer_sum = offer[f"sum_{offer.type}"].to_decimal()
-    asset = offer[offer.type]
+    asset = offer.escrow
     limits = await get_escrow_instance(asset).get_limits(asset)
     if not limits:
         return offer_sum
@@ -189,7 +190,7 @@ async def set_escrow_sum(message: types.Message, offer: EscrowOffer):
                 ),
             )
             answer = i18n("exceeded_insurance {amount} {currency}").format(
-                amount=insured, currency=offer[offer.type]
+                amount=insured, currency=offer.escrow
             )
             answer += "\n" + i18n("exceeded_insurance_options")
             await tg.send_message(message.chat.id, answer, reply_markup=keyboard)
@@ -216,7 +217,7 @@ async def ask_fee(user_id: int, chat_id: int, offer: EscrowOffer):
         InlineKeyboardButton(i18n("yes"), callback_data=f"accept_fee {offer._id}"),
         InlineKeyboardButton(i18n("no"), callback_data=f"decline_fee {offer._id}"),
     )
-    answer = answer.format(amount=offer[sum_fee_field], currency=offer[offer.type])
+    answer = answer.format(amount=offer[sum_fee_field], currency=offer.escrow)
     await tg.send_message(chat_id, answer, reply_markup=keyboard)
     await states.Escrow.fee.set()
 
@@ -442,8 +443,7 @@ async def set_receive_card_number(message: types.Message, offer: EscrowOffer):
         {"$set": {f"{user_field}.receive_address": ("*" * 8).join(card_number)}}
     )
     await tg.send_message(
-        message.chat.id,
-        i18n("ask_address {currency}").format(currency=offer[offer.type]),
+        message.chat.id, i18n("ask_address {currency}").format(currency=offer.escrow),
     )
     await states.Escrow.send_address.set()
 
@@ -595,7 +595,7 @@ async def set_init_send_address(
         update_dict["insured"] = Decimal128(insured)
         if offer[f"sum_{offer.type}"].to_decimal() > insured:
             answer += "\n" + i18n("exceeded_insurance {amount} {currency}").format(
-                amount=insured, currency=offer[offer.type]
+                amount=insured, currency=offer.escrow
             )
     await offer.update_document(
         {"$set": update_dict, "$unset": {"pending_input_from": True}}
@@ -680,6 +680,28 @@ def create_memo(
         )
 
 
+@escrow_callback_handler(lambda call: call.data.startswith("check_transaction "))
+async def check_transaction(call: types.CallbackQuery, offer: EscrowOffer):
+    """Start transaction check."""
+    if offer.type == "buy":
+        from_address = offer.init["send_address"]
+    elif offer.type == "sell":
+        from_address = offer.counter["send_address"]
+    escrow_instance = get_escrow_instance(offer.escrow)
+    await call.answer(i18n("transaction_check_starting"))
+    success = await escrow_instance.check_transaction(
+        offer_id=offer._id,
+        from_address=from_address,
+        amount_with_fee=offer["sum_fee_up"].to_decimal(),
+        amount_without_fee=offer[f"sum_{offer.type}"].to_decimal(),
+        asset=offer.escrow,
+        memo=offer.memo,
+        transaction_time=offer.transaction_time,
+    )
+    if not success:
+        await tg.send_message(call.message.chat.id, i18n("transaction_not_found"))
+
+
 async def set_counter_send_address(
     address: str, message: types.Message, offer: EscrowOffer
 ):
@@ -696,29 +718,36 @@ async def set_counter_send_address(
         escrow_user = offer.counter
         from_address = address
         send_reply = False
-    transaction_time = time()
-    await get_escrow_instance(offer[offer.type]).check_transaction(
-        offer._id,
-        from_address,
-        offer["sum_fee_up"].to_decimal(),
-        offer[f"sum_{offer.type}"].to_decimal(),
-        offer[offer.type],
-        memo,
-        transaction_time,
-    )
     keyboard = InlineKeyboardMarkup()
+    escrow_instance = get_escrow_instance(offer.escrow)
+    transaction_time = time()
+    if isinstance(escrow_instance, StreamBlockchain):
+        await escrow_instance.add_to_queue(
+            offer_id=offer._id,
+            from_address=from_address,
+            amount_with_fee=offer["sum_fee_up"].to_decimal(),
+            amount_without_fee=offer[f"sum_{offer.type}"].to_decimal(),
+            asset=offer.escrow,
+            memo=memo,
+            transaction_time=transaction_time,
+        )
+    else:
+        keyboard.add(
+            InlineKeyboardButton(
+                i18n("check", locale=escrow_user["locale"]),
+                callback_data=f"check_transaction {offer._id}",
+            )
+        )
     keyboard.add(
         InlineKeyboardButton(
             i18n("cancel", locale=escrow_user["locale"]),
             callback_data=f"escrow_cancel {offer._id}",
         )
     )
-    escrow_address = markdown.bold(get_escrow_instance(offer[offer.type]).address)
+    escrow_address = markdown.bold(escrow_instance.address)
     answer = i18n(
         "send {amount} {currency} {address}", locale=escrow_user["locale"]
-    ).format(
-        amount=offer.sum_fee_up, currency=offer[offer.type], address=escrow_address
-    )
+    ).format(amount=offer.sum_fee_up, currency=offer.escrow, address=escrow_address)
     answer += " " + i18n("with_memo", locale=escrow_user["locale"])
     answer += ":\n" + markdown.code(memo)
     await tg.send_message(
@@ -767,7 +796,7 @@ async def cancel_offer(call: types.CallbackQuery, offer: EscrowOffer):
             escrow_user = offer.counter
         if call.from_user.id != escrow_user["id"]:
             return await call.answer(i18n("cancel_before_verification"))
-        req = get_escrow_instance(offer[offer.type]).remove_from_queue(offer._id)
+        req = get_escrow_instance(offer.escrow).remove_from_queue(offer._id)
         req["timeout_handler"].cancel()
 
     sell_answer = i18n("escrow_cancelled", locale=offer.init["locale"])
@@ -865,18 +894,18 @@ async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
         other_user = offer.counter
 
     await call.answer(i18n("escrow_completing"))
-    escrow_instance = get_escrow_instance(offer[offer.type])
+    escrow_instance = get_escrow_instance(offer.escrow)
     trx_url = await escrow_instance.transfer(
         recipient_user["receive_address"],
         offer.sum_fee_down.to_decimal(),  # type: ignore
-        offer[offer.type],
+        offer.escrow,
         memo=create_memo(offer, transfer=True),
     )
     answer = i18n("escrow_completed", locale=other_user["locale"])
     recipient_answer = i18n("escrow_completed", locale=recipient_user["locale"])
     recipient_answer += " " + markdown.link(
         i18n("escrow_sent {amount} {currency}", locale=recipient_user["locale"]).format(
-            amount=offer.sum_fee_down, currency=offer[offer.type]
+            amount=offer.sum_fee_down, currency=offer.escrow
         ),
         trx_url,
     )
@@ -902,7 +931,7 @@ async def validate_offer(call: types.CallbackQuery, offer: EscrowOffer):
         receiver = offer.counter
         currency = offer.buy
 
-    escrow_instance = get_escrow_instance(offer[offer.type])
+    escrow_instance = get_escrow_instance(offer.escrow)
     answer = "{0}\n{1} sender: {2}{3}\n{1} receiver: {4}{5}\nBank: {6}\nMemo: {7}"
     answer = answer.format(
         markdown.link("Unconfirmed escrow.", escrow_instance.trx_url(offer.trx_id)),

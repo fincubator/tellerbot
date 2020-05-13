@@ -45,6 +45,8 @@ class EscrowOffer:
     sell: str
     #: Type of offer. Field of currency which is held during exchange.
     type: str  # noqa: A003
+    #: Currency which is held during exchange.
+    escrow: str
     #: Unix time stamp of offer creation.
     time: float
     #: Object representing initiator of escrow.

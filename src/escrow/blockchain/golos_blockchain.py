@@ -17,7 +17,6 @@
 import functools
 import json
 import typing
-from asyncio import create_task
 from asyncio import get_running_loop
 from asyncio import sleep
 from calendar import timegm
@@ -28,33 +27,23 @@ from time import time
 from golos import Api
 from golos.exceptions import RetriesExceeded
 from golos.exceptions import TransactionNotFound
-from golos.ws_client import error_handler
 
-from src.config import config
-from src.database import database
-from src.escrow.blockchain import BaseBlockchain
 from src.escrow.blockchain import BlockchainConnectionError
 from src.escrow.blockchain import InsuranceLimits
+from src.escrow.blockchain import StreamBlockchain
 
 
-NODES = (
-    "wss://api.golos.blckchnd.com/ws",
-    "wss://golosd.privex.io",
-    "wss://golos.solox.world/ws",
-    "wss://golos.lexa.host/ws",
-)
-
-
-class GolosBlockchain(BaseBlockchain):
+class GolosBlockchain(StreamBlockchain):
     """Golos node client implementation for escrow exchange."""
 
+    name = "golos"
     assets = frozenset(["GOLOS", "GBG"])
     address = "tellerbot"
     explorer = "https://golos.cf/tx/?={}"
 
     async def connect(self):
         loop = get_running_loop()
-        connect_to_node = functools.partial(Api, nodes=NODES)
+        connect_to_node = functools.partial(Api, nodes=self.nodes)
         try:
             self._golos = await loop.run_in_executor(None, connect_to_node)
             self._stream = await loop.run_in_executor(None, connect_to_node)
@@ -62,33 +51,11 @@ class GolosBlockchain(BaseBlockchain):
         except RetriesExceeded as exception:
             raise BlockchainConnectionError(exception)
 
-        queue = []
-        cursor = database.escrow.find(
-            {"memo": {"$exists": True}, "trx_id": {"$exists": False}}
-        )
-        min_time = None
-        async for offer in cursor:
-            if offer["type"] == "buy":
-                address = offer["init"]["send_address"]
-                amount = offer["sum_buy"].to_decimal()
-            else:
-                address = offer["counter"]["send_address"]
-                amount = offer["sum_sell"].to_decimal()
-            queue_member = self.create_queue_member(
-                offer_id=offer["_id"],
-                from_address=address,
-                amount_with_fee=offer["sum_fee_up"].to_decimal(),
-                amount_without_fee=amount,
-                asset=offer[offer["type"]],
-                memo=offer["memo"],
-                transaction_time=offer["transaction_time"],
-            )
-            if queue_member is not None:
-                queue.append(queue_member)
-                if min_time is None or offer["transaction_time"] < min_time:
-                    min_time = offer["transaction_time"]
+        queue = await self.create_queue()
         if not queue:
             return
+        min_time = self.get_min_time(queue)
+
         func = functools.partial(
             self._golos.get_account_history,
             self.address,
@@ -108,24 +75,15 @@ class GolosBlockchain(BaseBlockchain):
                 if not queue:
                     return
         self._queue.extend(queue)
-        await self._start_streaming()
 
     async def get_limits(self, asset: str):
         limits = {"GOLOS": InsuranceLimits(Decimal("10000"), Decimal("100000"))}
         return limits.get(asset)
 
     async def transfer(self, to: str, amount: Decimal, asset: str, memo: str = ""):
-        with open(config.WIF_FILENAME) as wif_file:
-            transaction = await get_running_loop().run_in_executor(
-                None,
-                self._golos.transfer,
-                to,
-                amount,
-                self.address,
-                json.load(wif_file)["golos"],
-                asset,
-                memo,
-            )
+        transaction = await get_running_loop().run_in_executor(
+            None, self._golos.transfer, to, amount, self.address, self.wif, asset, memo,
+        )
         return self.trx_url(transaction["id"])
 
     async def is_block_confirmed(self, block_num, op):
@@ -154,10 +112,7 @@ class GolosBlockchain(BaseBlockchain):
         else:
             return True
 
-    async def start_streaming(self):
-        create_task(self._start_streaming())
-
-    async def _start_streaming(self):
+    async def stream(self):
         loop = get_running_loop()
         block = await loop.run_in_executor(
             None, self._stream.rpc.call, "set_block_applied_callback", [0]
@@ -182,10 +137,11 @@ class GolosBlockchain(BaseBlockchain):
             if not self._queue:
                 await loop.run_in_executor(None, self._stream.rpc.close)
                 return
-            response = await loop.run_in_executor(None, self._stream.rpc.ws.recv)
-            response_json = json.loads(response)
-            if "error" in response_json:
-                return error_handler(response_json)
+            while True:
+                response = await loop.run_in_executor(None, self._stream.rpc.ws.recv)
+                response_json = json.loads(response)
+                if "error" not in response_json:
+                    break
             block = response_json["result"]
 
     async def _check_operation(
@@ -205,7 +161,8 @@ class GolosBlockchain(BaseBlockchain):
                     continue
             if op["to"] != self.address or op["from"] != req["from_address"]:
                 continue
-            req["timeout_handler"].cancel()
+            if "timeout_handler" in req:
+                req["timeout_handler"].cancel()
             refund_reasons = set()
             if asset != req["asset"]:
                 refund_reasons.add("asset")

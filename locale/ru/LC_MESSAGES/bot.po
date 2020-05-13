@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
-"POT-Creation-Date: 2020-04-12 21:55+0300\n"
+"POT-Creation-Date: 2020-05-13 15:08+0300\n"
 "PO-Revision-Date: 2019-02-24 04:46+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -478,6 +478,18 @@ msgstr "Ваше предложение эскроу отклонено."
 #: src/handlers/escrow.py
 msgid "offer_declined"
 msgstr "Предложение отклонено."
+
+#: src/handlers/escrow.py
+msgid "transaction_check_starting"
+msgstr "Начинаю проверку транзакции..."
+
+#: src/handlers/escrow.py
+msgid "transaction_not_found"
+msgstr "Транзакция не найдена."
+
+#: src/handlers/escrow.py
+msgid "check"
+msgstr "Проверить транзакцию"
 
 #: src/handlers/escrow.py
 msgid "with_memo"
