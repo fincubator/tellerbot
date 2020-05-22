@@ -238,6 +238,7 @@ class CyberBlockchain(BaseBlockchain):
         return result
 
     async def _resolve_address(self, address) -> str:
+        address = address.lower()
         addresses = await self._resolve_addresses([address])
         return addresses[address]
 
