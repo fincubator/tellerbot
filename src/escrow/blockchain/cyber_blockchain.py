@@ -228,6 +228,8 @@ class CyberBlockchain(BaseBlockchain):
                 data = [element for element in data if element != error_element]
                 cyberway_username = error_element.split("@")[0]
                 result[cyberway_username] = cyberway_username
+                if not data:
+                    break
             else:
                 for element, cyberway_username in zip(data, cyberway_usernames):
                     golos_address = element.split("@")[0]
@@ -242,10 +244,10 @@ class CyberBlockchain(BaseBlockchain):
     async def _check_queue_in_history(
         self, queue: typing.List[typing.Dict[str, typing.Any]],
     ) -> bool:
-        addresses = [queue_member["from_address"] for queue_member in queue]
+        addresses = [queue_member["from_address"].lower() for queue_member in queue]
         resolved = await self._resolve_addresses(addresses)
-        for queue_member in queue:
-            queue_member["from_address"] = resolved[queue_member["from_address"]]
+        for queue_member, address in zip(queue, addresses):
+            queue_member["from_address"] = resolved[address]
 
         pos = -1
         min_time = self.get_min_time(queue)
