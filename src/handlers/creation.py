@@ -400,10 +400,8 @@ async def price_ask(
         )
         callback_command = "buy"
     else:
-        answer = (
-            i18n("ask_sell_price {of_currency} {per_currency}").format(
-                of_currency=order["buy"], per_currency=order["sell"]
-            ),
+        answer = i18n("ask_sell_price {of_currency} {per_currency}").format(
+            of_currency=order["buy"], per_currency=order["sell"]
         )
         callback_command = "sell"
 
