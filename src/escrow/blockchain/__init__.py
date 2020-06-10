@@ -240,9 +240,11 @@ class BaseBlockchain(ABC):
             escrow_user = offer["counter"]
             other_user = offer["init"]
 
-        answer = i18n(
-            "transaction_passed {currency}", locale=escrow_user["locale"]
-        ).format(currency=offer[new_currency])
+        answer = markdown.escape_md(
+            i18n("transaction_passed {currency}", locale=escrow_user["locale"]).format(
+                currency=offer[new_currency]
+            )
+        )
         await tg.send_message(escrow_user["id"], answer)
         is_confirmed = await create_task(self.is_block_confirmed(block_num, op))
         if is_confirmed:
@@ -260,19 +262,21 @@ class BaseBlockchain(ABC):
                 i18n("transaction_confirmed", locale=other_user["locale"]),
                 self.trx_url(trx_id),
             )
-            answer += "\n" + i18n(
-                "send {amount} {currency} {address}", locale=other_user["locale"]
-            ).format(
-                amount=offer[f"sum_{new_currency}"],
-                currency=offer[new_currency],
-                address=markdown.escape_md(escrow_user["receive_address"]),
+            answer += "\n" + markdown.escape_md(
+                i18n(
+                    "send {amount} {currency} {address}", locale=other_user["locale"]
+                ).format(
+                    amount=offer[f"sum_{new_currency}"],
+                    currency=offer[new_currency],
+                    address=escrow_user["receive_address"],
+                )
             )
-            answer += "."
+            answer += r"\."
             await tg.send_message(
                 other_user["id"],
                 answer,
                 reply_markup=keyboard,
-                parse_mode=ParseMode.MARKDOWN,
+                parse_mode=ParseMode.MARKDOWN_V2,
             )
             return True
 
@@ -327,7 +331,7 @@ class BaseBlockchain(ABC):
             answer += f"\n• {message_point}"
 
         answer += "\n\n" + i18n("refund_promise", locale=user["locale"])
-        await tg.send_message(user["id"], answer, parse_mode=ParseMode.MARKDOWN)
+        await tg.send_message(user["id"], answer)
         is_confirmed = await create_task(self.is_block_confirmed(block_num, op))
         await database.escrow.update_one(
             {"_id": offer["_id"]}, {"$set": {"transaction_time": time()}}
@@ -343,9 +347,11 @@ class BaseBlockchain(ABC):
                 i18n("transaction_refunded", locale=user["locale"]), trx_url
             )
         else:
-            answer = i18n("transaction_not_confirmed", locale=user["locale"])
-        answer += " " + i18n("try_again", locale=user["locale"])
-        await tg.send_message(user["id"], answer, parse_mode=ParseMode.MARKDOWN)
+            answer = i18n(
+                "transaction_not_confirmed", locale=user["locale"], escape_md=True
+            )
+        answer += " " + i18n("try_again", locale=user["locale"], escape_md=True)
+        await tg.send_message(user["id"], answer, parse_mode=ParseMode.MARKDOWN_V2)
 
 
 class StreamBlockchain(BaseBlockchain):

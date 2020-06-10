@@ -292,21 +292,24 @@ async def ask_credentials(
                 i18n(
                     "request_full_card_number {currency} {user}",
                     locale=request_user["locale"],
-                ).format(currency=currency, user=mention),
+                    escape_md=True,
+                ).format(currency=markdown.escape_md(currency), user=mention),
                 reply_markup=keyboard,
-                parse_mode=ParseMode.MARKDOWN,
+                parse_mode=ParseMode.MARKDOWN_V2,
             )
             state = FSMContext(dp.storage, request_user["id"], request_user["id"])
             await state.set_state(states.Escrow.full_card.state)
             answer = i18n(
-                "asked_full_card_number {user}", locale=answer_user["locale"]
+                "asked_full_card_number {user}",
+                locale=answer_user["locale"],
+                escape_md=True,
             ).format(
                 user=markdown.link(
                     request_user["mention"], User(id=request_user["id"]).url
                 )
             )
             await tg.send_message(
-                answer_user["id"], answer, parse_mode=ParseMode.MARKDOWN,
+                answer_user["id"], answer, parse_mode=ParseMode.MARKDOWN_V2,
             )
         return
 
@@ -385,8 +388,10 @@ async def full_card_number_message(message: types.Message, offer: EscrowOffer):
     mention = markdown.link(user["mention"], User(id=user["id"]).url)
     await tg.send_message(
         message.chat.id,
-        i18n("wrong_full_card_number_receiver {user}").format(user=mention),
-        parse_mode=ParseMode.MARKDOWN,
+        i18n("wrong_full_card_number_receiver {user}", escape_md=True).format(
+            user=mention
+        ),
+        parse_mode=ParseMode.MARKDOWN_V2,
     )
 
 
@@ -404,10 +409,10 @@ async def full_card_number_sent(call: types.CallbackQuery, offer: EscrowOffer):
         )
         await tg.send_message(
             call.message.chat.id,
-            i18n("exchange_continued {user}").format(
+            i18n("exchange_continued {user}", escape_md=True).format(
                 user=markdown.link(counter["mention"], User(id=counter["id"]).url)
             ),
-            parse_mode=ParseMode.MARKDOWN,
+            parse_mode=ParseMode.MARKDOWN_V2,
         )
         await offer.update_document({"$set": {"pending_input_from": counter["id"]}})
         counter_state = FSMContext(dp.storage, counter["id"], counter["id"])
@@ -579,23 +584,28 @@ async def set_init_send_address(
         "escrow_offer_notification {user} {sell_amount} {sell_currency} "
         "for {buy_amount} {buy_currency}",
         locale=locale,
+        escape_md=True,
     ).format(
         user=mention,
-        sell_amount=offer.sum_sell,
-        sell_currency=offer.sell,
-        buy_amount=offer.sum_buy,
-        buy_currency=offer.buy,
+        sell_amount=markdown.escape_md(offer.sum_sell),
+        sell_currency=markdown.escape_md(offer.sell),
+        buy_amount=markdown.escape_md(offer.sum_buy),
+        buy_currency=markdown.escape_md(offer.buy),
     )
     if offer.bank:
-        answer += " " + i18n("using {bank}", locale=locale).format(bank=offer.bank)
-    answer += "."
+        answer += " " + markdown.escape_md(
+            i18n("using {bank}", locale=locale).format(bank=offer.bank)
+        )
+    answer += r"\."
     update_dict = {"init.send_address": address}
     if offer.type == "sell":
         insured = await get_insurance(offer)
         update_dict["insured"] = Decimal128(insured)
         if offer[f"sum_{offer.type}"].to_decimal() > insured:
-            answer += "\n" + i18n("exceeded_insurance {amount} {currency}").format(
-                amount=insured, currency=offer.escrow
+            answer += "\n" + markdown.escape_md(
+                i18n("exceeded_insurance {amount} {currency}", escape_md=True).format(
+                    amount=insured, currency=offer.escrow
+                )
             )
     await offer.update_document(
         {"$set": update_dict, "$unset": {"pending_input_from": True}}
@@ -604,7 +614,7 @@ async def set_init_send_address(
         offer.counter["id"],
         answer,
         reply_markup=buy_keyboard,
-        parse_mode=ParseMode.MARKDOWN,
+        parse_mode=ParseMode.MARKDOWN_V2,
     )
     sell_keyboard = InlineKeyboardMarkup()
     sell_keyboard.add(
@@ -746,12 +756,21 @@ async def set_counter_send_address(
     )
     escrow_address = markdown.bold(escrow_instance.address)
     answer = i18n(
-        "send {amount} {currency} {address}", locale=escrow_user["locale"]
-    ).format(amount=offer.sum_fee_up, currency=offer.escrow, address=escrow_address)
-    answer += " " + i18n("with_memo", locale=escrow_user["locale"])
+        "send {amount} {currency} {address}",
+        locale=escrow_user["locale"],
+        escape_md=True,
+    ).format(
+        amount=markdown.escape_md(offer.sum_fee_up),
+        currency=markdown.escape_md(offer.escrow),
+        address=escrow_address,
+    )
+    answer += " " + i18n("with_memo", locale=escrow_user["locale"], escape_md=True)
     answer += ":\n" + markdown.code(memo)
     await tg.send_message(
-        escrow_user["id"], answer, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN
+        escrow_user["id"],
+        answer,
+        reply_markup=keyboard,
+        parse_mode=ParseMode.MARKDOWN_V2,
     )
     if send_reply:
         keyboard = InlineKeyboardMarkup()
@@ -766,7 +785,6 @@ async def set_counter_send_address(
             + " "
             + i18n("transaction_completion_notification_promise"),
             reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN,
         )
     update = {
         "counter.send_address": address,
@@ -887,34 +905,34 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer
 async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
     """Release escrow asset and finish exchange."""
     if offer.type == "buy":
-        recipient_user = offer.counter
+        rcvr_user = offer.counter
         other_user = offer.init
     elif offer.type == "sell":
-        recipient_user = offer.init
+        rcvr_user = offer.init
         other_user = offer.counter
 
     await call.answer(i18n("escrow_completing"))
     escrow_instance = get_escrow_instance(offer.escrow)
     trx_url = await escrow_instance.transfer(
-        recipient_user["receive_address"],
+        rcvr_user["receive_address"],
         offer.sum_fee_down.to_decimal(),  # type: ignore
         offer.escrow,
         memo=create_memo(offer, transfer=True),
     )
-    answer = i18n("escrow_completed", locale=other_user["locale"])
-    recipient_answer = i18n("escrow_completed", locale=recipient_user["locale"])
-    recipient_answer += " " + markdown.link(
-        i18n("escrow_sent {amount} {currency}", locale=recipient_user["locale"]).format(
+    answer = i18n("escrow_completed", locale=other_user["locale"], escape_md=True)
+    rcvr_answer = i18n("escrow_completed", locale=rcvr_user["locale"], escape_md=True)
+    rcvr_answer += " " + markdown.link(
+        i18n("escrow_sent {amount} {currency}", locale=rcvr_user["locale"]).format(
             amount=offer.sum_fee_down, currency=offer.escrow
         ),
         trx_url,
     )
     await offer.delete_document()
     await tg.send_message(
-        recipient_user["id"],
-        recipient_answer,
+        rcvr_user["id"],
+        rcvr_answer,
         reply_markup=start_keyboard(),
-        parse_mode=ParseMode.MARKDOWN,
+        parse_mode=ParseMode.MARKDOWN_V2,
     )
     await tg.send_message(other_user["id"], answer, reply_markup=start_keyboard())
 
@@ -924,26 +942,28 @@ async def validate_offer(call: types.CallbackQuery, offer: EscrowOffer):
     """Ask support for manual verification of exchange."""
     if offer.type == "buy":
         sender = offer.counter
-        receiver = offer.init
+        rcvr = offer.init
         currency = offer.sell
     elif offer.type == "sell":
         sender = offer.init
-        receiver = offer.counter
+        rcvr = offer.counter
         currency = offer.buy
 
     escrow_instance = get_escrow_instance(offer.escrow)
     answer = "{0}\n{1} sender: {2}{3}\n{1} receiver: {4}{5}\nBank: {6}\nMemo: {7}"
     answer = answer.format(
         markdown.link("Unconfirmed escrow.", escrow_instance.trx_url(offer.trx_id)),
-        currency,
+        markdown.escape_md(currency),
         markdown.link(sender["mention"], User(id=sender["id"]).url),
-        " ({})".format(sender["name"]) if "name" in sender else "",
-        markdown.link(receiver["mention"], User(id=receiver["id"]).url),
-        " ({})".format(receiver["name"]) if "name" in receiver else "",
+        markdown.escape_md(" ({})".format(sender["name"])) if "name" in sender else "",
+        markdown.link(rcvr["mention"], User(id=rcvr["id"]).url),
+        markdown.escape_md(" ({})".format(rcvr["name"])) if "name" in rcvr else "",
         offer.bank,
         markdown.code(offer.memo),
     )
-    await tg.send_message(config.SUPPORT_CHAT_ID, answer, parse_mode=ParseMode.MARKDOWN)
+    await tg.send_message(
+        config.SUPPORT_CHAT_ID, answer, parse_mode=ParseMode.MARKDOWN_V2
+    )
     await offer.delete_document()
     await call.answer()
     await tg.send_message(

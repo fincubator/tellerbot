@@ -14,11 +14,13 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+import re
 import typing
 from pathlib import Path
 
 from aiogram import types
 from aiogram.contrib.middlewares.i18n import I18nMiddleware
+from aiogram.utils import markdown
 from pymongo import ReturnDocument
 
 from src.database import database
@@ -34,6 +36,18 @@ class I18nMiddlewareManual(I18nMiddleware):
         self.domain = domain
         self.path = path
         self.default = default
+
+    def __call__(self, *args, escape_md=False, **kwargs) -> str:
+        """Call I18nMiddleware with option to escape markdown retaining formatting."""
+        translation = super().__call__(*args, **kwargs)
+        if escape_md:
+            placeholders = re.findall(r"{\w*}", translation)
+            text_parts = map(markdown.escape_md, re.split(r"{\w*}", translation))
+            first_part = next(text_parts)
+            rest_generator = (p + tp for p, tp in zip(placeholders, text_parts))
+            return "".join((first_part, *rest_generator))
+        else:
+            return translation
 
     async def get_user_locale(
         self, action: str, args: typing.Tuple[typing.Any]
