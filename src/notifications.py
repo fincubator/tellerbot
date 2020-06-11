@@ -78,5 +78,7 @@ async def order_notification(order: typing.Mapping[str, typing.Any]):
         order = await database.orders.find_one({"_id": order["_id"]})  # Update order
         if not order:
             return
-        await show_order(order, user["chat"], user["id"], show_id=True)
+        await show_order(
+            order, user["chat"], user["id"], show_id=True, locale=user["locale"]
+        )
         await asyncio.sleep(1)  # Avoid Telegram limit
