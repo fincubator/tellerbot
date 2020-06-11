@@ -20,6 +20,7 @@ import typing
 
 from aiogram import Bot
 from aiogram import types
+from aiogram.bot import api
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
 
@@ -28,14 +29,17 @@ from src.database import MongoStorage
 from src.i18n import i18n
 
 
-tg = Bot(None, loop=asyncio.get_event_loop(), validate_token=False)
+tg = Bot("0:", loop=asyncio.get_event_loop(), validate_token=False)
 dp = Dispatcher(tg)
 
 
 def setup():
     """Set API token from config to bot and setup dispatcher."""
     with open(config.TOKEN_FILENAME, "r") as token_file:
-        tg._ctx_token.set(token_file.read().strip())
+        token = token_file.read().strip()
+        api.check_token(token)
+        tg._ctx_token.set(token)
+        tg.id = int(token.split(":")[0])
 
     dp.storage = MongoStorage()
 
