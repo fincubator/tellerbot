@@ -1,5 +1,5 @@
-aiogram==2.8
 emoji==0.5.4
+git+https://github.com/aiogram/aiogram.git@557147ad8d39ec6d90f36a840c09b458a063e48f
 motor==2.1.0
 pymongo==3.10.1
 requests==2.23.0
