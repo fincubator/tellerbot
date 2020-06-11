@@ -82,7 +82,14 @@ class GolosBlockchain(StreamBlockchain):
 
     async def transfer(self, to: str, amount: Decimal, asset: str, memo: str = ""):
         transaction = await get_running_loop().run_in_executor(
-            None, self._golos.transfer, to, amount, self.address, self.wif, asset, memo,
+            None,
+            self._golos.transfer,
+            to.lower(),
+            amount,
+            self.address,
+            self.wif,
+            asset,
+            memo,
         )
         return self.trx_url(transaction["id"])
 
@@ -159,7 +166,7 @@ class GolosBlockchain(StreamBlockchain):
                 date = datetime.strptime(op["timestamp"], "%Y-%m-%dT%H:%M:%S")
                 if timegm(date.timetuple()) < req["transaction_time"]:
                     continue
-            if op["to"] != self.address or op["from"] != req["from_address"]:
+            if op["to"] != self.address or op["from"] != req["from_address"].lower():
                 continue
             if "timeout_handler" in req:
                 req["timeout_handler"].cancel()
