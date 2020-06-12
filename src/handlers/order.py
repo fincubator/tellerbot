@@ -648,9 +648,13 @@ async def archive_button(call: types.CallbackQuery, order: OrderType):
     args = call.data.split()
 
     archived = order.get("archived")
+    if archived:
+        update_dict = {"$unset": {"archived": True}, "$set": {"notify": True}}
+    else:
+        update_dict = {"$set": {"archived": True, "notify": False}}
     order = await database.orders.find_one_and_update(
         {"_id": ObjectId(args[1]), "user_id": call.from_user.id},
-        {"$unset" if archived else "$set": {"archived": True}},
+        update_dict,
         return_document=pymongo.ReturnDocument.AFTER,
     )
     if not order:
