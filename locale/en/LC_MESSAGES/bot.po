@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
-"POT-Creation-Date: 2020-05-13 15:08+0300\n"
+"POT-Creation-Date: 2020-06-13 02:06+0300\n"
 "PO-Revision-Date: 2019-10-03 14:00+0300\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: en\n"
@@ -290,6 +290,10 @@ msgstr "At what price (in {of_currency}/{per_currency}) do you want to buy?"
 #: src/handlers/creation.py
 msgid "same_currency_error"
 msgstr "Currencies should be different."
+
+#: src/handlers/creation.py
+msgid "same_gateway_error"
+msgstr "Gateways should be different."
 
 #: src/handlers/creation.py
 msgid "ask_sell_price {of_currency} {per_currency}"
