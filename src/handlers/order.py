@@ -476,7 +476,7 @@ async def finish_edit(user, update_dict):
     lambda call: call.data == "default_duration", state=states.field_editing
 )
 async def default_duration(call: types.CallbackQuery, state: FSMContext):
-    """React to "Unset" button by unsetting the edit field."""
+    """Repeat default duration."""
     user = await database.users.find_one({"id": call.from_user.id})
     order = await database.orders.find_one({"_id": user["edit"]["order_id"]})
     await call.answer()
