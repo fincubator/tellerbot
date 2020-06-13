@@ -796,8 +796,9 @@ async def cancel_offer(call: types.CallbackQuery, offer: EscrowOffer):
             escrow_user = offer.counter
         if call.from_user.id != escrow_user["id"]:
             return await call.answer(i18n("cancel_before_verification"))
-        req = get_escrow_instance(offer.escrow).remove_from_queue(offer._id)
-        req["timeout_handler"].cancel()
+        escrow_instance = get_escrow_instance(offer.escrow)
+        if isinstance(escrow_instance, StreamBlockchain):
+            escrow_instance.remove_from_queue(offer._id)
 
     sell_answer = i18n("escrow_cancelled", locale=offer.init["locale"])
     buy_answer = i18n("escrow_cancelled", locale=offer.counter["locale"])
