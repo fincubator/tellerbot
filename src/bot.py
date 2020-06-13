@@ -44,7 +44,7 @@ class IncomingHistoryMiddleware(BaseMiddleware):
             await database.logs.insert_one(
                 {
                     "direction": "in",
-                    "type": action.split("pre_process_", 1),
+                    "type": action.split("pre_process_", 1)[1],
                     "data": args[0].to_python(),
                 }
             )
