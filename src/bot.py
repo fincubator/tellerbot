@@ -56,12 +56,17 @@ class TellerBot(Bot):
     async def request(self, method, data=None, *args, **kwargs):
         """Make a request and save it in the database."""
         result = await super().request(method, data, *args, **kwargs)
-        if result and method not in (
-            api.Methods.GET_UPDATES,
-            api.Methods.SET_WEBHOOK,
-            api.Methods.DELETE_WEBHOOK,
-            api.Methods.GET_WEBHOOK_INFO,
-            api.Methods.GET_ME,
+        if (
+            config.DATABASE_LOGGING_ENABLED
+            and result
+            and method
+            not in (
+                api.Methods.GET_UPDATES,
+                api.Methods.SET_WEBHOOK,
+                api.Methods.DELETE_WEBHOOK,
+                api.Methods.GET_WEBHOOK_INFO,
+                api.Methods.GET_ME,
+            )
         ):
             # On requests Telegram either returns True on success or relevant object.
             # To store only useful information, method's payload is saved if result is
@@ -92,7 +97,8 @@ def setup():
 
     logging.basicConfig(level=config.LOGGER_LEVEL)
     dp.middleware.setup(LoggingMiddleware())
-    dp.middleware.setup(IncomingHistoryMiddleware())
+    if config.DATABASE_LOGGING_ENABLED:
+        dp.middleware.setup(IncomingHistoryMiddleware())
 
 
 def private_handler(*args, **kwargs):
