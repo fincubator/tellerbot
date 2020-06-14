@@ -116,7 +116,7 @@ async def cancel_button(call: types.CallbackQuery, state: FSMContext):
     await cancel_order_creation(call.from_user.id, call.message.chat.id)
 
 
-async def set_gateway(currency_type: str, message: types.Message):
+async def get_currency_with_gateway(currency_type: str, message: types.Message):
     """Try to append gateway from message text to currency."""
     gateway = message.text.upper()
 
@@ -154,12 +154,7 @@ async def set_gateway(currency_type: str, message: types.Message):
         )
         return False
 
-    set_dict = {currency_type: gateway + "." + order[currency_type]}
-    if currency_type == "sell":
-        set_dict["price_currency"] = "sell"
-    return await database.creation.find_one_and_update(
-        {"_id": order["_id"]}, {"$set": set_dict}, return_document=ReturnDocument.AFTER,
-    )
+    return order, gateway + "." + order[currency_type]
 
 
 async def match_currency(currency_type: str, message: types.Message):
@@ -301,9 +296,13 @@ async def choose_buy_gateway(message: types.Message, state: FSMContext):
         await cancel_order_creation(message.from_user.id, message.chat.id)
         return
     elif not message.text.startswith(emojize(":fast_forward:")):
-        order = await set_gateway("buy", message)
-        if not order:
+        gateway_result = await get_currency_with_gateway("buy", message)
+        if not gateway_result:
             return
+        order, currency = gateway_result
+        await database.creation.update_one(
+            {"_id": order["_id"]}, {"$set": {"buy": currency}}
+        )
 
     await OrderCreation.sell.set()
     await tg.send_message(
@@ -377,9 +376,21 @@ async def choose_sell_gateway(message: types.Message, state: FSMContext):
         await cancel_order_creation(message.from_user.id, message.chat.id)
         return
     elif not message.text.startswith(emojize(":fast_forward:")):
-        order = await set_gateway("sell", message)
-        if not order:
+        gateway_result = await get_currency_with_gateway("sell", message)
+        if not gateway_result:
             return
+        order, currency = gateway_result
+        if currency == order["buy"]:
+            await tg.send_message(
+                message.chat.id,
+                i18n("same_gateway_error"),
+                reply_markup=whitelist.gateway_keyboard(order["sell"], "sell"),
+            )
+            return
+        await database.creation.update_one(
+            {"_id": order["_id"]},
+            {"$set": {"sell": currency, "price_currency": "sell"}},
+        )
     else:
         order = await database.creation.find_one_and_update(
             {"user_id": message.from_user.id},

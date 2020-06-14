@@ -260,6 +260,8 @@ class CyberBlockchain(BaseBlockchain):
             if not history["actions"]:
                 return False
             for act in reversed(history["actions"]):
+                if act["action_trace"]["act"]["name"] != "transfer":
+                    continue
                 date = datetime.strptime(act["block_time"], TIME_FORMAT)
                 if timegm(date.timetuple()) < min_time:
                     return False

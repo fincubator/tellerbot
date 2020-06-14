@@ -359,12 +359,24 @@ class StreamBlockchain(BaseBlockchain):
 
     _queue: typing.List[typing.Dict[str, typing.Any]] = []
 
-    def check_timeout(self, offer_id: ObjectId) -> None:
+    def remove_from_queue(
+        self, offer_id: ObjectId
+    ) -> typing.Optional[typing.Mapping[str, typing.Any]]:
+        """Remove transaction with specified ``offer_id`` value from ``self._queue``.
+
+        :param offer_id: ``_id`` of escrow offer.
+        :return: True if transaction was found and False otherwise.
+        """
         for queue_member in self._queue:
             if queue_member["offer_id"] == offer_id:
                 if "timeout_handler" in queue_member:
                     queue_member["timeout_handler"].cancel()
                 self._queue.remove(queue_member)
+                return queue_member
+        return None
+
+    def check_timeout(self, offer_id: ObjectId) -> None:
+        self.remove_from_queue(offer_id)
         super().check_timeout(offer_id)
 
     @abstractmethod
