@@ -223,18 +223,6 @@ async def orders_list(
         )
 
 
-def get_order_field_names():
-    """Get translated names of order fields."""
-    return {
-        "sum_buy": i18n("buy_amount"),
-        "sum_sell": i18n("sell_amount"),
-        "price": i18n("price"),
-        "payment_system": i18n("payment_system"),
-        "duration": i18n("duration"),
-        "comments": i18n("comments"),
-    }
-
-
 async def show_order(
     order: typing.Mapping[str, typing.Any],
     chat_id: int,
@@ -273,7 +261,9 @@ async def show_order(
         if "edit" in user:
             if edit:
                 if user["edit"]["field"] == "price":
-                    new_edit_msg = i18n("new_price {of_currency} {per_currency}")
+                    new_edit_msg = i18n(
+                        "new_price {of_currency} {per_currency}", locale=locale
+                    )
                     if invert:
                         new_edit_msg = new_edit_msg.format(
                             of_currency=order["buy"], per_currency=order["sell"]
@@ -316,7 +306,14 @@ async def show_order(
     header += act.format(buy_currency=order["buy"], sell_currency=order["sell"]) + "\n"
 
     lines = [header]
-    field_names = get_order_field_names()
+    field_names = {
+        "sum_buy": i18n("buy_amount", locale=locale),
+        "sum_sell": i18n("sell_amount", locale=locale),
+        "price": i18n("price", locale=locale),
+        "payment_system": i18n("payment_system", locale=locale),
+        "duration": i18n("duration", locale=locale),
+        "comments": i18n("comments", locale=locale),
+    }
     lines_format: typing.Dict[str, typing.Optional[str]] = {}
     for name in field_names:
         lines_format[name] = None
@@ -466,7 +463,9 @@ async def show_order(
         if new_edit_msg is not None:
             keyboard = types.InlineKeyboardMarkup()
             keyboard.row(
-                types.InlineKeyboardButton(i18n("unset"), callback_data="unset")
+                types.InlineKeyboardButton(
+                    i18n("unset", locale=locale), callback_data="unset"
+                )
             )
             await tg.edit_message_text(
                 new_edit_msg,

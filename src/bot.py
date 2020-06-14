@@ -20,15 +20,68 @@ import typing
 
 from aiogram import Bot
 from aiogram import types
+from aiogram.bot import api
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
+from aiogram.dispatcher.middlewares import BaseMiddleware
 
 from src.config import config
+from src.database import database
 from src.database import MongoStorage
 from src.i18n import i18n
 
 
-tg = Bot(None, loop=asyncio.get_event_loop(), validate_token=False)
+class IncomingHistoryMiddleware(BaseMiddleware):
+    """Middleware for storing incoming history."""
+
+    async def trigger(self, action, args):
+        """Save incoming data in the database."""
+        if (
+            "update" not in action
+            and "error" not in action
+            and action.startswith("pre_process_")
+        ):
+            await database.logs.insert_one(
+                {
+                    "direction": "in",
+                    "type": action.split("pre_process_", 1)[1],
+                    "data": args[0].to_python(),
+                }
+            )
+
+
+class TellerBot(Bot):
+    """Custom bot class."""
+
+    async def request(self, method, data=None, *args, **kwargs):
+        """Make a request and save it in the database."""
+        result = await super().request(method, data, *args, **kwargs)
+        if (
+            config.DATABASE_LOGGING_ENABLED
+            and result
+            and method
+            not in (
+                api.Methods.GET_UPDATES,
+                api.Methods.SET_WEBHOOK,
+                api.Methods.DELETE_WEBHOOK,
+                api.Methods.GET_WEBHOOK_INFO,
+                api.Methods.GET_ME,
+            )
+        ):
+            # On requests Telegram either returns True on success or relevant object.
+            # To store only useful information, method's payload is saved if result is
+            # a boolean and result is saved otherwise.
+            await database.logs.insert_one(
+                {
+                    "direction": "out",
+                    "type": method,
+                    "data": data if isinstance(result, bool) else result,
+                }
+            )
+        return result
+
+
+tg = TellerBot(None, loop=asyncio.get_event_loop(), validate_token=False)
 dp = Dispatcher(tg)
 
 
@@ -44,6 +97,8 @@ def setup():
 
     logging.basicConfig(level=config.LOGGER_LEVEL)
     dp.middleware.setup(LoggingMiddleware())
+    if config.DATABASE_LOGGING_ENABLED:
+        dp.middleware.setup(IncomingHistoryMiddleware())
 
 
 def private_handler(*args, **kwargs):

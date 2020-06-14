@@ -76,7 +76,7 @@ async def order_notification(order: typing.Mapping[str, typing.Any]):
         if user["id"] == order["user_id"]:
             continue
         order = await database.orders.find_one({"_id": order["_id"]})  # Update order
-        if not order:
+        if not order or order.get("archived"):
             return
         await show_order(
             order, user["chat"], user["id"], show_id=True, locale=user["locale"]

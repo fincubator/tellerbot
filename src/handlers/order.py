@@ -476,7 +476,7 @@ async def finish_edit(user, update_dict):
     lambda call: call.data == "default_duration", state=states.field_editing
 )
 async def default_duration(call: types.CallbackQuery, state: FSMContext):
-    """React to "Unset" button by unsetting the edit field."""
+    """Repeat default duration."""
     user = await database.users.find_one({"id": call.from_user.id})
     order = await database.orders.find_one({"_id": user["edit"]["order_id"]})
     await call.answer()
@@ -648,9 +648,13 @@ async def archive_button(call: types.CallbackQuery, order: OrderType):
     args = call.data.split()
 
     archived = order.get("archived")
+    if archived:
+        update_dict = {"$unset": {"archived": True}, "$set": {"notify": True}}
+    else:
+        update_dict = {"$set": {"archived": True, "notify": False}}
     order = await database.orders.find_one_and_update(
         {"_id": ObjectId(args[1]), "user_id": call.from_user.id},
-        {"$unset" if archived else "$set": {"archived": True}},
+        update_dict,
         return_document=pymongo.ReturnDocument.AFTER,
     )
     if not order:
