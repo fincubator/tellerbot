@@ -387,6 +387,7 @@ async def edit_button(call: types.CallbackQuery):
     keyboard = types.InlineKeyboardMarkup()
     unset_button = types.InlineKeyboardButton(i18n("unset"), callback_data="unset")
 
+    answer = None
     if field == "sum_buy":
         answer = i18n("send_new_buy_amount")
         keyboard.row(unset_button)
@@ -421,8 +422,6 @@ async def edit_button(call: types.CallbackQuery):
     elif field == "comments":
         answer = i18n("send_new_comments")
         keyboard.row(unset_button)
-    else:
-        answer = None
 
     await call.answer()
     if not answer:

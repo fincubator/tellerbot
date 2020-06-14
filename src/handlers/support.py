@@ -47,17 +47,15 @@ async def send_message_to_support(message: types.Message):
 
     Envelope emoji at the beginning is the mark of support ticket.
     """
-    if message.from_user.username:
-        username = "@" + message.from_user.username
-    else:
-        username = markdown.link(message.from_user.full_name, message.from_user.url)
+    mention = markdown.link(message.from_user.mention, message.from_user.url)
 
     await tg.send_message(
         config.SUPPORT_CHAT_ID,
         emojize(":envelope:")
-        + f" #chat\\_{message.chat.id} {message.message_id}\n{username}:\n"
+        + markdown.escape_md(f" #chat_{message.chat.id} {message.message_id}\n")
+        + f"{mention}:\n"
         + markdown.escape_md(message.text),
-        parse_mode=types.ParseMode.MARKDOWN,
+        parse_mode=types.ParseMode.MARKDOWN_V2,
     )
     await tg.send_message(
         message.chat.id,

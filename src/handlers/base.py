@@ -175,10 +175,12 @@ async def orders_list(
                     order["buy"],
                 )
 
+        line = markdown.escape_md(line)
+
         if user_id is not None and order["user_id"] == user_id:
             line = f"*{line}*"
 
-        lines.append(f"{i + 1}. {line}")
+        lines.append(fr"{i + 1}\. {line}")
         buttons.append(
             types.InlineKeyboardButton(
                 "{}".format(i + 1), callback_data="get_order {}".format(order["_id"])
@@ -194,22 +196,21 @@ async def orders_list(
     keyboard.add(*buttons)
     keyboard.row(*inline_orders_buttons)
 
-    text = (
-        "\\["
+    text = markdown.escape_md(
+        "["
         + i18n("page {number} {total}").format(
             number=math.ceil(start / config.ORDERS_COUNT) + 1,
             total=math.ceil(quantity / config.ORDERS_COUNT),
         )
         + "]\n"
-        + "\n".join(lines)
-    )
+    ) + "\n".join(lines)
 
     if message_id is None:
         await tg.send_message(
             chat_id,
             text,
             reply_markup=keyboard,
-            parse_mode=types.ParseMode.MARKDOWN,
+            parse_mode=types.ParseMode.MARKDOWN_V2,
             disable_web_page_preview=True,
         )
     else:
@@ -218,7 +219,7 @@ async def orders_list(
             chat_id,
             message_id,
             reply_markup=keyboard,
-            parse_mode=types.ParseMode.MARKDOWN,
+            parse_mode=types.ParseMode.MARKDOWN_V2,
             disable_web_page_preview=True,
         )
 
@@ -295,7 +296,7 @@ async def show_order(
         header += markdown.bold(i18n("archived", locale=locale)) + "\n"
 
     creator = await database.users.find_one({"id": order["user_id"]})
-    header += "{} ({}) ".format(
+    header += r"{} \({}\) ".format(
         markdown.link(creator["mention"], types.User(id=creator["id"]).url),
         markdown.code(creator["id"]),
     )
@@ -303,9 +304,13 @@ async def show_order(
         act = i18n("sells {sell_currency} {buy_currency}", locale=locale)
     else:
         act = i18n("buys {buy_currency} {sell_currency}", locale=locale)
-    header += act.format(buy_currency=order["buy"], sell_currency=order["sell"]) + "\n"
+    header += (
+        markdown.escape_md(
+            act.format(buy_currency=order["buy"], sell_currency=order["sell"])
+        )
+        + "\n"
+    )
 
-    lines = [header]
     field_names = {
         "sum_buy": i18n("buy_amount", locale=locale),
         "sum_sell": i18n("sell_amount", locale=locale),
@@ -354,6 +359,8 @@ async def show_order(
             ),
         )
     )
+
+    lines = []
 
     if edit and creator["id"] == user_id:
         buttons = []
@@ -449,7 +456,7 @@ async def show_order(
             )
         )
 
-    answer = "\n".join(lines)
+    answer = "\n".join((header, *map(markdown.escape_md, lines)))
 
     if message_id is not None:
         await tg.edit_message_text(
@@ -457,7 +464,7 @@ async def show_order(
             chat_id,
             message_id,
             reply_markup=keyboard,
-            parse_mode=types.ParseMode.MARKDOWN,
+            parse_mode=types.ParseMode.MARKDOWN_V2,
             disable_web_page_preview=True,
         )
         if new_edit_msg is not None:
@@ -478,6 +485,6 @@ async def show_order(
             chat_id,
             answer,
             reply_markup=keyboard,
-            parse_mode=types.ParseMode.MARKDOWN,
+            parse_mode=types.ParseMode.MARKDOWN_V2,
             disable_web_page_preview=True,
         )

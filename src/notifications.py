@@ -18,6 +18,8 @@ import asyncio
 import typing
 from time import time
 
+from aiogram.types import ParseMode
+from aiogram.utils import markdown
 from aiogram.utils.exceptions import TelegramAPIError
 
 from src.bot import tg
@@ -36,12 +38,14 @@ async def run_loop():
         sent = False
         async for order in cursor:
             user = await database.users.find_one({"id": order["user_id"]})
-            message = i18n("order_expired", locale=user["locale"])
-            message += "\nID: {}".format(order["_id"])
+            message = i18n("order_expired", locale=user["locale"], escape_md=True)
+            message += "\nID: {}".format(markdown.code(order["_id"]))
             try:
                 if sent:
                     await asyncio.sleep(1)  # Avoid Telegram limit
-                await tg.send_message(user["chat"], message)
+                await tg.send_message(
+                    user["chat"], message, parse_mode=ParseMode.MARKDOWN_V2
+                )
             except TelegramAPIError:
                 pass
             else:

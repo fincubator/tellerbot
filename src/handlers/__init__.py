@@ -86,7 +86,7 @@ async def errors_handler(update: types.Update, exception: Exception):
         else:
             await tg.send_message(
                 exceptions_chat_id,
-                "Error handling {} {} from {} ({}) in chat {}\n{}".format(
+                r"Error handling {} {} from {} \({}\) in chat {}\n{}".format(
                     update_type,
                     update.update_id,
                     markdown.link(from_user.mention, from_user.url),
@@ -94,7 +94,7 @@ async def errors_handler(update: types.Update, exception: Exception):
                     chat_id,
                     markdown.code(traceback.format_exc(limit=-3)),
                 ),
-                parse_mode=types.ParseMode.MARKDOWN,
+                parse_mode=types.ParseMode.MARKDOWN_V2,
             )
         await tg.send_message(
             chat_id, i18n("unexpected_error"), reply_markup=start_keyboard(),
