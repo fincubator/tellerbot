@@ -8,47 +8,53 @@ msgstr ""
 "Project-Id-Version: TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
 "POT-Creation-Date: 2020-06-13 02:06+0300\n"
-"PO-Revision-Date: 2019-10-03 14:00+0300\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2020-06-17 01:40+0000\n"
+"Last-Translator: Allan Nordhøy <epost@anotheragency.no>\n"
+"Language-Team: Norwegian Bokmål <https://hosted.weblate.org/projects/"
+"tellerbot/tellerbot/nb_NO/>\n"
 "Language: nb_NO\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.1.1-dev\n"
 "Generated-By: Babel 2.8.0\n"
 
 #: src/escrow/blockchain/__init__.py
+#, fuzzy
 msgid "check_timeout {hours}"
 msgstr ""
+"Overføringssjekken tok mer enn {hours} timer, så beløpet ble ikke satt i "
+"bero."
 
 #: src/escrow/blockchain/__init__.py
+#, fuzzy
 msgid "transaction_passed {currency}"
-msgstr ""
+msgstr "Overføring gikk gjennom. Jeg vil varsle deg om du får {currency}."
 
 #: src/escrow/blockchain/__init__.py src/handlers/escrow.py
 msgid "sent"
-msgstr ""
+msgstr "Sendt"
 
 #: src/escrow/blockchain/__init__.py
 msgid "transaction_confirmed"
-msgstr ""
+msgstr "Overføring bekreftet."
 
 #: src/escrow/blockchain/__init__.py src/handlers/escrow.py
 msgid "send {amount} {currency} {address}"
-msgstr ""
+msgstr "Send {amount} {currency} til adressen {address}"
 
 #: src/escrow/blockchain/__init__.py
 msgid "transaction_not_confirmed"
-msgstr ""
+msgstr "Transaksjon ubekreftet."
 
 #: src/escrow/blockchain/__init__.py
 msgid "try_again"
-msgstr ""
+msgstr "Prøv igjen."
 
 #: src/escrow/blockchain/__init__.py
 msgid "transfer_mistakes"
-msgstr ""
+msgstr "Overføringen inneholdt feil:"
 
 #: src/escrow/blockchain/__init__.py
 msgid "wrong_asset"
@@ -72,11 +78,11 @@ msgstr ""
 
 #: src/handlers/__init__.py
 msgid "unknown_command"
-msgstr ""
+msgstr "Ukjent kommando."
 
 #: src/handlers/__init__.py
 msgid "unknown_button"
-msgstr ""
+msgstr "Ukjent knapp."
 
 #: src/handlers/__init__.py
 msgid "unexpected_error"
@@ -84,36 +90,36 @@ msgstr ""
 
 #: src/handlers/base.py
 msgid "create_order"
-msgstr ""
+msgstr "Opprett ordre"
 
 #: src/handlers/base.py
 msgid "my_orders"
-msgstr ""
+msgstr "Mine ordrer"
 
 #: src/handlers/base.py
 msgid "order_book"
-msgstr ""
+msgstr "Ordrebok"
 
 #: src/handlers/base.py
 msgid "language"
-msgstr ""
+msgstr "Språk"
 
 #: src/handlers/base.py
 msgid "support"
-msgstr ""
+msgstr "Støtte"
 
 #: src/handlers/base.py src/whitelist.py
 msgid "back"
-msgstr ""
+msgstr "Tilbake"
 
 #: src/handlers/base.py
 msgid "skip"
-msgstr ""
+msgstr "Hopp over"
 
 #: src/handlers/base.py src/handlers/creation.py src/handlers/escrow.py
 #: src/handlers/order.py src/handlers/start_menu.py src/whitelist.py
 msgid "cancel"
-msgstr ""
+msgstr "Avbryt"
 
 #: src/handlers/base.py
 msgid "no_orders"
@@ -121,11 +127,11 @@ msgstr ""
 
 #: src/handlers/base.py src/handlers/creation.py
 msgid "invert"
-msgstr ""
+msgstr "Inverter"
 
 #: src/handlers/base.py
 msgid "page {number} {total}"
-msgstr ""
+msgstr "Side {number} av {total}"
 
 #: src/handlers/base.py
 msgid "buy_amount"
@@ -137,19 +143,19 @@ msgstr ""
 
 #: src/handlers/base.py
 msgid "price"
-msgstr ""
+msgstr "Pris:"
 
 #: src/handlers/base.py
 msgid "payment_system"
-msgstr ""
+msgstr "Betalingssytem:"
 
 #: src/handlers/base.py
 msgid "duration"
-msgstr ""
+msgstr "Varighet:"
 
 #: src/handlers/base.py
 msgid "comments"
-msgstr ""
+msgstr "Kommentarer:"
 
 #: src/handlers/base.py src/handlers/order.py
 msgid "new_price {of_currency} {per_currency}"
@@ -157,7 +163,7 @@ msgstr ""
 
 #: src/handlers/base.py
 msgid "archived"
-msgstr ""
+msgstr "Arkivert"
 
 #: src/handlers/base.py
 msgid "sells {sell_currency} {buy_currency}"
@@ -169,23 +175,23 @@ msgstr ""
 
 #: src/handlers/base.py
 msgid "finish"
-msgstr ""
+msgstr "Fullfør"
 
 #: src/handlers/base.py
 msgid "similar"
-msgstr ""
+msgstr "Lignende"
 
 #: src/handlers/base.py
 msgid "match"
-msgstr ""
+msgstr "Jamfør"
 
 #: src/handlers/base.py
 msgid "edit"
-msgstr ""
+msgstr "Rediger"
 
 #: src/handlers/base.py
 msgid "delete"
-msgstr ""
+msgstr "Slett"
 
 #: src/handlers/base.py
 msgid "unarchive"
@@ -205,7 +211,7 @@ msgstr ""
 
 #: src/handlers/base.py src/handlers/order.py
 msgid "hide"
-msgstr ""
+msgstr "Skjul"
 
 #: src/handlers/base.py src/handlers/order.py
 msgid "unset"
@@ -361,7 +367,7 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "continue"
-msgstr ""
+msgstr "Fortsett"
 
 #: src/handlers/escrow.py
 msgid "exceeded_insurance {amount} {currency}"
@@ -377,19 +383,19 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "will_pay {amount} {currency}"
-msgstr ""
+msgstr "(Du vil betale {amount} {currency})"
 
 #: src/handlers/escrow.py
 msgid "will_get {amount} {currency}"
-msgstr ""
+msgstr "(Du vil få {amount} {currency})"
 
 #: src/handlers/escrow.py
 msgid "yes"
-msgstr ""
+msgstr "Ja"
 
 #: src/handlers/escrow.py src/handlers/order.py
 msgid "no"
-msgstr ""
+msgstr "Nei"
 
 #: src/handlers/escrow.py
 msgid "escrow_cancelled"
@@ -397,7 +403,7 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "choose_bank"
-msgstr ""
+msgstr "Velg bank."
 
 #: src/handlers/escrow.py
 msgid "request_full_card_number {currency} {user}"
@@ -409,11 +415,11 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "ask_address {currency}"
-msgstr ""
+msgstr "Send din {currency}-adresse."
 
 #: src/handlers/escrow.py
 msgid "bank_not_supported"
-msgstr ""
+msgstr "Denne banken støttes ikke."
 
 #: src/handlers/escrow.py
 msgid "send_first_and_last_4_digits_of_card_number {currency}"
@@ -441,11 +447,11 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "accept"
-msgstr ""
+msgstr "Godta"
 
 #: src/handlers/escrow.py
 msgid "decline"
-msgstr ""
+msgstr "Avslå"
 
 #: src/handlers/escrow.py
 msgid ""
@@ -459,7 +465,7 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "offer_sent"
-msgstr ""
+msgstr "Tilbud sendt."
 
 #: src/handlers/escrow.py
 msgid "escrow_offer_declined"
@@ -467,7 +473,7 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "offer_declined"
-msgstr ""
+msgstr "Tilbud avslått."
 
 #: src/handlers/escrow.py
 msgid "transaction_check_starting"
@@ -567,7 +573,7 @@ msgstr ""
 
 #: src/handlers/order.py
 msgid "send_new_payment_system"
-msgstr ""
+msgstr "Send nytt betalingssystem."
 
 #: src/handlers/order.py
 msgid "send_new_duration {limit}"
@@ -581,7 +587,7 @@ msgstr[1] ""
 
 #: src/handlers/order.py
 msgid "send_new_comments"
-msgstr ""
+msgstr "Send nye kommentarer."
 
 #: src/handlers/order.py
 msgid "unarchive_order_error"
@@ -593,7 +599,7 @@ msgstr ""
 
 #: src/handlers/order.py
 msgid "totally_sure"
-msgstr ""
+msgstr "Ja, jeg er helt sikker"
 
 #: src/handlers/order.py
 msgid "delete_order_confirmation"
@@ -625,23 +631,23 @@ msgstr ""
 
 #: src/handlers/start_menu.py
 msgid "choose_your_language"
-msgstr ""
+msgstr "Velg språk"
 
 #: src/handlers/start_menu.py
 msgid "request_question"
-msgstr ""
+msgstr "Hva er spørsmålet ditt?"
 
 #: src/handlers/start_menu.py
 msgid "user_not_found"
-msgstr ""
+msgstr "Fant ikke brukeren."
 
 #: src/handlers/start_menu.py
 msgid "no_user_argument"
-msgstr ""
+msgstr "Send brukernavn som et argument."
 
 #: src/handlers/start_menu.py
 msgid "your_subscriptions"
-msgstr ""
+msgstr "Dine abonnementer."
 
 #: src/handlers/start_menu.py
 msgid "no_subscriptions"
@@ -681,7 +687,7 @@ msgstr ""
 
 #: src/handlers/support.py
 msgid "reply_sent"
-msgstr ""
+msgstr "Svar sendt."
 
 #: src/handlers/support.py
 msgid "escrow_enabled"
@@ -713,4 +719,4 @@ msgstr ""
 
 #: src/whitelist.py
 msgid "without_gateway"
-msgstr ""
+msgstr "Uten portner"
