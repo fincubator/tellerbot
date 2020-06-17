@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
+import gettext
 import typing
 from pathlib import Path
 
@@ -34,6 +35,13 @@ class I18nMiddlewareManual(I18nMiddleware):
         self.domain = domain
         self.path = path
         self.default = default
+
+    def find_locales(self) -> typing.Dict[str, gettext.NullTranslations]:
+        """Load all compiled locales from path and add default fallbacks."""
+        translations = super().find_locales()
+        for translation in translations.values():
+            translation.add_fallback(translations[self.default])
+        return translations
 
     async def get_user_locale(
         self, action: str, args: typing.Tuple[typing.Any]
@@ -58,9 +66,10 @@ class I18nMiddlewareManual(I18nMiddleware):
             return_document=ReturnDocument.AFTER,
         )
         if document:
-            return document.get("locale", user.language_code)
+            locale = document.get("locale", user.language_code)
         else:
-            return user.language_code
+            locale = user.language_code
+        return locale if locale in self.available_locales else self.default
 
 
 i18n = plural_i18n = I18nMiddlewareManual("bot", Path(__file__).parents[1] / "locale")
