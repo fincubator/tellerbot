@@ -430,7 +430,7 @@ async def show_order(
                     ),
                 ),
             )
-        elif "price_sell" in order:
+        elif "price_sell" in order and not order.get("archived"):
             if (
                 get_escrow_instance(order["buy"]) is not None
                 or get_escrow_instance(order["sell"]) is not None
