@@ -27,6 +27,7 @@ from aiogram.types import InlineKeyboardButton
 from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.emoji import emojize
 from babel import Locale
+from babel import parse_locale
 from pymongo import DESCENDING
 
 from src import states
@@ -56,7 +57,7 @@ async def handle_start_command(message: types.Message, state: FSMContext):
         for language in i18n.available_locales:
             keyboard.row(
                 InlineKeyboardButton(
-                    Locale(language).display_name,
+                    Locale(parse_locale(language)[0]).display_name,
                     callback_data="locale {}".format(language),
                 )
             )
