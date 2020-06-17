@@ -195,9 +195,14 @@ async def aggregate_orders(buy: str, sell: str) -> typing.Tuple[Cursor, int]:
 async def orders_button(call: types.CallbackQuery):
     """React to left/right button query in order book."""
     query = {
-        "$or": [
-            {"expiration_time": {"$exists": False}},
-            {"expiration_time": {"$gt": time()}},
+        "$and": [
+            {
+                "$or": [
+                    {"expiration_time": {"$exists": False}},
+                    {"expiration_time": {"$gt": time()}},
+                ]
+            },
+            {"$or": [{"archived": {"$exists": False}}, {"archived": False}]},
         ]
     }
     cursor = database.orders.find(query).sort("start_time", pymongo.DESCENDING)
