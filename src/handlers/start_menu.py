@@ -43,6 +43,19 @@ from src.i18n import i18n
 from src.money import gateway_currency_regexp
 
 
+def locale_keyboard():
+    """Get inline keyboard markup with available locales."""
+    keyboard = InlineKeyboardMarkup()
+    for language in i18n.available_locales:
+        keyboard.row(
+            InlineKeyboardButton(
+                Locale(parse_locale(language)[0]).display_name,
+                callback_data="locale {}".format(language),
+            )
+        )
+    return keyboard
+
+
 @private_handler(commands=["start"], state=any_state)
 async def handle_start_command(message: types.Message, state: FSMContext):
     """Handle /start.
@@ -53,16 +66,8 @@ async def handle_start_command(message: types.Message, state: FSMContext):
     result = await database.users.update_one(user, {"$setOnInsert": user}, upsert=True)
 
     if not result.matched_count:
-        keyboard = InlineKeyboardMarkup()
-        for language in i18n.available_locales:
-            keyboard.row(
-                InlineKeyboardButton(
-                    Locale(parse_locale(language)[0]).display_name,
-                    callback_data="locale {}".format(language),
-                )
-            )
         await tg.send_message(
-            message.chat.id, i18n("choose_language"), reply_markup=keyboard
+            message.chat.id, i18n("choose_language"), reply_markup=locale_keyboard()
         )
         return
 
@@ -197,16 +202,8 @@ async def handle_my_orders(message: types.Message, state: FSMContext):
 @private_handler(lambda msg: msg.text.startswith(emojize(":abcd:")), state=any_state)
 async def choose_locale(message: types.Message):
     """Show list of languages."""
-    keyboard = InlineKeyboardMarkup()
-    for language in i18n.available_locales:
-        keyboard.row(
-            InlineKeyboardButton(
-                Locale(language).display_name,
-                callback_data="locale {}".format(language),
-            )
-        )
     await tg.send_message(
-        message.chat.id, i18n("choose_your_language"), reply_markup=keyboard
+        message.chat.id, i18n("choose_your_language"), reply_markup=locale_keyboard()
     )
 
 
