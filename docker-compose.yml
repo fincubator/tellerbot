@@ -2,7 +2,10 @@ version: "3.7"
 
 services:
   tellerbot:
-    build: .
+    build:
+      context: .
+      args:
+        ESCROW_ENABLED: ${ESCROW_ENABLED}
     container_name: tellerbot
     depends_on:
       - database
@@ -17,7 +20,7 @@ services:
       - ${SERVER_PORT}:${SERVER_PORT}
 
   database:
-    image: mongo:4.2.1
+    image: mongo:latest
     container_name: ${DATABASE_HOST}
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${DATABASE_USERNAME}
