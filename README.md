@@ -3,9 +3,9 @@
 <img src="https://i.imgur.com/cPUUcTw.jpg">
 
 [![Documentation Status](https://readthedocs.org/projects/tellerbot/badge/?version=latest)](https://tellerbot.readthedocs.io/en/latest/?badge=latest)
-[![Translation Status](https://hosted.weblate.org/widgets/tellerbot/-/tellerbot/svg-badge.svg)](https://hosted.weblate.org/engage/tellerbot/?utm_source=widget)
 [![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=fincubator/tellerbot)](https://dependabot.com)
 [![pre-commit](https://github.com/fincubator/tellerbot/workflows/pre-commit/badge.svg)](https://github.com/fincubator/tellerbot/actions?query=workflow%3Apre-commit)
+[![Translation Status](https://hosted.weblate.org/widgets/tellerbot/-/tellerbot/svg-badge.svg)](https://hosted.weblate.org/engage/tellerbot/?utm_source=widget)
 [![GitHub license](https://img.shields.io/github/license/fincubator/tellerbot)](https://github.com/PreICO/tellerbot/blob/escrow/COPYING)
 [![Telegram](https://img.shields.io/badge/Telegram-tellerchat-blue?logo=telegram)](https://t.me/tellerchat)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
@@ -75,7 +75,7 @@ python .
 ```
 
 ## Contributing
-You can help by working on [opened issues](https://github.com/fincubator/tellerbot/issues), fixing bugs, creating new features, improving documentation or translating bot messages to your language.
+You can help by working on [opened issues](https://github.com/fincubator/tellerbot/issues), fixing bugs, creating new features, improving documentation or [translating bot messages to your language](https://hosted.weblate.org/engage/tellerbot/).
 
 Before contributing, please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
