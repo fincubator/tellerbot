@@ -4,8 +4,6 @@ LABEL mantainer="alfred richardsn <rchrdsn@protonmail.ch>"
 
 ARG ESCROW_ENABLED
 
-RUN echo "$ESCROW_ENABLED"
-
 RUN if test "$ESCROW_ENABLED" = true; then \
     apt-get update && apt-get install --yes --no-install-recommends git; \
     else exit 0; fi
