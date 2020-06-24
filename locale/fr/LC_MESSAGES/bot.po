@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
 "POT-Creation-Date: 2020-06-13 02:06+0300\n"
-"PO-Revision-Date: 2020-06-21 17:30+0000\n"
+"PO-Revision-Date: 2020-06-25 01:41+0000\n"
 "Last-Translator: J. Lavoie <j.lavoie@net-c.ca>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/tellerbot/"
 "tellerbot/fr/>\n"
@@ -310,7 +310,7 @@ msgstr "Choisissez la devise de la somme de la commande."
 
 #: src/handlers/creation.py
 msgid "ask_order_sum {currency}"
-msgstr "Envoyer la somme de la commande en {currency}."
+msgstr "Envoyez la somme de la commande en {currency}."
 
 #: src/handlers/creation.py
 msgid "choose_sum_currency_with_buttons"
@@ -319,14 +319,15 @@ msgstr "Choisissez la devise de la somme avec les boutons."
 #: src/handlers/creation.py
 msgid "ask_location"
 msgstr ""
+"Envoyez la localisation d'un lieu de RDV préféré pour le paiement en liquide."
 
 #: src/handlers/creation.py
 msgid "cashless_payment_system"
-msgstr ""
+msgstr "Envoyez un système de paiement dématérialisé."
 
 #: src/handlers/creation.py
 msgid "location_not_found"
-msgstr ""
+msgstr "La localisation est introuvable."
 
 #: src/handlers/creation.py
 msgid "ask_duration {limit}"
@@ -346,7 +347,7 @@ msgstr ""
 
 #: src/handlers/creation.py
 msgid "ask_comments"
-msgstr ""
+msgstr "Ajoutez des commentaires supplémentaires."
 
 #: src/handlers/creation.py
 msgid "order_set"
@@ -370,7 +371,7 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "continue"
-msgstr ""
+msgstr "Continuer"
 
 #: src/handlers/escrow.py
 msgid "exceeded_insurance {amount} {currency}"
@@ -386,23 +387,23 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "will_pay {amount} {currency}"
-msgstr ""
+msgstr "(Vous payerez {amount} {currency})"
 
 #: src/handlers/escrow.py
 msgid "will_get {amount} {currency}"
-msgstr ""
+msgstr "(Vous recevrez {amount} {currency})"
 
 #: src/handlers/escrow.py
 msgid "yes"
-msgstr ""
+msgstr "Oui"
 
 #: src/handlers/escrow.py src/handlers/order.py
 msgid "no"
-msgstr ""
+msgstr "Non"
 
 #: src/handlers/escrow.py
 msgid "escrow_cancelled"
-msgstr ""
+msgstr "L'entiercement a été annulé."
 
 #: src/handlers/escrow.py
 msgid "choose_bank"
@@ -422,7 +423,7 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "bank_not_supported"
-msgstr ""
+msgstr "Cette banque n'est pas prise en charge."
 
 #: src/handlers/escrow.py
 msgid "send_first_and_last_4_digits_of_card_number {currency}"
@@ -430,7 +431,7 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "wrong_full_card_number_receiver {user}"
-msgstr ""
+msgstr "Vous devriez l'envoyer à {user}, pas à moi !"
 
 #: src/handlers/escrow.py
 msgid "exchange_continued {user}"
@@ -450,11 +451,11 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "accept"
-msgstr ""
+msgstr "Accepter"
 
 #: src/handlers/escrow.py
 msgid "decline"
-msgstr ""
+msgstr "Décliner"
 
 #: src/handlers/escrow.py
 msgid ""
@@ -468,7 +469,7 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "offer_sent"
-msgstr ""
+msgstr "Offre envoyée."
 
 #: src/handlers/escrow.py
 msgid "escrow_offer_declined"
@@ -492,7 +493,7 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "with_memo"
-msgstr ""
+msgstr "avec mémo"
 
 #: src/handlers/escrow.py
 msgid "transfer_information_sent"
@@ -512,15 +513,15 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "transfer_already_confirmed"
-msgstr ""
+msgstr "Vous avez déjà confirmé ce virement."
 
 #: src/handlers/escrow.py
 msgid "receiving_confirmation {currency} {user}"
-msgstr ""
+msgstr "Avez-vous reçu {currency} de {user} ?"
 
 #: src/handlers/escrow.py
 msgid "complete_escrow_promise"
-msgstr ""
+msgstr "Quand votre virement sera confirmé, je complèterai l'entiercement."
 
 #: src/handlers/escrow.py
 msgid "escrow_completing"
@@ -528,11 +529,11 @@ msgstr ""
 
 #: src/handlers/escrow.py
 msgid "escrow_completed"
-msgstr ""
+msgstr "L'entiercement est terminé !"
 
 #: src/handlers/escrow.py
 msgid "escrow_sent {amount} {currency}"
-msgstr ""
+msgstr "Je vous ai envoyé {amount} {currency}."
 
 #: src/handlers/escrow.py
 msgid "request_validation_promise"
@@ -622,11 +623,15 @@ msgstr ""
 
 #: src/handlers/start_menu.py
 msgid "choose_language"
-msgstr ""
+msgstr "Veuillez choisir votre langue."
 
 #: src/handlers/start_menu.py
 msgid "help_message"
 msgstr ""
+"Bonjour, je suis TellerBot. Je peux vous aider à rencontrer les des gens "
+"avec qui vous pouvez échanger de l'argent.\n"
+"\n"
+"Choisissez une des options sur votre clavier."
 
 #: src/handlers/start_menu.py
 msgid "exceeded_order_creation_time_limit {orders} {hours}"
@@ -634,15 +639,15 @@ msgstr ""
 
 #: src/handlers/start_menu.py
 msgid "choose_your_language"
-msgstr ""
+msgstr "Choisissez votre langue."
 
 #: src/handlers/start_menu.py
 msgid "request_question"
-msgstr ""
+msgstr "Quelle est votre question ?"
 
 #: src/handlers/start_menu.py
 msgid "user_not_found"
-msgstr ""
+msgstr "L'utilisateur est introuvable."
 
 #: src/handlers/start_menu.py
 msgid "no_user_argument"
@@ -678,19 +683,19 @@ msgstr ""
 
 #: src/handlers/support.py
 msgid "request_cancelled"
-msgstr ""
+msgstr "Votre demande est annulée."
 
 #: src/handlers/support.py
 msgid "support_response_promise"
-msgstr ""
+msgstr "Votre message a été transmis. Nous vous répondrons dans les 24 heures."
 
 #: src/handlers/support.py
 msgid "reply_error_bot_blocked"
-msgstr ""
+msgstr "Impossible d'envoyer la réponse, j'ai été bloqué par l'utilisateur."
 
 #: src/handlers/support.py
 msgid "reply_sent"
-msgstr ""
+msgstr "La réponse est envoyée."
 
 #: src/handlers/support.py
 msgid "escrow_enabled"
