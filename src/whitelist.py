@@ -46,7 +46,7 @@ CRYPTOCURRENCY: Mapping[str, Tuple[str, ...]] = {
 def currency_keyboard(currency_type: str) -> ReplyKeyboardMarkup:
     """Get keyboard with currencies from whitelists."""
     keyboard = ReplyKeyboardMarkup(
-        row_width=6, one_time_keyboard=currency_type == "sell"
+        row_width=5, one_time_keyboard=currency_type == "sell"
     )
     keyboard.row(*[KeyboardButton(c) for c in FIAT])
     keyboard.add(*[KeyboardButton(c) for c in CRYPTOCURRENCY])
@@ -64,7 +64,7 @@ def currency_keyboard(currency_type: str) -> ReplyKeyboardMarkup:
 def gateway_keyboard(currency: str, currency_type: str) -> ReplyKeyboardMarkup:
     """Get keyboard with gateways of ``currency`` from whitelist."""
     keyboard = ReplyKeyboardMarkup(
-        row_width=6, one_time_keyboard=currency_type == "sell"
+        row_width=5, one_time_keyboard=currency_type == "sell"
     )
     keyboard.add(*[KeyboardButton(g) for g in CRYPTOCURRENCY[currency]])
     keyboard.row(
