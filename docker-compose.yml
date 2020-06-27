@@ -25,9 +25,11 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${DATABASE_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD_FILE=${DATABASE_PASSWORD_FILENAME}
+      - MONGO_INITDB_DATABASE=${DATABASE_NAME}
     command: mongod --port ${DATABASE_PORT} --quiet
     ports:
       - ${DATABASE_PORT}:${DATABASE_PORT}
     volumes:
       - ${DATABASE_PASSWORD_FILENAME}:${DATABASE_PASSWORD_FILENAME}:ro
+      - ./mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh:ro
       - ~/data/db:/data/db
