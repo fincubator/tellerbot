@@ -57,19 +57,25 @@ cd tellerbot
 pip install -r requirements.txt
 pip install -r requirements-escrow.txt  # If you're going to support escrow
 ```
-4. Create environment file from example:
+4. Compile translations:
+```bash
+pybabel compile -d locale/ -D bot
+```
+5. Create environment file from example:
 ```bash
 cp .env.example .env
 ```
-5. Personalize settings by modifying ```.env``` with your preferable text editor. Remove ```INTERNAL_HOST``` and ```DATABASE_HOST``` if you want bot and database running on localhost.
-6. Create a new Telegram bot by talking to [@BotFather](https://t.me/BotFather) and get its API token.
-7. Create a file containing Telegram bot's API token with filename specified in ```TOKEN_FILENAME``` from ```.env```.
-8. Install and start MongoDB server.
-9. Set environment variables:
+6. Personalize settings by modifying ```.env``` with your preferable text editor. Remove ```INTERNAL_HOST``` and ```DATABASE_HOST``` if you want bot and database running on localhost.
+7. Create a new Telegram bot by talking to [@BotFather](https://t.me/BotFather) and get its API token.
+8. Create a file containing Telegram bot's API token with filename specified in ```TOKEN_FILENAME``` from ```.env```.
+9. Create a file containing database password with filename specified in ```DATABASE_PASSWORD_FILENAME``` from ```.env```.
+10. Install [MongoDB server](https://docs.mongodb.com/manual/installation/).
+11. Start MongoDB server and [enable authentification](https://docs.mongodb.com/manual/tutorial/enable-authentication/) of user specified in ```DATABASE_USERNAME``` with password in file specified in ```DATABASE_PASSWORD_FILENAME``` for database specified in ```DATABASE_NAME``` from ```.env```.
+12. Set environment variables:
 ```bash
 export $(grep -v '^#' .env | xargs)
 ```
-10. Launch TellerBot:
+13. Launch TellerBot:
 ```bash
 python .
 ```
