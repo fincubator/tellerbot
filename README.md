@@ -38,9 +38,11 @@ cp .env.example .env
 ```
 3. Personalize settings by modifying ```.env``` with your preferable text editor.
 4. Create a new Telegram bot by talking to [@BotFather](https://t.me/BotFather) and get its API token.
-5. Create a file containing Telegram bot's API token with filename specified in ```TOKEN_FILENAME``` from ```.env```.
-6. Install [Docker Compose](https://docs.docker.com/compose/install/).
-7. Start container:
+5. Create a file containing Telegram bot's API token with filename specified in ```TOKEN_FILENAME``` from ```.env``` (example in [secrets/tbtoken](secrets/tbtoken)).
+6. *(Optional)* If you're going to support escrow, create a file containing JSON mapping blockchain names to bot's WIF and API nodes with filename specified in ```ESCROW_FILENAME``` from ```.env``` (example in [secrets/escrow.json](secrets/escrow.json)).
+7. Create a file containing database password with filename specified in ```DATABASE_PASSWORD_FILENAME``` from ```.env``` (example in [secrets/dbpassword](secrets/dbpassword)).
+8. Install [Docker Compose](https://docs.docker.com/compose/install/).
+9. Start container:
 ```bash
 docker-compose up
 ```
@@ -51,7 +53,7 @@ docker-compose up
 git clone https://github.com/fincubator/tellerbot
 cd tellerbot
 ```
-2. Install Python version no less than 3.8.
+2. Install Python version no less than 3.8 with [pip](https://pip.pypa.io/en/stable/installing/).
 3. Install requirements:
 ```bash
 pip install -r requirements.txt
@@ -67,15 +69,16 @@ cp .env.example .env
 ```
 6. Personalize settings by modifying ```.env``` with your preferable text editor. Remove ```INTERNAL_HOST``` and ```DATABASE_HOST``` if you want bot and database running on localhost.
 7. Create a new Telegram bot by talking to [@BotFather](https://t.me/BotFather) and get its API token.
-8. Create a file containing Telegram bot's API token with filename specified in ```TOKEN_FILENAME``` from ```.env```.
-9. Create a file containing database password with filename specified in ```DATABASE_PASSWORD_FILENAME``` from ```.env```.
-10. Install [MongoDB server](https://docs.mongodb.com/manual/installation/).
-11. Start MongoDB server and [enable authentification](https://docs.mongodb.com/manual/tutorial/enable-authentication/) of user specified in ```DATABASE_USERNAME``` with password in file specified in ```DATABASE_PASSWORD_FILENAME``` for database specified in ```DATABASE_NAME``` from ```.env```.
-12. Set environment variables:
+8. Create a file containing Telegram bot's API token with filename specified in ```TOKEN_FILENAME``` from ```.env``` (example in [secrets/tbtoken](secrets/tbtoken)).
+9. *(Optional)* If you're going to support escrow, create a file containing JSON mapping blockchain names to bot's WIF and API nodes with filename specified in ```ESCROW_FILENAME``` from ```.env``` (example in [secrets/escrow.json](secrets/escrow.json)).
+10. Create a file containing database password with filename specified in ```DATABASE_PASSWORD_FILENAME``` from ```.env``` (example in [secrets/dbpassword](secrets/dbpassword)).
+11. Install [MongoDB server](https://docs.mongodb.com/manual/installation/).
+12. Start MongoDB server and [enable authentification](https://docs.mongodb.com/manual/tutorial/enable-authentication/) of user specified in ```DATABASE_USERNAME``` with password in file specified in ```DATABASE_PASSWORD_FILENAME``` for database specified in ```DATABASE_NAME``` from ```.env```.
+13. Set environment variables:
 ```bash
 export $(grep -v '^#' .env | xargs)
 ```
-13. Launch TellerBot:
+14. Launch TellerBot:
 ```bash
 python .
 ```
