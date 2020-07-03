@@ -35,7 +35,7 @@ from src.bot import (  # noqa: F401, noreorder
     state_handlers,
 )
 from src.bot import tg
-from src.database import database, STATE_KEY
+from src.database import database, database_user, STATE_KEY
 from src.i18n import i18n
 from src.money import normalize
 
@@ -102,7 +102,7 @@ async def orders_list(
     :param message_id: Telegram ID of message to edit.
     :param invert: Invert all prices.
     """
-    user = await database.users.find_one({"id": types.User.get_current().id})
+    user = database_user.get()
     if invert is None:
         invert = user.get("invert_book", False)
     else:
@@ -116,13 +116,13 @@ async def orders_list(
         types.InlineKeyboardButton(
             emojize(":arrow_left:"),
             callback_data="{} {} {}".format(
-                buttons_data, start - config.ORDERS_COUNT, int(invert)
+                buttons_data, start - config.ORDERS_COUNT, 1 if invert else 0
             ),
         ),
         types.InlineKeyboardButton(
             emojize(":arrow_right:"),
             callback_data="{} {} {}".format(
-                buttons_data, start + config.ORDERS_COUNT, int(invert)
+                buttons_data, start + config.ORDERS_COUNT, 1 if invert else 0
             ),
         ),
     )
@@ -252,7 +252,7 @@ async def show_order(
 
     new_edit_msg = None
     if invert is None:
-        user = await database.users.find_one({"id": user_id})
+        user = database_user.get()
         invert = user.get("invert_order", False)
     else:
         user = await database.users.find_one_and_update(

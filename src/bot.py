@@ -17,6 +17,7 @@
 import asyncio
 import logging
 import typing
+from time import time
 
 from aiogram import Bot
 from aiogram import types
@@ -27,6 +28,7 @@ from aiogram.dispatcher.middlewares import BaseMiddleware
 
 from src.config import config
 from src.database import database
+from src.database import database_user
 from src.database import MongoStorage
 from src.i18n import i18n
 
@@ -81,8 +83,44 @@ class TellerBot(Bot):
         return result
 
 
+class DispatcherManual(Dispatcher):
+    """Dispatcher with user availability in database check."""
+
+    async def process_update(self, update: types.Update):
+        """Process update object with user availability in database check.
+
+        If bot doesn't know the user, it pretends they sent /start message.
+        """
+        user = None
+        if update.message:
+            user = update.message.from_user
+            chat = update.message.chat
+        elif update.callback_query and update.callback_query.message:
+            user = update.callback_query.from_user
+            chat = update.callback_query.message.chat
+        if user:
+            db_user = await database.users.find_one({"id": user.id, "chat": chat.id})
+            if db_user is None:
+                if update.message:
+                    update.message.text = "/start"
+                elif update.callback_query:
+                    await update.callback_query.answer()
+                    update = types.Update(
+                        update_id=update.update_id,
+                        message={
+                            "message_id": -1,
+                            "from": user.to_python(),
+                            "chat": chat.to_python(),
+                            "date": int(time()),
+                            "text": "/start",
+                        },
+                    )
+            database_user.set(db_user)
+        return await super().process_update(update)
+
+
 tg = TellerBot(None, loop=asyncio.get_event_loop(), validate_token=False)
-dp = Dispatcher(tg)
+dp = DispatcherManual(tg)
 
 
 def setup():

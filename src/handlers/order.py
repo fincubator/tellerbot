@@ -36,6 +36,7 @@ from src.bot import dp
 from src.bot import tg
 from src.config import config
 from src.database import database
+from src.database import database_user
 from src.database import STATE_KEY
 from src.escrow import get_escrow_instance
 from src.escrow.escrow_offer import EscrowOffer
@@ -344,13 +345,16 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
                 i18n("cancel"), callback_data=f"init_cancel {offer_id}"
             )
         )
-        projection = {"id": True, "locale": True, "mention": True}
         escrow_type = "buy" if get_escrow_instance(order["buy"]) else "sell"
-        init_user = await database.users.find_one(
-            {"id": call.from_user.id}, projection=projection
-        )
+        user = database_user.get()
+        init_user = {
+            "id": user["id"],
+            "locale": user["locale"],
+            "mention": user["mention"],
+        }
         counter_user = await database.users.find_one(
-            {"id": order["user_id"]}, projection=projection
+            {"id": order["user_id"]},
+            projection={"id": True, "locale": True, "mention": True},
         )
         await database.escrow.delete_many({"init.send_address": {"$exists": False}})
         offer = EscrowOffer(
@@ -399,7 +403,7 @@ async def edit_button(call: types.CallbackQuery):
         answer = i18n("send_new_sell_amount")
         keyboard.row(unset_button)
     elif field == "price":
-        user = await database.users.find_one({"id": call.from_user.id})
+        user = database_user.get()
         answer = i18n("new_price {of_currency} {per_currency}")
         if user.get("invert_order", False):
             answer = answer.format(of_currency=order["buy"], per_currency=order["sell"])
@@ -433,7 +437,7 @@ async def edit_button(call: types.CallbackQuery):
     if not answer:
         return
 
-    user = await database.users.find_one({"id": call.from_user.id})
+    user = database_user.get()
     if "edit" in user:
         await tg.delete_message(call.message.chat.id, user["edit"]["message_id"])
     result = await tg.send_message(call.message.chat.id, answer, reply_markup=keyboard,)
@@ -482,7 +486,7 @@ async def finish_edit(user, update_dict):
 )
 async def default_duration(call: types.CallbackQuery, state: FSMContext):
     """Repeat default duration."""
-    user = await database.users.find_one({"id": call.from_user.id})
+    user = database_user.get()
     order = await database.orders.find_one({"_id": user["edit"]["order_id"]})
     await call.answer()
     await finish_edit(
@@ -505,7 +509,7 @@ async def default_duration(call: types.CallbackQuery, state: FSMContext):
 )
 async def unset_button(call: types.CallbackQuery, state: FSMContext):
     """React to "Unset" button by unsetting the edit field."""
-    user = await database.users.find_one({"id": call.from_user.id})
+    user = database_user.get()
     field = user["edit"]["field"]
     if field == "price":
         unset_dict = {"price_buy": True, "price_sell": True}
@@ -522,7 +526,7 @@ async def unset_button(call: types.CallbackQuery, state: FSMContext):
 @private_handler(state=states.field_editing)
 async def edit_field(message: types.Message, state: FSMContext):
     """Ask new value of chosen order's field during editing."""
-    user = await database.users.find_one({"id": message.from_user.id})
+    user = database_user.get()
     edit = user["edit"]
     field = edit["field"]
     invert = user.get("invert_order", False)

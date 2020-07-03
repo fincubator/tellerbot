@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with TellerBot.  If not, see <https://www.gnu.org/licenses/>.
 import typing
+from contextvars import ContextVar
 
 from aiogram.dispatcher.storage import BaseStorage
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -33,6 +34,8 @@ try:
 except (AttributeError, FileNotFoundError):
     client = AsyncIOMotorClient(config.DATABASE_HOST)
 database = client[config.DATABASE_NAME]
+
+database_user: ContextVar[typing.Mapping[str, typing.Any]] = ContextVar("database_user")
 
 STATE_KEY = "state"
 
