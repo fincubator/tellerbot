@@ -25,6 +25,7 @@ from aiogram.bot import api
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher.middlewares import BaseMiddleware
+from pymongo import ReturnDocument
 
 from src.config import config
 from src.database import database
@@ -99,8 +100,21 @@ class DispatcherManual(Dispatcher):
             user = update.callback_query.from_user
             chat = update.callback_query.message.chat
         if user:
-            db_user = await database.users.find_one({"id": user.id, "chat": chat.id})
-            if db_user is None:
+            await database.users.update_many(
+                {"id": {"$ne": user.id}, "mention": user.mention},
+                {"$set": {"has_username": False}},
+            )
+            document = await database.users.find_one_and_update(
+                {"id": user.id, "chat": chat.id},
+                {
+                    "$set": {
+                        "mention": user.mention,
+                        "has_username": bool(user.username),
+                    }
+                },
+                return_document=ReturnDocument.AFTER,
+            )
+            if document is None:
                 if update.message:
                     update.message.text = "/start"
                 elif update.callback_query:
@@ -115,7 +129,7 @@ class DispatcherManual(Dispatcher):
                             "text": "/start",
                         },
                     )
-            database_user.set(db_user)
+            database_user.set(document)
         return await super().process_update(update)
 
 

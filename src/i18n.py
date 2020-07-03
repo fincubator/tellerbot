@@ -20,9 +20,8 @@ from pathlib import Path
 
 from aiogram import types
 from aiogram.contrib.middlewares.i18n import I18nMiddleware
-from pymongo import ReturnDocument
 
-from src.database import database
+from src.database import database_user
 
 
 class I18nMiddlewareManual(I18nMiddleware):
@@ -56,15 +55,7 @@ class I18nMiddlewareManual(I18nMiddleware):
             return None
 
         user: types.User = types.User.get_current()
-        await database.users.update_many(
-            {"id": {"$ne": user.id}, "mention": user.mention},
-            {"$set": {"has_username": False}},
-        )
-        document = await database.users.find_one_and_update(
-            {"id": user.id},
-            {"$set": {"mention": user.mention, "has_username": bool(user.username)}},
-            return_document=ReturnDocument.AFTER,
-        )
+        document = database_user.get()
         if document:
             locale = document.get("locale", user.language_code)
         else:
