@@ -95,7 +95,7 @@ async def change_state(call: types.CallbackQuery, state: FSMContext):
 
 async def cancel_order_creation(user_id: int, chat_id: int):
     """Cancel order creation."""
-    await dp.get_current().current_state().finish()
+    await dp.current_state().finish()
 
     order = await database.creation.delete_one({"user_id": user_id})
     if not order.deleted_count:
@@ -912,4 +912,4 @@ async def choose_comments_handler(call: types.CallbackQuery):
     await call.answer()
     if order:
         await set_order(order, call.message.chat.id)
-    await dp.get_current().current_state().finish()
+    await dp.current_state().finish()
