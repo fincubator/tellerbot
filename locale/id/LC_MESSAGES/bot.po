@@ -8,289 +8,299 @@ msgstr ""
 "Project-Id-Version: TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
 "POT-Creation-Date: 2020-06-13 02:06+0300\n"
-"PO-Revision-Date: 2020-06-17 12:41+0000\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2020-07-11 10:41+0000\n"
+"Last-Translator: geeks121 <yozhy999@gmail.com>\n"
+"Language-Team: Indonesian <https://hosted.weblate.org/projects/tellerbot/"
+"tellerbot/id/>\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 4.1.1-dev\n"
+"X-Generator: Weblate 4.2-dev\n"
 "Generated-By: Babel 2.8.0\n"
 
 #: src/escrow/blockchain/__init__.py
 msgid "check_timeout {hours}"
 msgstr ""
+"Pemeriksaan transaksi memakan waktu lebih dari {hours} jam, jadi escrow "
+"dibatalkan."
 
 #: src/escrow/blockchain/__init__.py
 msgid "transaction_passed {currency}"
 msgstr ""
+"Transaksi telah lulus. Saya akan memberi tahu jika Anda akan mendapatkan "
+"{currency}."
 
 #: src/escrow/blockchain/__init__.py src/handlers/escrow.py
 msgid "sent"
-msgstr ""
+msgstr "Dikirim"
 
 #: src/escrow/blockchain/__init__.py
 msgid "transaction_confirmed"
-msgstr ""
+msgstr "Transaksi telah dikonfirmasi."
 
 #: src/escrow/blockchain/__init__.py src/handlers/escrow.py
 msgid "send {amount} {currency} {address}"
-msgstr ""
+msgstr "Kirim {amount} {currency} ke alamat {address}"
 
 #: src/escrow/blockchain/__init__.py
 msgid "transaction_not_confirmed"
-msgstr ""
+msgstr "Transaksi tidak dikonfirmasikan."
 
 #: src/escrow/blockchain/__init__.py
 msgid "try_again"
-msgstr ""
+msgstr "Mohon coba lagi."
 
 #: src/escrow/blockchain/__init__.py
 msgid "transfer_mistakes"
-msgstr ""
+msgstr "Ada kesalahan pada transfer Anda:"
 
 #: src/escrow/blockchain/__init__.py
 msgid "wrong_asset"
-msgstr ""
+msgstr "Aset salah"
 
 #: src/escrow/blockchain/__init__.py
 msgid "wrong_amount"
-msgstr ""
+msgstr "Jumlah salah"
 
 #: src/escrow/blockchain/__init__.py
 msgid "wrong_memo"
-msgstr ""
+msgstr "Memo salah"
 
 #: src/escrow/blockchain/__init__.py
 msgid "refund_promise"
-msgstr ""
+msgstr "Transaksi akan direfund setelah konfirmasi."
 
 #: src/escrow/blockchain/__init__.py
 msgid "transaction_refunded"
-msgstr ""
+msgstr "Transaksi telah direfund."
 
 #: src/handlers/__init__.py
 msgid "unknown_command"
-msgstr ""
+msgstr "Perintah tidak dikenal."
 
 #: src/handlers/__init__.py
 msgid "unknown_button"
-msgstr ""
+msgstr "Tombol tidak dikenal."
 
 #: src/handlers/__init__.py
 msgid "unexpected_error"
 msgstr ""
+"Terjadi kesalahan tak terduga saat menangani permintaan Anda. Kami sudah "
+"diberitahu dan akan memperbaikinya sesegera mungkin!"
 
 #: src/handlers/base.py
 msgid "create_order"
-msgstr ""
+msgstr "Buat pesanan"
 
 #: src/handlers/base.py
 msgid "my_orders"
-msgstr ""
+msgstr "Pesanan saya"
 
 #: src/handlers/base.py
 msgid "order_book"
-msgstr ""
+msgstr "Daftar pesanan"
 
 #: src/handlers/base.py
 msgid "language"
-msgstr ""
+msgstr "Bahasa"
 
 #: src/handlers/base.py
 msgid "support"
-msgstr ""
+msgstr "Bantuan"
 
 #: src/handlers/base.py src/whitelist.py
 msgid "back"
-msgstr ""
+msgstr "Kembali"
 
 #: src/handlers/base.py
 msgid "skip"
-msgstr ""
+msgstr "Lewati"
 
 #: src/handlers/base.py src/handlers/creation.py src/handlers/escrow.py
 #: src/handlers/order.py src/handlers/start_menu.py src/whitelist.py
 msgid "cancel"
-msgstr ""
+msgstr "Batalkan"
 
 #: src/handlers/base.py
 msgid "no_orders"
-msgstr ""
+msgstr "Tidak ada pesanan."
 
 #: src/handlers/base.py src/handlers/creation.py
 msgid "invert"
-msgstr ""
+msgstr "Membalikan"
 
 #: src/handlers/base.py
 msgid "page {number} {total}"
-msgstr ""
+msgstr "Halaman {number} dari {total}"
 
 #: src/handlers/base.py
 msgid "buy_amount"
-msgstr ""
+msgstr "Jumlah pembelian:"
 
 #: src/handlers/base.py
 msgid "sell_amount"
-msgstr ""
+msgstr "Jumlah penjualan:"
 
 #: src/handlers/base.py
 msgid "price"
-msgstr ""
+msgstr "Harga:"
 
 #: src/handlers/base.py
 msgid "payment_system"
-msgstr ""
+msgstr "Sistem pembayaran:"
 
 #: src/handlers/base.py
 msgid "duration"
-msgstr ""
+msgstr "Durasi:"
 
 #: src/handlers/base.py
 msgid "comments"
-msgstr ""
+msgstr "Komentar:"
 
 #: src/handlers/base.py src/handlers/order.py
 msgid "new_price {of_currency} {per_currency}"
-msgstr ""
+msgstr "Kirim harga baru untuk {of_currency}/{per_currency}."
 
 #: src/handlers/base.py
 msgid "archived"
-msgstr ""
+msgstr "Diarsipkan"
 
 #: src/handlers/base.py
 msgid "sells {sell_currency} {buy_currency}"
-msgstr ""
+msgstr "Jual {sell_currency} untuk {buy_currency}"
 
 #: src/handlers/base.py
 msgid "buys {buy_currency} {sell_currency}"
-msgstr ""
+msgstr "Beli {buy_currency} untuk {sell_currency}"
 
 #: src/handlers/base.py
 msgid "finish"
-msgstr ""
+msgstr "Selesai"
 
 #: src/handlers/base.py
 msgid "similar"
-msgstr ""
+msgstr "Serupa"
 
 #: src/handlers/base.py
 msgid "match"
-msgstr ""
+msgstr "Cocokan"
 
 #: src/handlers/base.py
 msgid "edit"
-msgstr ""
+msgstr "Sunting"
 
 #: src/handlers/base.py
 msgid "delete"
-msgstr ""
+msgstr "Hapus"
 
 #: src/handlers/base.py
 msgid "unarchive"
-msgstr ""
+msgstr "Batalkan arsip"
 
 #: src/handlers/base.py
 msgid "archive"
-msgstr ""
+msgstr "Arsip"
 
 #: src/handlers/base.py
 msgid "change_duration"
-msgstr ""
+msgstr "Perpanjang"
 
 #: src/handlers/base.py
 msgid "escrow"
-msgstr ""
+msgstr "Rekber"
 
 #: src/handlers/base.py src/handlers/order.py
 msgid "hide"
-msgstr ""
+msgstr "Sembunyikan"
 
 #: src/handlers/base.py src/handlers/order.py
 msgid "unset"
-msgstr ""
+msgstr "Tidak disetel"
 
 #: src/handlers/creation.py
 msgid "wrong_button"
-msgstr ""
+msgstr "Anda menggunakan tombol yang salah."
 
 #: src/handlers/creation.py
 msgid "back_error"
-msgstr ""
+msgstr "Tidak bisa kembali."
 
 #: src/handlers/creation.py
 msgid "skip_error"
-msgstr ""
+msgstr "Tidak bisa dilewati."
 
 #: src/handlers/creation.py
 msgid "no_creation"
-msgstr ""
+msgstr "Anda tidak membuat pesanan."
 
 #: src/handlers/creation.py
 msgid "order_cancelled"
-msgstr ""
+msgstr "Pesanan dibatalkan."
 
 #: src/handlers/creation.py src/handlers/escrow.py src/handlers/order.py
 msgid "exceeded_character_limit {limit} {sent}"
 msgstr ""
+"Nilai harus mengandung kurang dari {limit} karakter (Anda mengirim {sent} "
+"karakter)."
 
 #: src/handlers/creation.py
 msgid "non_latin_characters_gateway"
-msgstr ""
+msgstr "Gateway hanya boleh berisi karakter latin."
 
 #: src/handlers/creation.py
 msgid "request_whitelisting"
-msgstr ""
+msgstr "Minta masuk daftar putih"
 
 #: src/handlers/creation.py
 msgid "gateway_not_whitelisted {currency}"
-msgstr ""
+msgstr "Gateway dari {currency} tidak masuk daftar putih."
 
 #: src/handlers/creation.py
 msgid "non_latin_characters_currency"
-msgstr ""
+msgstr "Mata uang hanya boleh mengandung karakter latin."
 
 #: src/handlers/creation.py
 msgid "no_fiat_gateway"
-msgstr ""
+msgstr "Gateway tidak dapat ditentukan untuk mata uang fiat."
 
 #: src/handlers/creation.py
 msgid "choose_gateway {currency}"
-msgstr ""
+msgstr "Pilih Gateway untuk {currency}."
 
 #: src/handlers/creation.py
 msgid "currency_not_whitelisted"
-msgstr ""
+msgstr "Mata uang ini tidak masuk daftar putih."
 
 #: src/handlers/creation.py
 msgid "double_request"
-msgstr ""
+msgstr "Anda telah melakukan permintaan untuk mata uang ini."
 
 #: src/handlers/creation.py
 msgid "request_sent"
-msgstr ""
+msgstr "Permintaan dikirim."
 
 #: src/handlers/creation.py
 msgid "ask_sell_currency"
-msgstr ""
+msgstr "Mata uang apa yang ingin Anda jual?"
 
 #: src/handlers/creation.py src/handlers/start_menu.py
 msgid "ask_buy_currency"
-msgstr ""
+msgstr "Mata uang apa yang ingin Anda beli?"
 
 #: src/handlers/creation.py
 msgid "ask_buy_price {of_currency} {per_currency}"
 msgstr ""
+"Pada harga berapa (dalam {of_currency}/{per_currency}) yang ingin Anda beli?"
 
 #: src/handlers/creation.py
 msgid "same_currency_error"
-msgstr ""
+msgstr "Mata uang harus berbeda."
 
 #: src/handlers/creation.py
 msgid "same_gateway_error"
-msgstr ""
+msgstr "Gateway harus berbeda."
 
 #: src/handlers/creation.py
 msgid "ask_sell_price {of_currency} {per_currency}"
