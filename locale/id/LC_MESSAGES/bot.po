@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
 "POT-Creation-Date: 2020-06-13 02:06+0300\n"
-"PO-Revision-Date: 2020-07-11 10:41+0000\n"
+"PO-Revision-Date: 2020-07-13 05:41+0000\n"
 "Last-Translator: geeks121 <yozhy999@gmail.com>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/tellerbot/"
 "tellerbot/id/>\n"
@@ -305,422 +305,442 @@ msgstr "Gateway harus berbeda."
 #: src/handlers/creation.py
 msgid "ask_sell_price {of_currency} {per_currency}"
 msgstr ""
+"Pada harga berapa (dalam {of_currency}/{per_currency}) yang ingin Anda jual?"
 
 #: src/handlers/creation.py
 msgid "ask_sum_currency"
-msgstr ""
+msgstr "Pilih mata uang untuk jumlah pesanan."
 
 #: src/handlers/creation.py
 msgid "ask_order_sum {currency}"
-msgstr ""
+msgstr "Kirim jumlah pesanan dalam {currency}."
 
 #: src/handlers/creation.py
 msgid "choose_sum_currency_with_buttons"
-msgstr ""
+msgstr "Pilih mata uang dalam penjumlahan dengan tombol."
 
 #: src/handlers/creation.py
 msgid "ask_location"
-msgstr ""
+msgstr "Kirim lokasi titik point untuk pertemuan menggunakan pembayaran cash."
 
 #: src/handlers/creation.py
 msgid "cashless_payment_system"
-msgstr ""
+msgstr "Kirim pembayaran dengan sistem nontunai."
 
 #: src/handlers/creation.py
 msgid "location_not_found"
-msgstr ""
+msgstr "Lokasi tidak ditemukan."
 
 #: src/handlers/creation.py
 msgid "ask_duration {limit}"
-msgstr ""
+msgstr "Kirim durasi untuk pesanan hingga {limit} hari."
 
 #: src/handlers/creation.py
 msgid "choose_location"
-msgstr ""
+msgstr "Pilih salah satu dari lokasi berikut:"
 
 #: src/handlers/creation.py src/handlers/order.py
 msgid "send_natural_number"
-msgstr ""
+msgstr "Kirim nomor alami."
 
 #: src/handlers/creation.py src/handlers/order.py
 msgid "exceeded_duration_limit {limit}"
-msgstr ""
+msgstr "Kirim nomor kurang dari {limit}."
 
 #: src/handlers/creation.py
 msgid "ask_comments"
-msgstr ""
+msgstr "Tambahkan komentar apapun."
 
 #: src/handlers/creation.py
 msgid "order_set"
-msgstr ""
+msgstr "Pesanan telah ditetapkan."
 
 #: src/handlers/escrow.py
 msgid "send_at_least_8_digits"
-msgstr ""
+msgstr "Anda harus mengirim setidaknya 8 digit."
 
 #: src/handlers/escrow.py
 msgid "digits_parsing_error"
-msgstr ""
+msgstr "Tidak mendapatkan digit dari pesan."
 
 #: src/handlers/escrow.py
 msgid "offer_not_active"
-msgstr ""
+msgstr "Penawaran tidak aktif."
 
 #: src/handlers/escrow.py
 msgid "exceeded_order_sum"
-msgstr ""
+msgstr "Kirim nomor tidak melebihi jumlah pesanan."
 
 #: src/handlers/escrow.py
 msgid "continue"
-msgstr ""
+msgstr "Lanjutkan"
 
 #: src/handlers/escrow.py
 msgid "exceeded_insurance {amount} {currency}"
 msgstr ""
+"Jumlah aset escrow melebihi jumlah maksimum yang akan diasuransikan. Jika "
+"Anda melanjutkan, hanya {amount} {currency} yang akan dilindungi dan "
+"dikembalikan jika terjadi peristiwa tak terduga selama pertukaran."
 
 #: src/handlers/escrow.py
 msgid "exceeded_insurance_options"
 msgstr ""
+"Anda dapat mengirim nomor yang lebih kecil, lanjutkan dengan asuransi "
+"sebagian atau membatalkan penawaran."
 
 #: src/handlers/escrow.py
 msgid "ask_fee {fee_percents}"
-msgstr ""
+msgstr "Apakah Anda setuju untuk membayar biaya sebesar {fee_percents}%?"
 
 #: src/handlers/escrow.py
 msgid "will_pay {amount} {currency}"
-msgstr ""
+msgstr "(Anda akan membayar {amount} {currency})"
 
 #: src/handlers/escrow.py
 msgid "will_get {amount} {currency}"
-msgstr ""
+msgstr "(Anda akan mendapatkan {amount}{currency})"
 
 #: src/handlers/escrow.py
 msgid "yes"
-msgstr ""
+msgstr "Ya"
 
 #: src/handlers/escrow.py src/handlers/order.py
 msgid "no"
-msgstr ""
+msgstr "Tidak"
 
 #: src/handlers/escrow.py
 msgid "escrow_cancelled"
-msgstr ""
+msgstr "Escrow telah dibatalkan."
 
 #: src/handlers/escrow.py
 msgid "choose_bank"
-msgstr ""
+msgstr "Pilih bank."
 
 #: src/handlers/escrow.py
 msgid "request_full_card_number {currency} {user}"
-msgstr ""
+msgstr "Kirim nomor kartu {currency} lengkap Anda ke {user}."
 
 #: src/handlers/escrow.py
 msgid "asked_full_card_number {user}"
-msgstr ""
+msgstr "Saya meminta {user} untuk mengirim kartu lengkap mereka."
 
 #: src/handlers/escrow.py
 msgid "ask_address {currency}"
-msgstr ""
+msgstr "Kirim alamat {currency} Anda."
 
 #: src/handlers/escrow.py
 msgid "bank_not_supported"
-msgstr ""
+msgstr "Bank ini tidak didukung."
 
 #: src/handlers/escrow.py
 msgid "send_first_and_last_4_digits_of_card_number {currency}"
-msgstr ""
+msgstr "Kirim 4 digit pertama dan terakhir dari nomor kartu {currency} Anda."
 
 #: src/handlers/escrow.py
 msgid "wrong_full_card_number_receiver {user}"
-msgstr ""
+msgstr "Anda harus mengirim ke {user}, bukan kesaya!"
 
 #: src/handlers/escrow.py
 msgid "exchange_continued {user}"
-msgstr ""
+msgstr "Saya melanjutkan untuk bertukar dengan {user}."
 
 #: src/handlers/escrow.py
 msgid "send_name_patronymic_surname"
 msgstr ""
+"Kirimkan nama, patronimik, dan huruf pertama nama Anda dengan dipisahkan "
+"oleh spasi."
 
 #: src/handlers/escrow.py
 msgid "wrong_word_count {word_count}"
-msgstr ""
+msgstr "Anda harus mengirim {word_count} kata yang dipisahkan oleh spasi."
 
 #: src/handlers/escrow.py
 msgid "show_order"
-msgstr ""
+msgstr "Perlihatkan pesanan"
 
 #: src/handlers/escrow.py
 msgid "accept"
-msgstr ""
+msgstr "Terima"
 
 #: src/handlers/escrow.py
 msgid "decline"
-msgstr ""
+msgstr "Tolak"
 
 #: src/handlers/escrow.py
 msgid ""
 "escrow_offer_notification {user} {sell_amount} {sell_currency} for "
 "{buy_amount} {buy_currency}"
 msgstr ""
+"Anda mendapat penawaran escrow dari {user} untuk menjual {sell_amount} "
+"{sell_currency} untuk {buy_amount} {buy_currency}"
 
 #: src/handlers/escrow.py
 msgid "using {bank}"
-msgstr ""
+msgstr "Gunakan {bank}"
 
 #: src/handlers/escrow.py
 msgid "offer_sent"
-msgstr ""
+msgstr "Penawaran dikirim."
 
 #: src/handlers/escrow.py
 msgid "escrow_offer_declined"
-msgstr ""
+msgstr "Penawaran escrow Anda telah ditolak."
 
 #: src/handlers/escrow.py
 msgid "offer_declined"
-msgstr ""
+msgstr "Penawaran telah ditolak."
 
 #: src/handlers/escrow.py
 msgid "transaction_check_starting"
-msgstr ""
+msgstr "Mulai memeriksa transaksi…"
 
 #: src/handlers/escrow.py
 msgid "transaction_not_found"
-msgstr ""
+msgstr "Transaksi tidak ditemukan."
 
 #: src/handlers/escrow.py
 msgid "check"
-msgstr ""
+msgstr "Memeriksa transaksi"
 
 #: src/handlers/escrow.py
 msgid "with_memo"
-msgstr ""
+msgstr "Dengan memo"
 
 #: src/handlers/escrow.py
 msgid "transfer_information_sent"
-msgstr ""
+msgstr "Informasi transfer dikirim."
 
 #: src/handlers/escrow.py
 msgid "transaction_completion_notification_promise"
-msgstr ""
+msgstr "Saya akan memberitahu ketika transaksi telah komplit."
 
 #: src/handlers/escrow.py
 msgid "cancel_after_transfer"
-msgstr ""
+msgstr "Anda tidak bisa membatalkan penawaran setelah transfer ke escrow."
 
 #: src/handlers/escrow.py
 msgid "cancel_before_verification"
 msgstr ""
+"Anda tidak bisa menbatalkan penawaran ini sampai transaksi diverifikasi."
 
 #: src/handlers/escrow.py
 msgid "transfer_already_confirmed"
-msgstr ""
+msgstr "Anda telah mengkonfirmasi transfer ini."
 
 #: src/handlers/escrow.py
 msgid "receiving_confirmation {currency} {user}"
-msgstr ""
+msgstr "Apakah anda mendapatkan {currency} dari {user}?"
 
 #: src/handlers/escrow.py
 msgid "complete_escrow_promise"
 msgstr ""
+"Ketika transer Anda telah dikonfirmasi, saya akan menyempurnakan escrow."
 
 #: src/handlers/escrow.py
 msgid "escrow_completing"
-msgstr ""
+msgstr "Escrow sedang disempurnakan, tunggu sebentar."
 
 #: src/handlers/escrow.py
 msgid "escrow_completed"
-msgstr ""
+msgstr "Escrow telah komplit!"
 
 #: src/handlers/escrow.py
 msgid "escrow_sent {amount} {currency}"
-msgstr ""
+msgstr "saya mengirim Anda {amount} {currency}."
 
 #: src/handlers/escrow.py
 msgid "request_validation_promise"
 msgstr ""
+"Kami akan memvalidasi permintaan Anda secara manual dan memutuskan "
+"pengembalian."
 
 #: src/handlers/order.py
 msgid "order_not_found"
-msgstr ""
+msgstr "Pesanan tidak ditemukan."
 
 #: src/handlers/order.py
 msgid "no_more_orders"
-msgstr ""
+msgstr "Tidak ada pesanan lagi."
 
 #: src/handlers/order.py
 msgid "no_previous_orders"
-msgstr ""
+msgstr "Tidak ada pesanan sebelumnya."
 
 #: src/handlers/order.py
 msgid "escrow_unavailable"
-msgstr ""
+msgstr "Escrow sementara tidak tersedia. Maaf untuk ketidaknyamanannya."
 
 #: src/handlers/order.py
 msgid "change_to {currency}"
-msgstr ""
+msgstr "Ganti ke {currency}"
 
 #: src/handlers/order.py
 msgid "send_exchange_sum {currency}"
-msgstr ""
+msgstr "Kirim jumlah penukaran dalam {currency}."
 
 #: src/handlers/order.py
 msgid "edit_order_error"
-msgstr ""
+msgstr "Tidak dapat mengedit pesanan."
 
 #: src/handlers/order.py
 msgid "send_new_buy_amount"
-msgstr ""
+msgstr "Kirim jumlah pembelian baru."
 
 #: src/handlers/order.py
 msgid "send_new_sell_amount"
-msgstr ""
+msgstr "Kirim jumlah penjualan baru."
 
 #: src/handlers/order.py
 msgid "send_new_payment_system"
-msgstr ""
+msgstr "Kirim sistem pembayaran baru."
 
 #: src/handlers/order.py
 msgid "send_new_duration {limit}"
-msgstr ""
+msgstr "Kirim durasi baru hingga {limit} hari."
 
 #: src/handlers/order.py
 msgid "repeat_duration_singular {days}"
 msgid_plural "repeat_duration_plural {days}"
-msgstr[0] ""
+msgstr[0] "Ulangi {days} hari"
 
 #: src/handlers/order.py
 msgid "send_new_comments"
-msgstr ""
+msgstr "Kirim komentar baru."
 
 #: src/handlers/order.py
 msgid "unarchive_order_error"
-msgstr ""
+msgstr "Tidak dapat membatalkan arsip pesanan."
 
 #: src/handlers/order.py
 msgid "archive_order_error"
-msgstr ""
+msgstr "Tidak dapat mengarsipkan pesanan."
 
 #: src/handlers/order.py
 msgid "totally_sure"
-msgstr ""
+msgstr "Ya, saya sangat yakin"
 
 #: src/handlers/order.py
 msgid "delete_order_confirmation"
-msgstr ""
+msgstr "Apakah Anda yakin ingin menghapus pesanan?"
 
 #: src/handlers/order.py
 msgid "delete_order_error"
-msgstr ""
+msgstr "Tidak dapat menghapus pesanan."
 
 #: src/handlers/order.py
 msgid "order_deleted"
-msgstr ""
+msgstr "Pesanan dihapus."
 
 #: src/handlers/order.py
 msgid "hide_order_error"
-msgstr ""
+msgstr "Tidak bisa menyembunyikan pesanan."
 
 #: src/handlers/start_menu.py
 msgid "choose_language"
-msgstr ""
+msgstr "Silakan pilih bahasa Anda."
 
 #: src/handlers/start_menu.py
 msgid "help_message"
 msgstr ""
+"Halo, saya TellerBot. Saya dapat membantu Anda bertemu dengan orang-orang "
+"yang dapat bertukar uang dengan Anda.\n"
+"\n"
+"Pilih salah satu opsi di keyboard Anda."
 
 #: src/handlers/start_menu.py
 msgid "exceeded_order_creation_time_limit {orders} {hours}"
 msgstr ""
+"Anda tidak dapat membuat lebih dari {orders} pesanan dalam waktu {hours} jam."
 
 #: src/handlers/start_menu.py
 msgid "choose_your_language"
-msgstr ""
+msgstr "Pilih bahasamu."
 
 #: src/handlers/start_menu.py
 msgid "request_question"
-msgstr ""
+msgstr "Apa pertanyaanmu?"
 
 #: src/handlers/start_menu.py
 msgid "user_not_found"
-msgstr ""
+msgstr "Pengguna tidak ditemukan."
 
 #: src/handlers/start_menu.py
 msgid "no_user_argument"
-msgstr ""
+msgstr "Kirim nama pengguna sebagai argumen."
 
 #: src/handlers/start_menu.py
 msgid "your_subscriptions"
-msgstr ""
+msgstr "Langganan Anda:"
 
 #: src/handlers/start_menu.py
 msgid "no_subscriptions"
-msgstr ""
+msgstr "Anda tidak memiliki langganan."
 
 #: src/handlers/start_menu.py
 msgid "no_currency_argument"
-msgstr ""
+msgstr "Kirim mata uang atau pair mata uang sebagai argumen."
 
 #: src/handlers/start_menu.py
 msgid "subscription_added"
-msgstr ""
+msgstr "Berlangganan ditambahkan."
 
 #: src/handlers/start_menu.py
 msgid "subscription_exists"
-msgstr ""
+msgstr "Berlangganan sudah ada."
 
 #: src/handlers/start_menu.py
 msgid "subscription_deleted"
-msgstr ""
+msgstr "Berlangganan dihapus."
 
 #: src/handlers/start_menu.py
 msgid "subscription_delete_error"
-msgstr ""
+msgstr "Tidak dapat menghapus langganan."
 
 #: src/handlers/support.py
 msgid "request_cancelled"
-msgstr ""
+msgstr "Permintaan Anda dibatalkan."
 
 #: src/handlers/support.py
 msgid "support_response_promise"
 msgstr ""
+"Pesan Anda telah diteruskan. Kami akan merespons Anda dalam waktu 24 jam."
 
 #: src/handlers/support.py
 msgid "reply_error_bot_blocked"
-msgstr ""
+msgstr "Tidak dapat mengirim balasan, saya diblokir oleh pengguna."
 
 #: src/handlers/support.py
 msgid "reply_sent"
-msgstr ""
+msgstr "Balasan sudah terkirim."
 
 #: src/handlers/support.py
 msgid "escrow_enabled"
-msgstr ""
+msgstr "Escrow diaktifkan."
 
 #: src/handlers/support.py
 msgid "escrow_disabled"
-msgstr ""
+msgstr "Escrow dinonaktifkan."
 
 #: src/money.py
 msgid "send_decimal_number"
-msgstr ""
+msgstr "Kirim angka desimal."
 
 #: src/money.py
 msgid "send_positive_number"
-msgstr ""
+msgstr "Kirim angka positif."
 
 #: src/money.py
 msgid "exceeded_money_limit {limit}"
-msgstr ""
+msgstr "Kirim nomor kurang dari {limit}"
 
 #: src/money.py
 msgid "shortage_money_limit {limit}"
-msgstr ""
+msgstr "Kirim nomor lebih besar dari {limit}"
 
 #: src/notifications.py
 msgid "order_expired"
-msgstr ""
+msgstr "Pesanan Anda telah kedaluwarsa."
 
 #: src/whitelist.py
 msgid "without_gateway"
-msgstr ""
+msgstr "Tanpa gateway"
