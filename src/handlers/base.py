@@ -253,7 +253,10 @@ async def show_order(
 
     new_edit_msg = None
     if invert is None:
-        user = database_user.get()
+        try:
+            user = database_user.get()
+        except LookupError:
+            user = await database.users.find_one({"id": user_id})
         invert = user.get("invert_order", False)
     else:
         user = await database.users.find_one_and_update(
