@@ -47,6 +47,7 @@ def start_keyboard() -> types.ReplyKeyboardMarkup:
         types.KeyboardButton(emojize(":heavy_plus_sign: ") + i18n("create_order")),
         types.KeyboardButton(emojize(":bust_in_silhouette: ") + i18n("my_orders")),
         types.KeyboardButton(emojize(":closed_book: ") + i18n("order_book")),
+        types.KeyboardButton(emojize(":loudspeaker: ") + i18n("referral_link")),
         types.KeyboardButton(emojize(":abcd: ") + i18n("language")),
         types.KeyboardButton(emojize(":question: ") + i18n("support")),
     )

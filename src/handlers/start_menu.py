@@ -17,6 +17,8 @@
 """Handlers for start menu."""
 import re
 import typing
+from random import SystemRandom
+from string import ascii_lowercase
 from time import time
 
 from aiogram import types
@@ -29,6 +31,7 @@ from aiogram.utils.emoji import emojize
 from babel import Locale
 from babel import parse_locale
 from pymongo import DESCENDING
+from pymongo.errors import DuplicateKeyError
 
 from src import states
 from src import whitelist
@@ -36,6 +39,7 @@ from src.bot import dp
 from src.bot import tg
 from src.config import config
 from src.database import database
+from src.database import database_user
 from src.handlers.base import orders_list
 from src.handlers.base import private_handler
 from src.handlers.base import start_keyboard
@@ -62,8 +66,25 @@ async def handle_start_command(message: types.Message, state: FSMContext):
 
     Ask for language if user is new or show menu.
     """
-    user = {"id": message.from_user.id, "chat": message.chat.id}
-    result = await database.users.update_one(user, {"$setOnInsert": user}, upsert=True)
+    user = {
+        "id": message.from_user.id,
+        "chat": message.chat.id,
+        "mention": message.from_user.mention,
+        "has_username": bool(message.from_user.username),
+    }
+    args = message.text.split()
+    if len(args) > 1:
+        if args[1][0] == "_":
+            search_filter = {"mention": "@" + args[1][1:], "has_username": True}
+        else:
+            search_filter = {"referral_code": args[1]}
+        referrer_user = await database.users.find_one(search_filter)
+        if referrer_user:
+            user["referrer"] = referrer_user["id"]
+
+    result = await database.users.update_one(
+        {"id": user["id"], "chat": user["chat"]}, {"$setOnInsert": user}, upsert=True
+    )
 
     if not result.matched_count:
         await tg.send_message(
@@ -196,6 +217,42 @@ async def handle_my_orders(message: types.Message, state: FSMContext):
     quantity = await database.orders.count_documents(query)
     await state.finish()
     await orders_list(cursor, message.chat.id, 0, quantity, "my_orders")
+
+
+@private_handler(commands=["link"], state=any_state)
+@private_handler(
+    lambda msg: msg.text.startswith(emojize(":loudspeaker:")), state=any_state
+)
+async def get_referral_link(message: types.Message):
+    """Send user's referral link and generate if it doesn't exist."""
+    user = database_user.get()
+    code = user.get("referral_code")
+    if code is None:
+        while True:
+            cryptogen = SystemRandom()
+            code = "".join(cryptogen.choice(ascii_lowercase) for _ in range(7))
+            try:
+                await database.users.update_one(
+                    {"_id": user["_id"]}, {"$set": {"referral_code": code}}
+                )
+            except DuplicateKeyError:
+                continue
+            else:
+                break
+    me = await tg.me
+    answer = i18n("referral_share {link}").format(
+        link=f"https://t.me/{me.username}?start={code}"
+    )
+    if message.from_user.username:
+        answer += "\n" + i18n("referral_share_alias {link}").format(
+            link=f"https://t.me/{me.username}?start=_{message.from_user.username}"
+        )
+    await tg.send_message(
+        message.chat.id,
+        answer,
+        disable_web_page_preview=True,
+        reply_markup=start_keyboard(),
+    )
 
 
 @private_handler(commands=["locale"], state=any_state)

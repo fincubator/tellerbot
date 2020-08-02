@@ -116,7 +116,8 @@ class DispatcherManual(Dispatcher):
             )
             if document is None:
                 if update.message:
-                    update.message.text = "/start"
+                    if not update.message.text.startswith("/start "):
+                        update.message.text = "/start"
                 elif update.callback_query:
                     await update.callback_query.answer()
                     update = types.Update(

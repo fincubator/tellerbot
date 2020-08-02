@@ -25,6 +25,7 @@ from src import notifications
 from src.bot import dp
 from src.bot import tg
 from src.config import config
+from src.database import database
 from src.escrow import close_blockchains
 from src.escrow import connect_to_blockchains
 
@@ -36,6 +37,7 @@ async def on_startup(webhook_path, *args):
     """
     await tg.delete_webhook()
     await tg.set_webhook("https://" + config.SERVER_HOST + webhook_path)
+    await database.users.create_index("referral_code", unique=True, sparse=True)
     asyncio.create_task(notifications.run_loop())
     asyncio.create_task(connect_to_blockchains())
 
