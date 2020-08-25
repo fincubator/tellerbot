@@ -51,26 +51,31 @@ async def claim_currency(call: types.CallbackQuery):
         .limit(1)
     )
     last_cashback = await cursor.to_list(length=1)
-    address = last_cashback[0]["address"]
-    keyboard = InlineKeyboardMarkup(row_width=1)
-    keyboard.add(
-        InlineKeyboardButton(
-            i18n("confirm_cashback_address"),
-            callback_data=f"claim_transfer {currency} {address}",
-        ),
-        InlineKeyboardButton(
-            i18n("custom_cashback_address"),
-            callback_data=f"custom_cashback_address {currency}",
-        ),
-    )
-    await call.answer()
-    await tg.edit_message_text(
-        i18n("use_cashback_address {address}").format(address=markdown.code(address)),
-        call.message.chat.id,
-        call.message.message_id,
-        reply_markup=keyboard,
-        parse_mode=ParseMode.MARKDOWN,
-    )
+    if last_cashback:
+        address = last_cashback[0]["address"]
+        keyboard = InlineKeyboardMarkup(row_width=1)
+        keyboard.add(
+            InlineKeyboardButton(
+                i18n("confirm_cashback_address"),
+                callback_data=f"claim_transfer {currency} {address}",
+            ),
+            InlineKeyboardButton(
+                i18n("custom_cashback_address"),
+                callback_data=f"custom_cashback_address {currency}",
+            ),
+        )
+        await call.answer()
+        await tg.edit_message_text(
+            i18n("use_cashback_address {address}").format(
+                address=markdown.code(address)
+            ),
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=keyboard,
+            parse_mode=ParseMode.MARKDOWN,
+        )
+    else:
+        return await custom_cashback_address(call)
 
 
 @dp.callback_query_handler(
@@ -86,10 +91,11 @@ async def custom_cashback_address(call: types.CallbackQuery):
         {"id": call.from_user.id, "currency": currency, "address": {"$ne": None}}
     ).sort("time", pymongo.DESCENDING)
     addresses = await cursor.distinct("address")
+    addresses = addresses[1:]
     await call.answer()
     if addresses:
         keyboard = ReplyKeyboardMarkup(row_width=1)
-        keyboard.add(*[KeyboardButton(address) for address in addresses[1:]])
+        keyboard.add(*[KeyboardButton(address) for address in addresses])
         await tg.send_message(call.message.chat.id, answer, reply_markup=keyboard)
     else:
         await tg.send_message(call.message.chat.id, answer)
