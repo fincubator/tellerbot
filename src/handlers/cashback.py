@@ -105,7 +105,7 @@ async def transfer_cashback(user_id: int, currency: str, address: str):
     )
     amount_document = await cursor.to_list(length=1)
     try:
-        return await get_escrow_instance(currency).transfer(
+        result = await get_escrow_instance(currency).transfer(
             address,
             amount_document[0]["amount"].to_decimal(),
             currency,
@@ -115,6 +115,7 @@ async def transfer_cashback(user_id: int, currency: str, address: str):
         raise error
     else:
         await database.cashback.delete_many({"id": user_id, "currency": currency})
+        return result
 
 
 @private_handler(state=states.cashback_address)
