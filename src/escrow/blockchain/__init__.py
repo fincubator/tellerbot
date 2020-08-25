@@ -405,3 +405,7 @@ class StreamBlockchain(BaseBlockchain):
 
 class BlockchainConnectionError(Exception):
     """Unsuccessful attempt at connection to blockchain node."""
+
+
+class TransferError(Exception):
+    """Unsuccessful attempt at transfer."""

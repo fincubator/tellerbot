@@ -33,6 +33,7 @@ from aiogram.utils import markdown
 from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
 
+from src import referral_system as rs
 from src import states
 from src.bot import dp
 from src.bot import tg
@@ -883,30 +884,78 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer
     )
 
 
+async def add_cashback(
+    currency, amount, sum_fee_up, sum_fee_down, sender_user, recipient_user
+):
+    """Create cashback documents from escrow exchange."""
+    fees = (
+        (sum_fee_up - amount, sender_user, sender_user["send_address"]),
+        (amount - sum_fee_down, recipient_user, recipient_user["receive_address"]),
+    )
+    cashback = []
+    current_time = time()
+    for fee, user, user_address in fees:
+        if not fee:
+            continue
+        categories = (
+            (rs.PERSONAL_CATEGORY, user["id"], user_address),
+            (rs.REFERRED_CATEGORY, user.get("referrer"), None),
+            (rs.REFERRED_BY_REFERALS_CATEGORY, user.get("referrer_of_referrer"), None),
+        )
+        for category, user_id, address in categories:
+            if not user_id:
+                break
+            count = await database.users.count_documents({"referrer": user_id})
+            if not count:
+                continue
+            document = {
+                "id": user_id,
+                "currency": currency,
+                "amount": rs.bonus_coefficient(category, count) * fee,
+                "time": current_time,
+            }
+            if address:
+                document["address"] = address
+            cashback.append(document)
+    if cashback:
+        await database.cashback.insert_many(cashback)
+
+
 @escrow_callback_handler(lambda call: call.data.startswith("escrow_complete "))
 @dp.async_task
 async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
     """Release escrow asset and finish exchange."""
     if offer.type == "buy":
         recipient_user = offer.counter
-        other_user = offer.init
+        sender_user = offer.init
+        amount = offer.sum_buy.to_decimal()  # type: ignore
     elif offer.type == "sell":
         recipient_user = offer.init
-        other_user = offer.counter
+        sender_user = offer.counter
+        amount = offer.sum_sell.to_decimal()  # type: ignore
+
+    sum_fee_up = offer.sum_fee_up.to_decimal()  # type: ignore
+    sum_fee_down = offer.sum_fee_down.to_decimal()  # type: ignore
 
     await call.answer(i18n("escrow_completing"))
     escrow_instance = get_escrow_instance(offer.escrow)
     trx_url = await escrow_instance.transfer(
         recipient_user["receive_address"],
-        offer.sum_fee_down.to_decimal(),  # type: ignore
+        sum_fee_down,
         offer.escrow,
         memo=create_memo(offer, transfer=True),
     )
-    answer = i18n("escrow_completed", locale=other_user["locale"])
+
+    if sender_user["send_address"] != recipient_user["receive_address"]:
+        add_cashback(
+            offer.escrow, amount, sum_fee_up, sum_fee_down, sender_user, recipient_user
+        )
+
+    answer = i18n("escrow_completed", locale=sender_user["locale"])
     recipient_answer = i18n("escrow_completed", locale=recipient_user["locale"])
     recipient_answer += " " + markdown.link(
         i18n("escrow_sent {amount} {currency}", locale=recipient_user["locale"]).format(
-            amount=offer.sum_fee_down, currency=offer.escrow
+            amount=amount, currency=offer.escrow
         ),
         trx_url,
     )
@@ -917,7 +966,7 @@ async def complete_offer(call: types.CallbackQuery, offer: EscrowOffer):
         reply_markup=start_keyboard(),
         parse_mode=ParseMode.MARKDOWN,
     )
-    await tg.send_message(other_user["id"], answer, reply_markup=start_keyboard())
+    await tg.send_message(sender_user["id"], answer, reply_markup=start_keyboard())
 
 
 @escrow_callback_handler(lambda call: call.data.startswith("escrow_validate "))

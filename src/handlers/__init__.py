@@ -29,6 +29,7 @@ from src.config import config
 from src.handlers import start_menu  # noqa: F401, noreorder
 from src.handlers import creation  # noqa: F401
 from src.handlers import escrow  # noqa: F401
+from src.handlers import cashback  # noqa: F401
 from src.handlers import order  # noqa: F401
 from src.handlers import support  # noqa: F401
 from src.handlers.base import private_handler

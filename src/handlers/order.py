@@ -37,7 +37,6 @@ from src.bot import tg
 from src.config import config
 from src.database import database
 from src.database import database_user
-from src.database import STATE_KEY
 from src.escrow import get_escrow_instance
 from src.escrow.escrow_offer import EscrowOffer
 from src.handlers.base import orders_list
@@ -302,6 +301,11 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
     if not config.ESCROW_ENABLED:
         await call.answer(i18n("escrow_unavailable"))
         return
+
+    if call.from_user.id == order["user_id"]:
+        await call.answer(i18n("escrow_starting_error"))
+        return
+
     args = call.data.split()
     currency_arg = args[2]
     edit = bool(int(args[3]))
@@ -352,9 +356,17 @@ async def escrow_button(call: types.CallbackQuery, order: OrderType):
             "locale": user["locale"],
             "mention": user["mention"],
         }
+        if "referrer" in user:
+            init_user["referrer"] = user["referrer"]
         counter_user = await database.users.find_one(
             {"id": order["user_id"]},
-            projection={"id": True, "locale": True, "mention": True},
+            projection={
+                "id": True,
+                "locale": True,
+                "mention": True,
+                "referrer": True,
+                "referrer_of_referrer": True,
+            },
         )
         await database.escrow.delete_many({"init.send_address": {"$exists": False}})
         offer = EscrowOffer(
@@ -452,7 +464,7 @@ async def edit_button(call: types.CallbackQuery):
                 "edit.location_message_id": int(args[3]),
                 "edit.one_time": bool(int(args[4])),
                 "edit.show_id": call.message.text.startswith("ID"),
-                STATE_KEY: states.field_editing.state,
+                "state": states.field_editing.state,
             }
         },
     )
@@ -477,7 +489,7 @@ async def finish_edit(user, update_dict):
         except MessageNotModified:
             pass
     await database.users.update_one(
-        {"_id": user["_id"]}, {"$unset": {"edit": True, STATE_KEY: True}}
+        {"_id": user["_id"]}, {"$unset": {"edit": True, "state": True}}
     )
 
 

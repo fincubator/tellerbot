@@ -83,3 +83,5 @@ class Escrow(StatesGroup):
 asking_support = State("asking_support")
 #: Send new value of chosen order's field during editing.
 field_editing = State("field_editing")
+#: Send new value of chosen order's field during editing.
+cashback_address = State("cashback_address")

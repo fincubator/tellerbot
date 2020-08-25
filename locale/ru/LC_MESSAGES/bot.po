@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
-"POT-Creation-Date: 2020-08-02 04:57+0300\n"
+"POT-Creation-Date: 2020-08-25 07:27+0300\n"
 "PO-Revision-Date: 2020-06-17 12:41+0000\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: ru\n"
@@ -101,6 +101,10 @@ msgstr "Список заказов"
 #: src/handlers/base.py
 msgid "referral_link"
 msgstr "Реферальная ссылка"
+
+#: src/handlers/base.py
+msgid "claim_cashback"
+msgstr "Запросить кэшбэк"
 
 #: src/handlers/base.py
 msgid "language"
@@ -218,6 +222,36 @@ msgstr "Скрыть"
 #: src/handlers/base.py src/handlers/order.py
 msgid "unset"
 msgstr "Сбросить"
+
+#: src/handlers/cashback.py
+msgid "confirm_cashback_address"
+msgstr "Да"
+
+#: src/handlers/cashback.py
+msgid "custom_cashback_address"
+msgstr "Нет, использовать другой адрес"
+
+#: src/handlers/cashback.py
+msgid "use_cashback_address {address}"
+msgstr "Отправить кэшбэк на адрес {address}?"
+
+#: src/handlers/cashback.py
+msgid "send_cashback_address"
+msgstr "Отправьте адрес, на который будет отправлен кэшбэк."
+
+#: src/handlers/cashback.py
+msgid "claim_transfer_wait"
+msgstr "Отправляю кэшбэк..."
+
+#: src/handlers/cashback.py
+msgid "cashback_transfer_error"
+msgstr ""
+"Не удалось отправить кэшбэк. Убедитесь, что запрашиваемая сумма кэшбэка "
+"доступна для отправки."
+
+#: src/handlers/cashback.py
+msgid "cashback_transferred"
+msgstr "Кэшбэк отправлен!"
 
 #: src/handlers/creation.py
 msgid "wrong_button"
@@ -567,6 +601,10 @@ msgid "escrow_unavailable"
 msgstr "Эскроу временно недоступен. Извините за неудобства."
 
 #: src/handlers/order.py
+msgid "escrow_starting_error"
+msgstr "Не удалось начать эскроу."
+
+#: src/handlers/order.py
 msgid "change_to {currency}"
 msgstr "Поменять на {currency}"
 
@@ -664,6 +702,20 @@ msgstr "Выберите свой язык."
 #: src/handlers/start_menu.py
 msgid "request_question"
 msgstr "Какой у вас вопрос?"
+
+#: src/handlers/start_menu.py
+msgid "claim {amount} {currency}"
+msgstr "Запросить {amount} {currency}"
+
+#: src/handlers/start_menu.py
+msgid "no_cashback"
+msgstr ""
+"У вас нет доступного для запроса кэшбэка. Используйте эскроу для его "
+"получения."
+
+#: src/handlers/start_menu.py
+msgid "choose_cashback_currency"
+msgstr "Выберите валюту кэшбэка."
 
 #: src/handlers/start_menu.py
 msgid "user_not_found"

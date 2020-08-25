@@ -25,12 +25,14 @@ from decimal import Decimal
 from time import time
 
 from golos import Api
+from golos.exceptions import GolosException
 from golos.exceptions import RetriesExceeded
 from golos.exceptions import TransactionNotFound
 
 from src.escrow.blockchain import BlockchainConnectionError
 from src.escrow.blockchain import InsuranceLimits
 from src.escrow.blockchain import StreamBlockchain
+from src.escrow.blockchain import TransferError
 
 
 class GolosBlockchain(StreamBlockchain):
@@ -81,16 +83,19 @@ class GolosBlockchain(StreamBlockchain):
         return limits.get(asset)
 
     async def transfer(self, to: str, amount: Decimal, asset: str, memo: str = ""):
-        transaction = await get_running_loop().run_in_executor(
-            None,
-            self._golos.transfer,
-            to.lower(),
-            amount,
-            self.address,
-            self.wif,
-            asset,
-            memo,
-        )
+        try:
+            transaction = await get_running_loop().run_in_executor(
+                None,
+                self._golos.transfer,
+                to.lower(),
+                amount,
+                self.address,
+                self.wif,
+                asset,
+                memo,
+            )
+        except GolosException:
+            raise TransferError
         return self.trx_url(transaction["id"])
 
     async def is_block_confirmed(self, block_num, op):
