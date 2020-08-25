@@ -21,6 +21,7 @@ from random import SystemRandom
 from string import ascii_lowercase
 from time import time
 
+import pymongo
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
@@ -30,7 +31,6 @@ from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.emoji import emojize
 from babel import Locale
 from babel import parse_locale
-from pymongo import DESCENDING
 from pymongo.errors import DuplicateKeyError
 
 from src import states
@@ -81,6 +81,8 @@ async def handle_start_command(message: types.Message, state: FSMContext):
         referrer_user = await database.users.find_one(search_filter)
         if referrer_user:
             user["referrer"] = referrer_user["id"]
+            if referrer_user.get("referrer"):
+                user["referrer_of_referrer"] = referrer_user["referrer"]
 
     result = await database.users.update_one(
         {"id": user["id"], "chat": user["chat"]}, {"$setOnInsert": user}, upsert=True
@@ -198,7 +200,7 @@ async def handle_book(
             if buy != "*":
                 query["buy"] = gateway_currency_regexp(buy)
 
-    cursor = database.orders.find(query).sort("start_time", DESCENDING)
+    cursor = database.orders.find(query).sort("start_time", pymongo.DESCENDING)
     quantity = await database.orders.count_documents(query)
     await state.finish()
     await orders_list(
@@ -213,7 +215,7 @@ async def handle_book(
 async def handle_my_orders(message: types.Message, state: FSMContext):
     """Show user's orders."""
     query = {"user_id": message.from_user.id}
-    cursor = database.orders.find(query).sort("start_time", DESCENDING)
+    cursor = database.orders.find(query).sort("start_time", pymongo.DESCENDING)
     quantity = await database.orders.count_documents(query)
     await state.finish()
     await orders_list(cursor, message.chat.id, 0, quantity, "my_orders")
@@ -282,7 +284,44 @@ async def help_command(message: types.Message):
     )
 
 
-@private_handler(commands=["c", "creator"], state=any_state)
+@private_handler(commands=["claim"], state=any_state)
+@private_handler(
+    lambda msg: msg.text.startswith(emojize(":moneybag:")), state=any_state
+)
+async def claim_cashback(message: types.Message, state: FSMContext):
+    """Start cashback claiming process by asking currency."""
+    documents = database.cashback.aggregate(
+        [
+            {"$match": {"id": message.from_user.id}},
+            {"$group": {"_id": "$currency", "amount": {"$sum": "$amount"}}},
+            {"$sort": {"_id": pymongo.ASCENDING}},
+        ]
+    )
+    keyboard = InlineKeyboardMarkup(row_width=1)
+    empty = True
+    async for document in documents:
+        empty = False
+        currency = document["_id"]
+        amount = document["amount"]
+        keyboard.row(
+            InlineKeyboardButton(
+                i18n("claim {amount} {currency}").format(
+                    amount=amount, currency=currency
+                ),
+                callback_data=f"claim_currency {currency}",
+            )
+        )
+    if empty:
+        await tg.send_message(
+            message.chat.id, i18n("no_cashback"), reply_markup=keyboard
+        )
+    else:
+        await tg.send_message(
+            message.chat.id, i18n("choose_cashback_currency"), reply_markup=keyboard
+        )
+
+
+@private_handler(commands=["creator", "c"], state=any_state)
 async def search_by_creator(message: types.Message, state: FSMContext):
     """Search orders by creator.
 
@@ -320,7 +359,7 @@ async def search_by_creator(message: types.Message, state: FSMContext):
         )
         return
 
-    cursor = database.orders.find(query).sort("start_time", DESCENDING)
+    cursor = database.orders.find(query).sort("start_time", pymongo.DESCENDING)
     quantity = await database.orders.count_documents(query)
     await state.finish()
     await orders_list(

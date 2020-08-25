@@ -33,6 +33,7 @@ from src.config import config
 from src.escrow.blockchain import BaseBlockchain
 from src.escrow.blockchain import BlockchainConnectionError
 from src.escrow.blockchain import InsuranceLimits
+from src.escrow.blockchain import TransferError
 
 
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
@@ -173,7 +174,10 @@ class CyberBlockchain(BaseBlockchain):
             "signatures": [EOSKey(self.wif).sign(digest)],
         }
         trx_data = json.dumps(final_trx, cls=types.EOSEncoder)
-        result = await self._api("v1/chain/push_transaction", data=trx_data)
+        try:
+            result = await self._api("v1/chain/push_transaction", data=trx_data)
+        except aiohttp.ClientResponseError:
+            raise TransferError
         return self.trx_url(result["transaction_id"])
 
     async def is_block_confirmed(self, block_num, op):

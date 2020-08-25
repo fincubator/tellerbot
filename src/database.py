@@ -37,8 +37,6 @@ database = client[config.DATABASE_NAME]
 
 database_user: ContextVar[typing.Mapping[str, typing.Any]] = ContextVar("database_user")
 
-STATE_KEY = "state"
-
 
 class MongoStorage(BaseStorage):
     """MongoDB asynchronous storage for FSM using motor."""
@@ -46,18 +44,51 @@ class MongoStorage(BaseStorage):
     async def get_state(self, user: int, **kwargs) -> typing.Optional[str]:
         """Get current state of user with Telegram ID ``user``."""
         document = await database.users.find_one({"id": user})
-        return document.get(STATE_KEY) if document else None
+        return document.get("state") if document else None
 
     async def set_state(
         self, user: int, state: typing.Optional[str] = None, **kwargs
     ) -> None:
         """Set new state ``state`` of user with Telegram ID ``user``."""
         if state is None:
-            await database.users.update_one({"id": user}, {"$unset": {STATE_KEY: True}})
+            await database.users.update_one({"id": user}, {"$unset": {"state": True}})
         else:
-            await database.users.update_one({"id": user}, {"$set": {STATE_KEY: state}})
+            await database.users.update_one({"id": user}, {"$set": {"state": state}})
 
-    async def finish(self, user, **kwargs):
+    async def get_data(self, user: int, **kwargs) -> typing.Dict:
+        """Get state data of user with Telegram ID ``user``."""
+        document = await database.users.find_one({"id": user})
+        return document.get("data", {})
+
+    async def set_data(
+        self, user: int, data: typing.Optional[typing.Dict] = None, **kwargs
+    ) -> None:
+        """Set state data ``data`` of user with Telegram ID ``user``."""
+        if data is None:
+            await database.users.update_one({"id": user}, {"$unset": {"data": True}})
+        else:
+            await database.users.update_one({"id": user}, {"$set": {"data": data}})
+
+    async def update_data(
+        self, user: int, data: typing.Optional[typing.Dict] = None, **kwargs
+    ) -> None:
+        """Update data of user with Telegram ID ``user``."""
+        if data is None:
+            data = {}
+        data.update(kwargs)
+        await database.users.update_one(
+            {"id": user},
+            {"$set": {f"data.{key}": value for key, value in data.items()}},
+        )
+
+    async def reset_state(self, user: int, with_data: bool = True, **kwargs):
+        """Reset state for user with Telegram ID ``user``."""
+        update = {"$unset": {"state": True}}
+        if with_data:
+            update["$unset"]["data"] = True
+        await database.users.update_one({"id": user}, update)
+
+    async def finish(self, user: int, **kwargs):
         """Finish conversation with user."""
         await self.set_state(user=user, state=None)
 

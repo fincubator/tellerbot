@@ -50,4 +50,4 @@ def bonus_coefficient(category: Mapping[int, int], count: int) -> Decimal:
     for level, percent in category.items():
         if level <= count and level > assigned_level:
             assigned_level = level
-    return Decimal(category[assigned_level]) / 100
+    return Decimal(category[assigned_level]) / 100 if assigned_level > 0 else Decimal(0)

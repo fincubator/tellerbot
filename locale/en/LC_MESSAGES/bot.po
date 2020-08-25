@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
-"POT-Creation-Date: 2020-08-02 04:57+0300\n"
+"POT-Creation-Date: 2020-08-25 07:27+0300\n"
 "PO-Revision-Date: 2020-06-17 12:41+0000\n"
 "Last-Translator: alfred richardsn <rchrdsn@protonmail.ch>\n"
 "Language: en\n"
@@ -100,6 +100,10 @@ msgstr "Order book"
 #: src/handlers/base.py
 msgid "referral_link"
 msgstr "Referral link"
+
+#: src/handlers/base.py
+msgid "claim_cashback"
+msgstr "Claim cashback"
 
 #: src/handlers/base.py
 msgid "language"
@@ -217,6 +221,36 @@ msgstr "Hide"
 #: src/handlers/base.py src/handlers/order.py
 msgid "unset"
 msgstr "Unset"
+
+#: src/handlers/cashback.py
+msgid "confirm_cashback_address"
+msgstr "Yes"
+
+#: src/handlers/cashback.py
+msgid "custom_cashback_address"
+msgstr "No, use other address"
+
+#: src/handlers/cashback.py
+msgid "use_cashback_address {address}"
+msgstr "Should cashback be sent on address {address}?"
+
+#: src/handlers/cashback.py
+msgid "send_cashback_address"
+msgstr "Send address where cashback will be sent."
+
+#: src/handlers/cashback.py
+msgid "claim_transfer_wait"
+msgstr "Transferring cashback..."
+
+#: src/handlers/cashback.py
+msgid "cashback_transfer_error"
+msgstr ""
+"Couldn't transfer cashback. Make sure that you're claiming a cashback "
+"with a transferable amount."
+
+#: src/handlers/cashback.py
+msgid "cashback_transferred"
+msgstr "Cashback transferred!"
 
 #: src/handlers/creation.py
 msgid "wrong_button"
@@ -564,6 +598,10 @@ msgid "escrow_unavailable"
 msgstr "Escrow is temporarily unavailable. Sorry for the inconvenience."
 
 #: src/handlers/order.py
+msgid "escrow_starting_error"
+msgstr "Couldn't start escrow."
+
+#: src/handlers/order.py
 msgid "change_to {currency}"
 msgstr "Change to {currency}"
 
@@ -660,6 +698,18 @@ msgstr "Choose your language."
 #: src/handlers/start_menu.py
 msgid "request_question"
 msgstr "What's your question?"
+
+#: src/handlers/start_menu.py
+msgid "claim {amount} {currency}"
+msgstr "Claim {amount} {currency}"
+
+#: src/handlers/start_menu.py
+msgid "no_cashback"
+msgstr "You don't have cashback that can be claimed. Use escrow to get it."
+
+#: src/handlers/start_menu.py
+msgid "choose_cashback_currency"
+msgstr "Choose currency of cashback."
 
 #: src/handlers/start_menu.py
 msgid "user_not_found"

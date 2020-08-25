@@ -35,7 +35,7 @@ from src.bot import (  # noqa: F401, noreorder
     state_handlers,
 )
 from src.bot import tg
-from src.database import database, database_user, STATE_KEY
+from src.database import database, database_user
 from src.i18n import i18n
 from src.money import normalize
 
@@ -48,6 +48,7 @@ def start_keyboard() -> types.ReplyKeyboardMarkup:
         types.KeyboardButton(emojize(":bust_in_silhouette: ") + i18n("my_orders")),
         types.KeyboardButton(emojize(":closed_book: ") + i18n("order_book")),
         types.KeyboardButton(emojize(":loudspeaker: ") + i18n("referral_link")),
+        types.KeyboardButton(emojize(":moneybag: ") + i18n("claim_cashback")),
         types.KeyboardButton(emojize(":abcd: ") + i18n("language")),
         types.KeyboardButton(emojize(":question: ") + i18n("support")),
     )
@@ -279,7 +280,7 @@ async def show_order(
             elif user["edit"]["order_message_id"] == message_id:
                 await tg.delete_message(user["chat"], user["edit"]["message_id"])
                 await database.users.update_one(
-                    {"_id": user["_id"]}, {"$unset": {"edit": True, STATE_KEY: True}}
+                    {"_id": user["_id"]}, {"$unset": {"edit": True, "state": True}}
                 )
 
     if location_message_id is None:

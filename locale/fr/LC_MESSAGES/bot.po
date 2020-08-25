@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
-"POT-Creation-Date: 2020-08-02 04:57+0300\n"
+"POT-Creation-Date: 2020-08-25 07:27+0300\n"
 "PO-Revision-Date: 2020-06-25 01:41+0000\n"
 "Last-Translator: J. Lavoie <j.lavoie@net-c.ca>\n"
 "Language: fr\n"
@@ -101,6 +101,10 @@ msgstr "Journal des commandes"
 
 #: src/handlers/base.py
 msgid "referral_link"
+msgstr ""
+
+#: src/handlers/base.py
+msgid "claim_cashback"
 msgstr ""
 
 #: src/handlers/base.py
@@ -219,6 +223,34 @@ msgstr "Masquer"
 #: src/handlers/base.py src/handlers/order.py
 msgid "unset"
 msgstr "Désactiver"
+
+#: src/handlers/cashback.py
+msgid "confirm_cashback_address"
+msgstr ""
+
+#: src/handlers/cashback.py
+msgid "custom_cashback_address"
+msgstr ""
+
+#: src/handlers/cashback.py
+msgid "use_cashback_address {address}"
+msgstr ""
+
+#: src/handlers/cashback.py
+msgid "send_cashback_address"
+msgstr ""
+
+#: src/handlers/cashback.py
+msgid "claim_transfer_wait"
+msgstr ""
+
+#: src/handlers/cashback.py
+msgid "cashback_transfer_error"
+msgstr ""
+
+#: src/handlers/cashback.py
+msgid "cashback_transferred"
+msgstr ""
 
 #: src/handlers/creation.py
 msgid "wrong_button"
@@ -559,6 +591,10 @@ msgid "escrow_unavailable"
 msgstr ""
 
 #: src/handlers/order.py
+msgid "escrow_starting_error"
+msgstr ""
+
+#: src/handlers/order.py
 msgid "change_to {currency}"
 msgstr ""
 
@@ -655,6 +691,18 @@ msgstr "Choisissez votre langue."
 #: src/handlers/start_menu.py
 msgid "request_question"
 msgstr "Quelle est votre question ?"
+
+#: src/handlers/start_menu.py
+msgid "claim {amount} {currency}"
+msgstr ""
+
+#: src/handlers/start_menu.py
+msgid "no_cashback"
+msgstr ""
+
+#: src/handlers/start_menu.py
+msgid "choose_cashback_currency"
+msgstr ""
 
 #: src/handlers/start_menu.py
 msgid "user_not_found"
