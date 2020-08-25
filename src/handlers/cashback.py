@@ -116,23 +116,19 @@ async def transfer_cashback(user_id: int, currency: str, address: str):
 async def claim_transfer_custom_address(message: types.Message, state: FSMContext):
     """Transfer cashback to custom address."""
     data = await state.get_data()
-    wait_message = await tg.send_message(
-        message.chat.id, i18n("claim_transfer_wait"), reply_markup=start_keyboard()
-    )
+    await tg.send_message(message.chat.id, i18n("claim_transfer_wait"))
     try:
         trx_url = await transfer_cashback(
             message.from_user.id, data["currency"], message.text
         )
     except TransferError:
-        await tg.edit_message_text(
-            i18n("cashback_transfer_error"), message.chat.id, wait_message.message_id,
-        )
+        await tg.send_message(message.chat.id, i18n("cashback_transfer_error"))
     else:
-        await tg.edit_message_text(
-            markdown.link(i18n("cashback_transferred"), trx_url),
+        await tg.send_message(
             message.chat.id,
-            wait_message.message_id,
+            markdown.link(i18n("cashback_transferred"), trx_url),
             parse_mode=ParseMode.MARKDOWN,
+            reply_markup=start_keyboard(),
         )
 
 
@@ -147,7 +143,7 @@ async def claim_transfer(call: types.CallbackQuery):
     try:
         trx_url = await transfer_cashback(call.from_user.id, currency, address)
     except TransferError:
-        await tg.edit_message_text(
+        await tg.send_message(
             call.message.chat.id,
             i18n("cashback_transfer_error"),
             reply_markup=start_keyboard(),
