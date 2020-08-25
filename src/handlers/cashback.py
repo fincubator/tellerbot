@@ -104,12 +104,17 @@ async def transfer_cashback(user_id: int, currency: str, address: str):
         ]
     )
     amount_document = await cursor.to_list(length=1)
-    return await get_escrow_instance(currency).transfer(
-        address,
-        amount_document[0]["amount"].to_decimal(),
-        currency,
-        memo="cashback for using escrow service on https://t.me/TellerBot",
-    )
+    try:
+        return await get_escrow_instance(currency).transfer(
+            address,
+            amount_document[0]["amount"].to_decimal(),
+            currency,
+            memo="cashback for using escrow service on https://t.me/TellerBot",
+        )
+    except Exception as error:
+        raise error
+    else:
+        await database.cashback.delete_many({"id": user_id, "currency": currency})
 
 
 @private_handler(state=states.cashback_address)
