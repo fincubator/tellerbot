@@ -39,7 +39,7 @@ CRYPTOCURRENCY: Mapping[str, Tuple[str, ...]] = {
     "USDT": ("BTC", "EOS", "ETH", "FINTEH", "GDEX", "RUDEX", "TRON"),
     "VIZ": (),
     "BIP": (),
-    "DEC": ("STEEM", "HIVE", "TRON"),
+    "CMN": (),
 }
 
 
