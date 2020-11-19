@@ -247,7 +247,8 @@ class CyberBlockchain(BaseBlockchain):
         return addresses[address]
 
     async def _check_queue_in_history(
-        self, queue: typing.List[typing.Dict[str, typing.Any]],
+        self,
+        queue: typing.List[typing.Dict[str, typing.Any]],
     ) -> bool:
         addresses = [queue_member["from_address"].lower() for queue_member in queue]
         resolved = await self._resolve_addresses(addresses)

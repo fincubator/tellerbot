@@ -355,7 +355,8 @@ async def search_by_creator(message: types.Message, state: FSMContext):
                 return
     except IndexError:
         await tg.send_message(
-            message.chat.id, i18n("no_user_argument"),
+            message.chat.id,
+            i18n("no_user_argument"),
         )
         return
 
@@ -370,7 +371,9 @@ async def search_by_creator(message: types.Message, state: FSMContext):
 @private_handler(commands=["subscribe", "s"], state=any_state)
 @private_handler(commands=["unsubscribe", "u"], state=any_state)
 async def subcribe_to_pair(
-    message: types.Message, state: FSMContext, command: Command.CommandObj,
+    message: types.Message,
+    state: FSMContext,
+    command: Command.CommandObj,
 ):
     r"""Manage subscription to pairs.
 

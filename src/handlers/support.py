@@ -38,7 +38,9 @@ async def unhelp_button(call: types.CallbackQuery, state: FSMContext):
     await state.finish()
     await call.answer()
     await tg.send_message(
-        call.message.chat.id, i18n("request_cancelled"), reply_markup=start_keyboard(),
+        call.message.chat.id,
+        i18n("request_cancelled"),
+        reply_markup=start_keyboard(),
     )
 
 

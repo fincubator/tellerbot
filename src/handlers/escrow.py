@@ -249,7 +249,8 @@ async def full_card_number_request(chat_id: int, offer: EscrowOffer):
 
 
 async def ask_credentials(
-    call: types.CallbackQuery, offer: EscrowOffer,
+    call: types.CallbackQuery,
+    offer: EscrowOffer,
 ):
     """Update offer with ``update_dict`` and start asking transfer information.
 
@@ -307,7 +308,9 @@ async def ask_credentials(
                 )
             )
             await tg.send_message(
-                answer_user["id"], answer, parse_mode=ParseMode.MARKDOWN,
+                answer_user["id"],
+                answer,
+                parse_mode=ParseMode.MARKDOWN,
             )
         return
 
@@ -444,7 +447,8 @@ async def set_receive_card_number(message: types.Message, offer: EscrowOffer):
         {"$set": {f"{user_field}.receive_address": ("*" * 8).join(card_number)}}
     )
     await tg.send_message(
-        message.chat.id, i18n("ask_address {currency}").format(currency=offer.escrow),
+        message.chat.id,
+        i18n("ask_address {currency}").format(currency=offer.escrow),
     )
     await states.Escrow.send_address.set()
 
@@ -480,7 +484,8 @@ async def set_receive_address(message: types.Message, offer: EscrowOffer):
     )
     if ask_name:
         await tg.send_message(
-            message.chat.id, i18n("send_name_patronymic_surname"),
+            message.chat.id,
+            i18n("send_name_patronymic_surname"),
         )
         await states.Escrow.name.set()
     else:
@@ -515,7 +520,8 @@ async def set_name(message: types.Message, offer: EscrowOffer):
     name = message.text.split()
     if len(name) != 3:
         await tg.send_message(
-            message.chat.id, i18n("wrong_word_count {word_count}").format(word_count=3),
+            message.chat.id,
+            i18n("wrong_word_count {word_count}").format(word_count=3),
         )
         return
     name[2] = name[2][0] + "."  # Leaving the first letter of surname with dot
@@ -633,7 +639,8 @@ async def decline_offer(call: types.CallbackQuery, offer: EscrowOffer):
     offer.react_time = time()
     await offer.delete_document()
     await tg.send_message(
-        offer.init["id"], i18n("escrow_offer_declined", locale=offer.init["locale"]),
+        offer.init["id"],
+        i18n("escrow_offer_declined", locale=offer.init["locale"]),
     )
     await call.answer()
     await tg.send_message(call.message.chat.id, i18n("offer_declined"))
@@ -879,7 +886,10 @@ async def final_offer_confirmation(call: types.CallbackQuery, offer: EscrowOffer
     await call.answer()
     await tg.send_message(
         other_user["id"],
-        i18n("complete_escrow_promise", locale=other_user["locale"],),
+        i18n(
+            "complete_escrow_promise",
+            locale=other_user["locale"],
+        ),
         reply_markup=start_keyboard(),
     )
 
