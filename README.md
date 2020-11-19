@@ -44,8 +44,10 @@ cp .env.example .env
 8. Install [Docker Compose](https://docs.docker.com/compose/install/).
 9. Start container:
 ```bash
-docker-compose up
+docker-compose up --build
 ```
+
+For subsequent launches starting container is enough.
 
 ### Manual
 1. Clone the repository:
@@ -72,16 +74,22 @@ cp .env.example .env
 8. Create a file containing Telegram bot's API token with filename specified in ```TOKEN_FILENAME``` from ```.env``` (example in [secrets/tbtoken](secrets/tbtoken)).
 9. *(Optional)* If you're going to support escrow, create a file containing JSON mapping blockchain names to bot's WIF and API nodes with filename specified in ```ESCROW_FILENAME``` from ```.env``` (example in [secrets/escrow.json](secrets/escrow.json)).
 10. Create a file containing database password with filename specified in ```DATABASE_PASSWORD_FILENAME``` from ```.env``` (example in [secrets/dbpassword](secrets/dbpassword)).
-11. Install [MongoDB server](https://docs.mongodb.com/manual/installation/).
-12. Start MongoDB server and [enable authentification](https://docs.mongodb.com/manual/tutorial/enable-authentication/) of user specified in ```DATABASE_USERNAME``` with password in file specified in ```DATABASE_PASSWORD_FILENAME``` for database specified in ```DATABASE_NAME``` from ```.env```.
-13. Set environment variables:
+11. Install and start [MongoDB server](https://docs.mongodb.com/manual/installation/).
+12. Set environment variables:
 ```bash
 export $(grep -v '^#' .env | xargs)
 ```
-14. Launch TellerBot:
+13. Create database user:
+```bash
+./mongo-init.sh
+```
+14. Restart MongoDB server with [access control enabled](https://docs.mongodb.com/manual/tutorial/enable-authentication/#re-start-the-mongodb-instance-with-access-control).
+15. Launch TellerBot:
 ```bash
 python .
 ```
+
+For subsequent launches setting enviroment variables and launching TellerBot is enough.
 
 ## Contributing
 You can help by working on [opened issues](https://github.com/fincubator/tellerbot/issues), fixing bugs, creating new features, improving documentation or [translating bot messages to your language](https://hosted.weblate.org/engage/tellerbot/).

@@ -26,10 +26,13 @@ from src.config import config
 try:
     with open(config.DATABASE_PASSWORD_FILENAME, "r") as password_file:
         client = AsyncIOMotorClient(
-            config.DATABASE_HOST,
-            config.DATABASE_PORT,
-            username=config.DATABASE_USERNAME,
-            password=password_file.read(),
+            "mongodb://{username}:{password}@{host}:{port}/{name}".format(
+                host=config.DATABASE_HOST,
+                port=config.DATABASE_PORT,
+                username=config.DATABASE_USERNAME,
+                password=password_file.read().strip(),
+                name=config.DATABASE_NAME,
+            )
         )
 except (AttributeError, FileNotFoundError):
     client = AsyncIOMotorClient(config.DATABASE_HOST)
