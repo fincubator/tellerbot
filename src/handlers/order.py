@@ -452,7 +452,11 @@ async def edit_button(call: types.CallbackQuery):
     user = database_user.get()
     if "edit" in user:
         await tg.delete_message(call.message.chat.id, user["edit"]["message_id"])
-    result = await tg.send_message(call.message.chat.id, answer, reply_markup=keyboard,)
+    result = await tg.send_message(
+        call.message.chat.id,
+        answer,
+        reply_markup=keyboard,
+    )
     await database.users.update_one(
         {"_id": user["_id"]},
         {

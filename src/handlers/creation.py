@@ -100,7 +100,9 @@ async def cancel_order_creation(user_id: int, chat_id: int):
     order = await database.creation.delete_one({"user_id": user_id})
     if not order.deleted_count:
         await tg.send_message(
-            chat_id, i18n("no_creation"), reply_markup=start_keyboard(),
+            chat_id,
+            i18n("no_creation"),
+            reply_markup=start_keyboard(),
         )
         return True
 
@@ -249,7 +251,9 @@ async def whitelisting_request(call: types.CallbackQuery):
                 )
             else:
                 await tg.edit_message_text(
-                    support_text, config.SUPPORT_CHAT_ID, request["message_id"],
+                    support_text,
+                    config.SUPPORT_CHAT_ID,
+                    request["message_id"],
                 )
 
     await call.answer()
@@ -427,7 +431,8 @@ async def price_ask(
     buttons = await inline_control_buttons()
     callback_data = f"price {callback_command}"
     buttons.insert(
-        0, [InlineKeyboardButton(i18n("invert"), callback_data=callback_data)],
+        0,
+        [InlineKeyboardButton(i18n("invert"), callback_data=callback_data)],
     )
     await tg.edit_message_text(
         answer,

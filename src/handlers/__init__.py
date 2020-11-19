@@ -98,7 +98,9 @@ async def errors_handler(update: types.Update, exception: Exception):
                 parse_mode=types.ParseMode.MARKDOWN,
             )
         await tg.send_message(
-            chat_id, i18n("unexpected_error"), reply_markup=start_keyboard(),
+            chat_id,
+            i18n("unexpected_error"),
+            reply_markup=start_keyboard(),
         )
 
     return True
