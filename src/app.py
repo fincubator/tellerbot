@@ -51,14 +51,17 @@ def main():
     webhook_path = config.WEBHOOK_PATH + "/" + url_token
 
     bot.setup()
-    executor.start_webhook(
-        dispatcher=dp,
-        webhook_path=webhook_path,
-        on_startup=lambda *args: on_startup(webhook_path, *args),
-        on_shutdown=lambda *args: close_blockchains(),
-        host=config.INTERNAL_HOST,
-        port=config.SERVER_PORT,
-    )
+    if config.SET_WEBHOOK:
+        executor.start_webhook(
+            dispatcher=dp,
+            webhook_path=webhook_path,
+            on_startup=lambda *args: on_startup(webhook_path, *args),
+            on_shutdown=lambda *args: close_blockchains(),
+            host=config.INTERNAL_HOST,
+            port=config.SERVER_PORT,
+        )
+    else:
+        executor.start_polling(dispatcher=dp)
     print()  # noqa: T001  Executor stopped with ^C
 
     # Stop all background tasks

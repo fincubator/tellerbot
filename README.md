@@ -77,7 +77,7 @@ cp .env.example .env
 11. Install and start [MongoDB server](https://docs.mongodb.com/manual/installation/).
 12. Set environment variables:
 ```bash
-export $(grep -v '^#' .env | xargs)
+export $(sed 's/#.*//' .env | xargs)
 ```
 13. Create database user:
 ```bash

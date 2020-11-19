@@ -18,11 +18,12 @@ from os import getenv
 
 
 DEFAULT_VALUES = {
+    "SET_WEBHOOK": False,
     "INTERNAL_HOST": "127.0.0.1",
     "DATABASE_HOST": "127.0.0.1",
     "DATABASE_PORT": 27017,
     "DATABASE_NAME": "tellerbot",
-    "ESCROW_ENABLED": True,
+    "ESCROW_ENABLED": False,
 }
 
 
