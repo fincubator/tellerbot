@@ -39,7 +39,7 @@ cp .env.example .env
 3. Personalize settings by modifying ```.env``` with your preferable text editor.
 4. Create a new Telegram bot by talking to [@BotFather](https://t.me/BotFather) and get its API token.
 5. Create a file containing Telegram bot's API token with filename specified in ```TOKEN_FILENAME``` from ```.env``` (example in [secrets/tbtoken](secrets/tbtoken)).
-6. *(Optional)* If you're going to support escrow, create a file containing JSON mapping blockchain names to bot's WIF and API nodes with filename specified in ```ESCROW_FILENAME``` from ```.env``` (example in [secrets/escrow.json](secrets/escrow.json)).
+6. *(Optional)* If you're going to support escrow, set ```ESCROW_ENABLED=true``` in ```.env``` and create a file containing JSON mapping blockchain names to bot's WIF and API nodes with filename specified in ```ESCROW_FILENAME``` from ```.env``` (example in [secrets/escrow.json](secrets/escrow.json)).
 7. Create a file containing database password with filename specified in ```DATABASE_PASSWORD_FILENAME``` from ```.env``` (example in [secrets/dbpassword](secrets/dbpassword)).
 8. Install [Docker Compose](https://docs.docker.com/compose/install/).
 9. Start container:
@@ -72,7 +72,7 @@ cp .env.example .env
 6. Personalize settings by modifying ```.env``` with your preferable text editor. Remove ```INTERNAL_HOST``` and ```DATABASE_HOST``` if you want bot and database running on localhost.
 7. Create a new Telegram bot by talking to [@BotFather](https://t.me/BotFather) and get its API token.
 8. Create a file containing Telegram bot's API token with filename specified in ```TOKEN_FILENAME``` from ```.env``` (example in [secrets/tbtoken](secrets/tbtoken)).
-9. *(Optional)* If you're going to support escrow, create a file containing JSON mapping blockchain names to bot's WIF and API nodes with filename specified in ```ESCROW_FILENAME``` from ```.env``` (example in [secrets/escrow.json](secrets/escrow.json)).
+9. *(Optional)* If you're going to support escrow, set ```ESCROW_ENABLED=true``` in ```.env``` and create a file containing JSON mapping blockchain names to bot's WIF and API nodes with filename specified in ```ESCROW_FILENAME``` from ```.env``` (example in [secrets/escrow.json](secrets/escrow.json)).
 10. Create a file containing database password with filename specified in ```DATABASE_PASSWORD_FILENAME``` from ```.env``` (example in [secrets/dbpassword](secrets/dbpassword)).
 11. Install and start [MongoDB server](https://docs.mongodb.com/manual/installation/).
 12. Set environment variables:
