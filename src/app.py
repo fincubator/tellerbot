@@ -1,4 +1,4 @@
-# Copyright (C) 2019  alfred richardsn
+# Copyright (C) 2019-2020  alfred richardsn
 #
 # This file is part of TellerBot.
 #
@@ -30,13 +30,14 @@ from src.escrow import close_blockchains
 from src.escrow import connect_to_blockchains
 
 
-async def on_startup(webhook_path, *args):
+async def on_startup(webhook_path=None, *args):
     """Prepare bot before starting.
 
     Set webhook and run background tasks.
     """
     await tg.delete_webhook()
-    await tg.set_webhook("https://" + config.SERVER_HOST + webhook_path)
+    if webhook_path is not None:
+        await tg.set_webhook("https://" + config.SERVER_HOST + webhook_path)
     await database.users.create_index("referral_code", unique=True, sparse=True)
     asyncio.create_task(notifications.run_loop())
     asyncio.create_task(connect_to_blockchains())
@@ -47,11 +48,11 @@ def main():
 
     Bot's main entry point.
     """
-    url_token = secrets.token_urlsafe()
-    webhook_path = config.WEBHOOK_PATH + "/" + url_token
-
     bot.setup()
     if config.SET_WEBHOOK:
+        url_token = secrets.token_urlsafe()
+        webhook_path = config.WEBHOOK_PATH + "/" + url_token
+
         executor.start_webhook(
             dispatcher=dp,
             webhook_path=webhook_path,
@@ -61,7 +62,11 @@ def main():
             port=config.SERVER_PORT,
         )
     else:
-        executor.start_polling(dispatcher=dp)
+        executor.start_polling(
+            dispatcher=dp,
+            on_startup=lambda *args: on_startup(None, *args),
+            on_shutdown=lambda *args: close_blockchains(),
+        )
     print()  # noqa: T001  Executor stopped with ^C
 
     # Stop all background tasks
