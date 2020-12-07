@@ -41,7 +41,7 @@ cp .env.example .env
 5. Create a file containing Telegram bot's API token with filename specified in ```TOKEN_FILENAME``` from ```.env``` (example in [secrets/tbtoken](secrets/tbtoken)).
 6. *(Optional)* If you're going to support escrow, set ```ESCROW_ENABLED=true``` in ```.env``` and create a file containing JSON mapping blockchain names to bot's WIF and API nodes with filename specified in ```ESCROW_FILENAME``` from ```.env``` (example in [secrets/escrow.json](secrets/escrow.json)).
 7. Create a file containing database password with filename specified in ```DATABASE_PASSWORD_FILENAME``` from ```.env``` (example in [secrets/dbpassword](secrets/dbpassword)).
-8. Install [Docker Compose](https://docs.docker.com/compose/install/).
+8. Install [Docker Compose](https://docs.docker.com/compose/install/) version no less than 1.26.0.
 9. Start container:
 ```bash
 docker-compose up --build
