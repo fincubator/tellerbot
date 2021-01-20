@@ -27,7 +27,7 @@ repos:
     hooks:
     -   id: flake8
         additional_dependencies: [
-            git+https://github.com/best-doctor/flake8-annotations-complexity.git@3863739c34748db8fb5a740d903b8e243dfddb20,
+            flake8-annotations-complexity,
             flake8_builtins,
             flake8-eradicate,
             flake8_pep3101,
