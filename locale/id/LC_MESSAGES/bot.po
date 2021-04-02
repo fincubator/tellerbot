@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: TellerBot\n"
 "Report-Msgid-Bugs-To: rchrdsn@protonmail.ch\n"
 "POT-Creation-Date: 2020-06-13 02:06+0300\n"
-"PO-Revision-Date: 2020-07-13 05:41+0000\n"
-"Last-Translator: geeks121 <yozhy999@gmail.com>\n"
+"PO-Revision-Date: 2021-04-03 04:26+0000\n"
+"Last-Translator: Reza Almanda <rezaalmanda27@gmail.com>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/tellerbot/"
 "tellerbot/id/>\n"
 "Language: id\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 4.2-dev\n"
+"X-Generator: Weblate 4.6-dev\n"
 "Generated-By: Babel 2.8.0\n"
 
 #: src/escrow/blockchain/__init__.py
@@ -744,3 +744,67 @@ msgstr "Pesanan Anda telah kedaluwarsa."
 #: src/whitelist.py
 msgid "without_gateway"
 msgstr "Tanpa gateway"
+
+#: src/handlers/start_menu.py
+msgid "choose_cashback_currency"
+msgstr "Pilih mata uang cashback."
+
+#: src/handlers/start_menu.py
+msgid "no_cashback"
+msgstr ""
+"Anda tidak memiliki cashback yang bisa diklaim. Gunakan escrow untuk "
+"mendapatkannya."
+
+#: src/handlers/start_menu.py
+msgid "claim {amount} {currency}"
+msgstr "Klaim {amount} {currency}"
+
+#: src/handlers/start_menu.py
+msgid "referral_share_alias {link}"
+msgstr "Tautan referral Anda dengan nama pengguna: {link}"
+
+#: src/handlers/start_menu.py
+msgid "referral_share {link}"
+msgstr "Tautan referral Anda dengan kode: {link}"
+
+#: src/handlers/order.py
+msgid "escrow_starting_error"
+msgstr "Tidak dapat memulai eskro."
+
+#: src/handlers/cashback.py
+msgid "cashback_transferred"
+msgstr "Cashback ditransfer!"
+
+#: src/handlers/cashback.py
+msgid "cashback_transfer_error"
+msgstr ""
+"Tidak dapat mentransfer cashback. Pastikan Anda mengklaim cashback dengan "
+"jumlah yang dapat ditransfer."
+
+#: src/handlers/cashback.py
+msgid "claim_transfer_wait"
+msgstr "Mentransfer cashback..."
+
+#: src/handlers/cashback.py
+msgid "send_cashback_address"
+msgstr "Kirim alamat dimana cashback akan dikirim."
+
+#: src/handlers/cashback.py
+msgid "use_cashback_address {address}"
+msgstr "Apakah cashback harus dikirim ke alamat {address}?"
+
+#: src/handlers/cashback.py
+msgid "custom_cashback_address"
+msgstr "Tidak, gunakan alamat lain"
+
+#: src/handlers/cashback.py
+msgid "confirm_cashback_address"
+msgstr "Ya"
+
+#: src/handlers/base.py
+msgid "claim_cashback"
+msgstr "Klaim cashback"
+
+#: src/handlers/base.py
+msgid "referral_link"
+msgstr "Tautan referral"
