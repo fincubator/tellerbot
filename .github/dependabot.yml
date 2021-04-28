@@ -1,0 +1,28 @@
+version: 2
+updates:
+- package-ecosystem: pip
+  directory: "/"
+  schedule:
+    interval: weekly
+    day: sunday
+    time: "20:00"
+    timezone: Europe/Moscow
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: aiogram
+    versions:
+    - "> 2.10.1"
+  - dependency-name: aiogram
+    versions:
+    - "> 2.8"
+  - dependency-name: pytest
+    versions:
+    - "> 5.4.3"
+  - dependency-name: pre-commit
+    versions:
+    - 2.10.0
+    - 2.12.0
+  - dependency-name: sphinx
+    versions:
+    - 3.5.0
+    - 3.5.2
