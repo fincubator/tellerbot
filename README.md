@@ -3,7 +3,6 @@
 <img src="https://i.imgur.com/cPUUcTw.jpg">
 
 [![Documentation Status](https://readthedocs.org/projects/tellerbot/badge/?version=latest)](https://tellerbot.readthedocs.io/en/latest/?badge=latest)
-[![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=fincubator/tellerbot)](https://dependabot.com)
 [![pre-commit](https://github.com/fincubator/tellerbot/workflows/pre-commit/badge.svg)](https://github.com/fincubator/tellerbot/actions?query=workflow%3Apre-commit)
 [![Translation Status](https://hosted.weblate.org/widgets/tellerbot/-/tellerbot/svg-badge.svg)](https://hosted.weblate.org/engage/tellerbot/?utm_source=widget)
 [![GitHub license](https://img.shields.io/github/license/fincubator/tellerbot)](https://github.com/PreICO/tellerbot/blob/escrow/COPYING)
