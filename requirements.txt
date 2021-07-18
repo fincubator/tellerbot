@@ -1,5 +1,5 @@
 aiogram==2.8
-emoji==1.2.0
+emoji==1.4.1
 motor==2.3.1
 pymongo==3.11.3
 requests==2.25.1
